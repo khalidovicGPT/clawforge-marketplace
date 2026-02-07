@@ -4,13 +4,23 @@ import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
-// Use service role for webhook handling
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Use service role for webhook handling (only if configured)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+const supabaseAdmin = supabaseUrl && supabaseServiceKey 
+  ? createClient(supabaseUrl, supabaseServiceKey)
+  : null;
 
 export async function POST(request: Request) {
+  if (!stripe) {
+    return NextResponse.json({ error: 'Stripe not configured' }, { status: 503 });
+  }
+
+  if (!supabaseAdmin) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
+  }
+
   const body = await request.text();
   const headersList = await headers();
   const signature = headersList.get('stripe-signature');
@@ -19,14 +29,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Missing signature' }, { status: 400 });
   }
 
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 503 });
+  }
+
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
-    );
+    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
   } catch (err) {
     console.error('Webhook signature verification failed:', err);
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
@@ -36,13 +47,13 @@ export async function POST(request: Request) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
-        await handleCheckoutCompleted(session);
+        await handleCheckoutCompleted(session, supabaseAdmin);
         break;
       }
 
       case 'account.updated': {
         const account = event.data.object as Stripe.Account;
-        await handleAccountUpdated(account);
+        await handleAccountUpdated(account, supabaseAdmin);
         break;
       }
 
@@ -63,7 +74,10 @@ export async function POST(request: Request) {
   }
 }
 
-async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+async function handleCheckoutCompleted(
+  session: Stripe.Checkout.Session, 
+  supabase: ReturnType<typeof createClient>
+) {
   const skillId = session.metadata?.skill_id;
   
   if (!skillId) {
@@ -71,7 +85,6 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     return;
   }
 
-  // Get customer email to find user
   const customerEmail = session.customer_details?.email;
   
   if (!customerEmail) {
@@ -79,8 +92,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     return;
   }
 
-  // Find user by email
-  const { data: user, error: userError } = await supabaseAdmin
+  const { data: user, error: userError } = await supabase
     .from('users')
     .select('id')
     .eq('email', customerEmail)
@@ -91,8 +103,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     return;
   }
 
-  // Create purchase record
-  const { error: purchaseError } = await supabaseAdmin
+  const { error: purchaseError } = await supabase
     .from('purchases')
     .upsert({
       user_id: user.id,
@@ -109,21 +120,19 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     return;
   }
 
-  // Increment download count
-  await supabaseAdmin.rpc('increment_downloads', { skill_uuid: skillId });
-
+  await supabase.rpc('increment_downloads', { skill_uuid: skillId });
   console.log(`Purchase recorded: user=${user.id}, skill=${skillId}`);
 }
 
-async function handleAccountUpdated(account: Stripe.Account) {
-  // Update creator's onboarding status
+async function handleAccountUpdated(
+  account: Stripe.Account,
+  supabase: ReturnType<typeof createClient>
+) {
   const isOnboarded = account.details_submitted && account.charges_enabled;
 
-  const { error } = await supabaseAdmin
+  const { error } = await supabase
     .from('users')
-    .update({
-      stripe_onboarding_complete: isOnboarded,
-    })
+    .update({ stripe_onboarding_complete: isOnboarded })
     .eq('stripe_account_id', account.id);
 
   if (error) {
