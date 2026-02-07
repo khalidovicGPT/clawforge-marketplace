@@ -2,14 +2,14 @@ import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
-// Query params schema
+// Query params schema - handle null values from searchParams.get()
 const querySchema = z.object({
   page: z.coerce.number().min(1).default(1),
   pageSize: z.coerce.number().min(1).max(50).default(12),
-  category: z.string().optional(),
-  certification: z.enum(['bronze', 'silver', 'gold']).optional(),
-  priceType: z.enum(['free', 'one_time']).optional(),
-  search: z.string().optional(),
+  category: z.string().nullish().transform(v => v || undefined),
+  certification: z.enum(['bronze', 'silver', 'gold']).nullish().transform(v => v || undefined),
+  priceType: z.enum(['free', 'one_time']).nullish().transform(v => v || undefined),
+  search: z.string().nullish().transform(v => v || undefined),
   sortBy: z.enum(['newest', 'popular', 'rating', 'price_asc', 'price_desc']).default('newest'),
 });
 
@@ -19,13 +19,13 @@ export async function GET(request: NextRequest) {
     
     // Parse and validate query params
     const params = querySchema.parse({
-      page: searchParams.get('page'),
-      pageSize: searchParams.get('pageSize'),
+      page: searchParams.get('page') || 1,
+      pageSize: searchParams.get('pageSize') || 12,
       category: searchParams.get('category'),
       certification: searchParams.get('certification'),
       priceType: searchParams.get('priceType'),
       search: searchParams.get('search'),
-      sortBy: searchParams.get('sortBy'),
+      sortBy: searchParams.get('sortBy') || 'newest',
     });
 
     const supabase = await createClient();
@@ -35,9 +35,9 @@ export async function GET(request: NextRequest) {
       .from('skills')
       .select(`
         *,
-        creator:users!creator_id(id, display_name, avatar_url)
+        creator:users!skills_creator_id_fkey(id, name, avatar_url)
       `, { count: 'exact' })
-      .eq('status', 'published');
+      .eq('status', 'approved');
 
     // Apply filters
     if (params.category) {
@@ -45,61 +45,64 @@ export async function GET(request: NextRequest) {
     }
     
     if (params.certification) {
-      query = query.eq('certification', params.certification);
+      query = query.eq('certification_level', params.certification);
     }
     
-    if (params.priceType) {
-      query = query.eq('price_type', params.priceType);
+    if (params.priceType === 'free') {
+      query = query.eq('price', 0);
+    } else if (params.priceType === 'one_time') {
+      query = query.gt('price', 0);
     }
     
     if (params.search) {
-      query = query.or(`title.ilike.%${params.search}%,description_short.ilike.%${params.search}%`);
+      query = query.or(`name.ilike.%${params.search}%,description.ilike.%${params.search}%`);
     }
 
     // Apply sorting
     switch (params.sortBy) {
       case 'popular':
-        query = query.order('downloads_count', { ascending: false });
+        query = query.order('download_count', { ascending: false });
         break;
       case 'rating':
-        query = query.order('rating_avg', { ascending: false, nullsFirst: false });
+        query = query.order('rating_avg', { ascending: false });
         break;
       case 'price_asc':
-        query = query.order('price', { ascending: true, nullsFirst: true });
+        query = query.order('price', { ascending: true });
         break;
       case 'price_desc':
         query = query.order('price', { ascending: false });
         break;
       case 'newest':
       default:
-        query = query.order('published_at', { ascending: false });
-        break;
+        query = query.order('created_at', { ascending: false });
     }
 
-    // Apply pagination
+    // Pagination
     const from = (params.page - 1) * params.pageSize;
     const to = from + params.pageSize - 1;
     query = query.range(from, to);
 
-    const { data, error, count } = await query;
+    const { data: skills, count, error } = await query;
 
     if (error) {
-      console.error('Error fetching skills:', error);
-      return NextResponse.json({ error: 'Failed to fetch skills' }, { status: 500 });
+      console.error('Supabase error:', error);
+      return NextResponse.json({ error: 'Database error', details: error.message }, { status: 500 });
     }
 
     return NextResponse.json({
-      data,
-      count: count ?? 0,
-      page: params.page,
-      pageSize: params.pageSize,
-      totalPages: Math.ceil((count ?? 0) / params.pageSize),
+      skills: skills || [],
+      pagination: {
+        page: params.page,
+        pageSize: params.pageSize,
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / params.pageSize),
+      },
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Invalid query parameters', details: error.issues }, { status: 400 });
     }
-    console.error('Unexpected error:', error);
+    console.error('Skills API error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
