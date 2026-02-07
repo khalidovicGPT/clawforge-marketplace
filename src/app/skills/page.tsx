@@ -75,22 +75,27 @@ async function SkillsGrid({ searchParams }: { searchParams: PageProps['searchPar
     .range(from, to)
     .returns<SkillWithCreator[]>();
 
+  // Log any error for debugging
   if (error) {
-    console.error('Error fetching skills:', error);
-    return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-8 text-center">
-        <p className="text-red-600">Erreur lors du chargement des skills</p>
-      </div>
-    );
+    console.error('Supabase error fetching skills:', JSON.stringify(error, null, 2));
   }
 
+  // Show empty state if no skills (not an error if skills array is empty)
   if (!skills || skills.length === 0) {
     return (
       <div className="rounded-lg border bg-gray-50 p-12 text-center">
-        <p className="text-2xl">🔍</p>
-        <p className="mt-2 text-gray-600">Aucun skill trouvé</p>
-        <p className="mt-1 text-sm text-gray-500">
-          Essayez de modifier vos filtres ou revenez plus tard.
+        <p className="text-4xl">🚀</p>
+        <h3 className="mt-4 text-lg font-semibold text-gray-900">
+          La marketplace est presque prête !
+        </h3>
+        <p className="mt-2 text-gray-600">
+          Les premiers skills arrivent bientôt. Revenez très vite !
+        </p>
+        <p className="mt-4 text-sm text-gray-500">
+          Vous êtes développeur ?{' '}
+          <a href="/become-creator" className="text-blue-600 hover:underline">
+            Devenez le premier créateur
+          </a>
         </p>
       </div>
     );
