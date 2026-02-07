@@ -26,7 +26,7 @@ async function SkillsGrid({ searchParams }: { searchParams: PageProps['searchPar
       *,
       creator:users!creator_id(id, display_name, avatar_url)
     `)
-    .eq('status', 'published');
+    .eq('status', 'approved');
 
   // Apply filters
   if (params.category && params.category !== 'all') {
