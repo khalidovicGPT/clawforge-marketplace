@@ -1,9 +1,14 @@
 import Stripe from 'stripe';
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-01-28.clover',
-  typescript: true,
-});
+// Initialize Stripe only if API key is available
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+
+export const stripe = stripeSecretKey 
+  ? new Stripe(stripeSecretKey, {
+      apiVersion: '2024-12-18.acacia',
+      typescript: true,
+    })
+  : null;
 
 // Commission configuration
 export const PLATFORM_FEE_PERCENT = 20; // ClawForge takes 20%, creator gets 80%
@@ -37,6 +42,10 @@ export async function createCheckoutSession({
   successUrl: string;
   cancelUrl: string;
 }) {
+  if (!stripe) {
+    throw new Error('Stripe is not configured');
+  }
+
   const platformFee = calculatePlatformFee(priceInCents);
 
   const session = await stripe.checkout.sessions.create({
@@ -78,6 +87,10 @@ export async function createCheckoutSession({
  * Create a Stripe Connect Express account for a creator
  */
 export async function createConnectAccount(email: string) {
+  if (!stripe) {
+    throw new Error('Stripe is not configured');
+  }
+
   const account = await stripe.accounts.create({
     type: 'express',
     email,
@@ -101,6 +114,10 @@ export async function createAccountLink(
   refreshUrl: string,
   returnUrl: string
 ) {
+  if (!stripe) {
+    throw new Error('Stripe is not configured');
+  }
+
   const accountLink = await stripe.accountLinks.create({
     account: accountId,
     refresh_url: refreshUrl,
@@ -115,6 +132,10 @@ export async function createAccountLink(
  * Check if a Connect account has completed onboarding
  */
 export async function isAccountOnboarded(accountId: string): Promise<boolean> {
+  if (!stripe) {
+    throw new Error('Stripe is not configured');
+  }
+
   const account = await stripe.accounts.retrieve(accountId);
   return account.details_submitted && account.charges_enabled;
 }
