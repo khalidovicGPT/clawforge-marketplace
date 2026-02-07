@@ -1,15 +1,52 @@
 import Link from 'next/link';
 import { Star } from 'lucide-react';
-import { SKILL_CATEGORIES, CERTIFICATION_BADGES, type SkillWithCreator } from '@/types/database';
-import { formatPrice, formatNumber } from '@/lib/utils';
+
+const CERTIFICATION_BADGES: Record<string, { emoji: string; label: string }> = {
+  bronze: { emoji: '🥉', label: 'Bronze' },
+  silver: { emoji: '🥈', label: 'Silver' },
+  gold: { emoji: '🥇', label: 'Gold' },
+};
+
+const CATEGORY_EMOJIS: Record<string, string> = {
+  'Communication': '📧',
+  'Productivité': '⚡',
+  'Développement': '💻',
+  'Données': '📊',
+  'Intégration': '🔗',
+};
+
+interface Skill {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  category: string;
+  price: number;
+  currency: string;
+  certification_level: string | null;
+  download_count: number;
+  rating_avg: number | null;
+  rating_count: number;
+}
 
 interface SkillCardProps {
-  skill: SkillWithCreator;
+  skill: Skill;
+}
+
+function formatPrice(price: number, currency = 'EUR'): string {
+  if (price === 0) return 'Gratuit';
+  return new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 0,
+  }).format(price / 100);
 }
 
 export function SkillCard({ skill }: SkillCardProps) {
-  const category = SKILL_CATEGORIES[skill.category as keyof typeof SKILL_CATEGORIES];
-  const certification = CERTIFICATION_BADGES[skill.certification];
+  const categoryEmoji = CATEGORY_EMOJIS[skill.category] || '📦';
+  const certification = skill.certification_level 
+    ? CERTIFICATION_BADGES[skill.certification_level] 
+    : { emoji: '📦', label: 'Standard' };
 
   return (
     <Link
@@ -19,29 +56,18 @@ export function SkillCard({ skill }: SkillCardProps) {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
-          {/* Icon */}
           <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-100 text-2xl group-hover:bg-blue-50">
-            {skill.icon_url ? (
-              <img
-                src={skill.icon_url}
-                alt={skill.title}
-                className="h-8 w-8 rounded"
-              />
-            ) : (
-              category?.emoji || '📦'
-            )}
+            {categoryEmoji}
           </div>
           
-          {/* Title & Category */}
           <div>
             <h3 className="font-semibold text-gray-900 group-hover:text-blue-600">
-              {skill.title}
+              {skill.name}
             </h3>
-            <p className="text-sm text-gray-500">{category?.label || skill.category}</p>
+            <p className="text-sm text-gray-500">{skill.category}</p>
           </div>
         </div>
         
-        {/* Certification Badge */}
         <span className="text-xl" title={certification.label}>
           {certification.emoji}
         </span>
@@ -49,42 +75,27 @@ export function SkillCard({ skill }: SkillCardProps) {
 
       {/* Description */}
       <p className="mt-3 line-clamp-2 text-sm text-gray-600">
-        {skill.description_short}
+        {skill.description || 'Aucune description disponible.'}
       </p>
 
       {/* Stats */}
       <div className="mt-4 flex items-center gap-3 text-sm text-gray-500">
-        {skill.rating_avg && (
-          <div className="flex items-center gap-1">
-            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-            <span>{skill.rating_avg.toFixed(1)}</span>
-          </div>
+        {skill.rating_avg && skill.rating_avg > 0 && (
+          <>
+            <div className="flex items-center gap-1">
+              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+              <span>{skill.rating_avg.toFixed(1)}</span>
+            </div>
+            <span>•</span>
+          </>
         )}
-        <span>•</span>
-        <span>{formatNumber(skill.downloads_count)} téléchargements</span>
+        <span>{skill.download_count.toLocaleString('fr-FR')} téléchargements</span>
       </div>
 
-      {/* Footer: Creator & Price */}
-      <div className="mt-4 flex items-center justify-between border-t pt-4">
-        <div className="flex items-center gap-2">
-          {skill.creator.avatar_url ? (
-            <img
-              src={skill.creator.avatar_url}
-              alt={skill.creator.display_name || 'Créateur'}
-              className="h-6 w-6 rounded-full"
-            />
-          ) : (
-            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-200 text-xs font-medium text-gray-600">
-              {skill.creator.display_name?.[0]?.toUpperCase() || '?'}
-            </div>
-          )}
-          <span className="text-sm text-gray-600">
-            {skill.creator.display_name || 'Anonyme'}
-          </span>
-        </div>
-        
-        <span className={`font-semibold ${skill.price_type === 'free' ? 'text-green-600' : 'text-gray-900'}`}>
-          {formatPrice(skill.price)}
+      {/* Footer: Price */}
+      <div className="mt-4 flex items-center justify-end border-t pt-4">
+        <span className={`font-semibold ${skill.price === 0 ? 'text-green-600' : 'text-gray-900'}`}>
+          {formatPrice(skill.price, skill.currency)}
         </span>
       </div>
     </Link>
