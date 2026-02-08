@@ -1,7 +1,17 @@
 import { Suspense } from 'react';
+import { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { SkillCard } from '@/components/skills/skill-card';
 import { SkillFilters } from '@/components/skills/skill-filters';
+
+export const metadata: Metadata = {
+  title: 'Catalogue des Skills',
+  description: 'Parcourez notre catalogue de skills certifiés pour OpenClaw. Filtrez par catégorie, prix ou certification. Trouvez le skill parfait pour votre agent IA.',
+  openGraph: {
+    title: 'Catalogue des Skills - ClawForge',
+    description: 'Des centaines de skills certifiés pour étendre les capacités de votre agent OpenClaw.',
+  },
+};
 
 interface PageProps {
   searchParams: Promise<{

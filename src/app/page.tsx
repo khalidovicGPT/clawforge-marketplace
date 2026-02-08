@@ -1,7 +1,17 @@
 import Link from 'next/link';
+import { Metadata } from 'next';
 import { Search, Shield, Zap, Wallet, Star } from 'lucide-react';
 import { SKILL_CATEGORIES, CERTIFICATION_BADGES } from '@/types/database';
 import { createClient } from '@/lib/supabase/server';
+
+export const metadata: Metadata = {
+  title: 'ClawForge - Marketplace Skills OpenClaw',
+  description: 'Découvrez des skills certifiés et sécurisés pour étendre les capacités de votre agent OpenClaw. Si c\'est sur ClawForge, ça marche.',
+  openGraph: {
+    title: 'ClawForge - Marketplace Skills OpenClaw',
+    description: 'La première marketplace de skills certifiés pour OpenClaw. Découvrez, achetez et installez des skills premium.',
+  },
+};
 
 async function getPopularSkills() {
   const supabase = await createClient();
