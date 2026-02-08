@@ -11,7 +11,7 @@ const USER_STEPS = [
   {
     icon: Search,
     title: 'Parcourez le catalogue',
-    description: 'Explorez des centaines de skills certifiés. Filtrez par catégorie, prix ou certification pour trouver exactement ce qu'il vous faut.',
+    description: 'Explorez des centaines de skills certifiés. Filtrez par catégorie, prix ou certification pour trouver exactement ce dont vous avez besoin.',
     color: 'bg-blue-100 text-blue-600',
   },
   {
@@ -38,7 +38,7 @@ const CREATOR_STEPS = [
   {
     icon: UserPlus,
     title: 'Créez votre compte',
-    description: 'Inscrivez-vous gratuitement via GitHub ou Google. Complétez l'onboarding Stripe pour recevoir vos paiements.',
+    description: 'Inscrivez-vous gratuitement via GitHub ou Google. Complétez le processus Stripe pour recevoir vos paiements.',
     color: 'bg-blue-100 text-blue-600',
   },
   {
@@ -129,7 +129,7 @@ export default function HowItWorksPage() {
           <p className="mt-4 text-lg text-gray-600">
             ClawForge connecte les utilisateurs OpenClaw aux meilleurs créateurs de skills. 
             Que vous cherchiez à étendre votre agent ou à monétiser vos créations, 
-            c'est simple et rapide.
+            le processus est simple et rapide.
           </p>
         </div>
       </section>
@@ -161,7 +161,7 @@ export default function HowItWorksPage() {
               Pourquoi choisir ClawForge ?
             </h2>
             <p className="mt-2 text-gray-400">
-              La marketplace de référence pour l'écosystème OpenClaw
+              La marketplace de référence pour OpenClaw
             </p>
           </div>
 
@@ -189,7 +189,7 @@ export default function HowItWorksPage() {
             Prêt à commencer ?
           </h2>
           <p className="mt-2 text-gray-600">
-            Rejoignez la communauté ClawForge dès aujourd'hui.
+            Rejoignez la communauté ClawForge dès maintenant.
           </p>
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link
