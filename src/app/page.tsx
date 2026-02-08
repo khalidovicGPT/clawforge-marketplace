@@ -1,8 +1,24 @@
 import Link from 'next/link';
-import { Search, Shield, Zap, Code, Wallet, Star } from 'lucide-react';
+import { Search, Shield, Zap, Wallet, Star } from 'lucide-react';
 import { SKILL_CATEGORIES, CERTIFICATION_BADGES } from '@/types/database';
+import { createClient } from '@/lib/supabase/server';
 
-export default function HomePage() {
+async function getPopularSkills() {
+  const supabase = await createClient();
+  
+  const { data: skills } = await supabase
+    .from('skills')
+    .select('*')
+    .eq('status', 'approved')
+    .order('download_count', { ascending: false })
+    .limit(6);
+  
+  return skills || [];
+}
+
+export default async function HomePage() {
+  const popularSkills = await getPopularSkills();
+
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
@@ -18,19 +34,23 @@ export default function HomePage() {
           </p>
           
           {/* Search Bar */}
-          <div className="mx-auto mt-10 max-w-xl">
+          <form action="/skills" method="GET" className="mx-auto mt-10 max-w-xl">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
+                name="search"
                 placeholder="Rechercher un skill..."
-                className="w-full rounded-full border border-gray-300 bg-white py-4 pl-12 pr-4 text-gray-900 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-full border border-gray-300 bg-white py-4 pl-12 pr-32 text-gray-900 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <button className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-gray-900 px-6 py-2 text-sm font-medium text-white hover:bg-gray-800">
+              <button 
+                type="submit"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-gray-900 px-6 py-2 text-sm font-medium text-white hover:bg-gray-800"
+              >
                 Rechercher
               </button>
             </div>
-          </div>
+          </form>
         </div>
       </section>
 
@@ -71,52 +91,84 @@ export default function HomePage() {
           </div>
           
           <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {/* Placeholder cards - will be replaced with real data */}
-            {[
-              { title: 'Email Assistant', category: 'communication', price: 1500, cert: 'silver' as const, rating: 4.8, downloads: 234 },
-              { title: 'Cloud Storage', category: 'productivity', price: 0, cert: 'bronze' as const, rating: 4.2, downloads: 567 },
-              { title: 'Calendar Sync', category: 'productivity', price: 500, cert: 'gold' as const, rating: 4.9, downloads: 891 },
-            ].map((skill, i) => (
-              <div
-                key={i}
-                className="rounded-xl border bg-white p-6 shadow-sm transition hover:shadow-md"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-100 text-2xl">
-                      {SKILL_CATEGORIES[skill.category as keyof typeof SKILL_CATEGORIES]?.emoji || '📦'}
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{skill.title}</h3>
-                      <p className="text-sm text-gray-500">
-                        {SKILL_CATEGORIES[skill.category as keyof typeof SKILL_CATEGORIES]?.label}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="text-xl">
-                    {CERTIFICATION_BADGES[skill.cert].emoji}
-                  </span>
-                </div>
+            {popularSkills.length > 0 ? (
+              popularSkills.map((skill) => {
+                const category = SKILL_CATEGORIES[skill.category as keyof typeof SKILL_CATEGORIES];
+                const cert = CERTIFICATION_BADGES[skill.certification_level as keyof typeof CERTIFICATION_BADGES] || CERTIFICATION_BADGES.none;
                 
-                <div className="mt-4 flex items-center gap-2 text-sm text-gray-500">
-                  <div className="flex items-center gap-1">
-                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <span>{skill.rating}</span>
-                  </div>
-                  <span>•</span>
-                  <span>{skill.downloads} téléchargements</span>
-                </div>
-                
-                <div className="mt-4 flex items-center justify-between">
-                  <span className="font-semibold text-gray-900">
-                    {skill.price === 0 ? 'Gratuit' : `${(skill.price / 100).toFixed(0)}€`}
-                  </span>
-                  <button className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800">
-                    Voir →
-                  </button>
-                </div>
+                return (
+                  <Link
+                    key={skill.id}
+                    href={`/skills/${skill.slug || skill.id}`}
+                    className="rounded-xl border bg-white p-6 shadow-sm transition hover:shadow-md"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-100 text-2xl">
+                          {skill.icon_url ? (
+                            <img src={skill.icon_url} alt={skill.name} className="h-10 w-10 rounded-lg" />
+                          ) : (
+                            category?.emoji || '📦'
+                          )}
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-gray-900">{skill.name}</h3>
+                          <p className="text-sm text-gray-500">
+                            {category?.label || skill.category}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-xl" title={cert.label}>
+                        {cert.emoji}
+                      </span>
+                    </div>
+                    
+                    <p className="mt-3 text-sm text-gray-600 line-clamp-2">
+                      {skill.description}
+                    </p>
+                    
+                    <div className="mt-4 flex items-center gap-2 text-sm text-gray-500">
+                      {skill.rating_avg && (
+                        <>
+                          <div className="flex items-center gap-1">
+                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                            <span>{skill.rating_avg.toFixed(1)}</span>
+                          </div>
+                          <span>•</span>
+                        </>
+                      )}
+                      <span>{skill.download_count || 0} téléchargements</span>
+                    </div>
+                    
+                    <div className="mt-4 flex items-center justify-between">
+                      <span className="font-semibold text-gray-900">
+                        {skill.price === 0 ? 'Gratuit' : `${(skill.price / 100).toFixed(0)}€`}
+                      </span>
+                      <span className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800">
+                        Voir →
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })
+            ) : (
+              // Fallback placeholder cards when no skills available
+              <div className="col-span-full rounded-lg border bg-white p-12 text-center">
+                <p className="text-4xl">🚀</p>
+                <h3 className="mt-4 text-lg font-semibold text-gray-900">
+                  Les premiers skills arrivent bientôt !
+                </h3>
+                <p className="mt-2 text-gray-600">
+                  Revenez très vite pour découvrir des skills certifiés.
+                </p>
+                <Link
+                  href="/become-creator"
+                  className="mt-4 inline-flex rounded-lg bg-gray-900 px-6 py-3 text-sm font-medium text-white hover:bg-gray-800"
+                >
+                  Devenir créateur
+                </Link>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </section>

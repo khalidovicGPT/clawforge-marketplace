@@ -1,8 +1,15 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { Download, Star, Package, User, CreditCard, Plus } from 'lucide-react';
+import { Download, Star, Package, User, CreditCard, Plus, Clock, CheckCircle, XCircle, Upload } from 'lucide-react';
 import { SKILL_CATEGORIES, CERTIFICATION_BADGES } from '@/types/database';
+
+const STATUS_CONFIG = {
+  pending: { label: 'En attente', icon: Clock, color: 'text-amber-600 bg-amber-100' },
+  approved: { label: 'Approuvé', icon: CheckCircle, color: 'text-green-600 bg-green-100' },
+  rejected: { label: 'Refusé', icon: XCircle, color: 'text-red-600 bg-red-100' },
+  draft: { label: 'Brouillon', icon: Clock, color: 'text-gray-600 bg-gray-100' },
+};
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -42,6 +49,16 @@ export default async function DashboardPage() {
 
   const isCreator = profile?.role === 'creator' || profile?.role === 'admin';
   const hasStripeAccount = !!profile?.stripe_account_id && profile?.stripe_onboarding_complete;
+
+  // Get skills created by this user (if creator)
+  const { data: mySkills } = isCreator ? await supabase
+    .from('skills')
+    .select('*')
+    .eq('creator_id', user.id)
+    .order('created_at', { ascending: false }) : { data: null };
+
+  // Calculate total downloads for creator's skills
+  const totalCreatorDownloads = mySkills?.reduce((sum, skill) => sum + (skill.download_count || 0), 0) || 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -131,6 +148,96 @@ export default async function DashboardPage() {
                 Devenir créateur
               </Link>
             </div>
+          </div>
+        )}
+
+        {/* Creator Section - My Skills */}
+        {isCreator && (
+          <div className="mb-8 rounded-xl border bg-white shadow-sm">
+            <div className="flex items-center justify-between border-b p-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Mes skills</h2>
+                <p className="mt-1 text-sm text-gray-500">
+                  {mySkills?.length || 0} skill(s) • {totalCreatorDownloads} téléchargement(s) total
+                </p>
+              </div>
+              <Link
+                href="/dashboard/new-skill"
+                className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+              >
+                <Upload className="h-4 w-4" />
+                Soumettre un skill
+              </Link>
+            </div>
+
+            {mySkills && mySkills.length > 0 ? (
+              <div className="divide-y">
+                {mySkills.map((skill) => {
+                  const category = SKILL_CATEGORIES[skill.category as keyof typeof SKILL_CATEGORIES];
+                  const cert = CERTIFICATION_BADGES[skill.certification_level as keyof typeof CERTIFICATION_BADGES] || CERTIFICATION_BADGES.none;
+                  const status = STATUS_CONFIG[skill.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.pending;
+                  const StatusIcon = status.icon;
+                  
+                  return (
+                    <div key={skill.id} className="flex items-center justify-between p-6">
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gray-100 text-2xl">
+                          {skill.icon_url ? (
+                            <img src={skill.icon_url} alt={skill.name} className="h-10 w-10 rounded-lg" />
+                          ) : (
+                            category?.emoji || '📦'
+                          )}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold text-gray-900">{skill.name}</h3>
+                            <span title={cert.label}>{cert.emoji}</span>
+                          </div>
+                          <p className="text-sm text-gray-500">
+                            {category?.label || skill.category} • v{skill.version}
+                            {skill.price > 0 && ` • ${(skill.price / 100).toFixed(0)}€`}
+                            {skill.price === 0 && ' • Gratuit'}
+                          </p>
+                          <p className="mt-1 text-xs text-gray-400">
+                            {skill.download_count || 0} téléchargement(s) • Créé le {new Date(skill.created_at).toLocaleDateString('fr-FR')}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-3">
+                        <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium ${status.color}`}>
+                          <StatusIcon className="h-3 w-3" />
+                          {status.label}
+                        </span>
+                        {skill.status === 'approved' && (
+                          <Link
+                            href={`/skills/${skill.slug || skill.id}`}
+                            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                          >
+                            Voir →
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="p-12 text-center">
+                <Upload className="mx-auto h-12 w-12 text-gray-300" />
+                <h3 className="mt-4 text-lg font-medium text-gray-900">Aucun skill</h3>
+                <p className="mt-2 text-gray-500">
+                  Vous n'avez pas encore soumis de skill.
+                </p>
+                <Link
+                  href="/dashboard/new-skill"
+                  className="mt-4 inline-flex items-center gap-2 rounded-lg bg-gray-900 px-6 py-3 font-medium text-white hover:bg-gray-800"
+                >
+                  <Upload className="h-5 w-5" />
+                  Soumettre mon premier skill
+                </Link>
+              </div>
+            )}
           </div>
         )}
 
