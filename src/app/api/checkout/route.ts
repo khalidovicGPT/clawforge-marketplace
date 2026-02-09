@@ -105,8 +105,8 @@ export async function POST(request: NextRequest) {
         },
       ],
       mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://clawforge.com'}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://clawforge.com'}/skills/${skillSlug}`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://clawforge-marketplace.vercel.app'}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://clawforge-marketplace.vercel.app'}/skills/${skillSlug}`,
       metadata: {
         skill_id: skill.id,
         user_id: user.id,
