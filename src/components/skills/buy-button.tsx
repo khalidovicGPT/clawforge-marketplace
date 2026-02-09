@@ -39,10 +39,8 @@ export function BuyButton({ skillId, skillSlug, price, currency }: BuyButtonProp
       }
 
       if (data.url) {
-        // Redirect to Stripe Checkout
         window.location.href = data.url;
       } else if (data.free) {
-        // Free download - redirect to success
         router.push(`/checkout/success?skill_id=${skillId}&free=true`);
       }
     } catch (error) {
@@ -64,9 +62,10 @@ export function BuyButton({ skillId, skillSlug, price, currency }: BuyButtonProp
 
   return (
     <button
+      type="button"
       onClick={handleCheckout}
       disabled={loading}
-      className="mt-6 w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+      className="mt-6 w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
     >
       {loading ? (
         <>
@@ -87,4 +86,3 @@ export function BuyButton({ skillId, skillSlug, price, currency }: BuyButtonProp
     </button>
   );
 }
-// Force redeploy Mon Feb  9 19:46:26 UTC 2026
