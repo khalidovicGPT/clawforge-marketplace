@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { Star, Download, ArrowLeft } from 'lucide-react';
 
@@ -28,6 +29,41 @@ function formatPrice(price: number, currency = 'EUR'): string {
 
 interface PageProps {
   params: Promise<{ slug: string }>;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const supabase = await createClient();
+
+  const { data: skill } = await supabase
+    .from('skills')
+    .select('name, description, price')
+    .eq('slug', slug)
+    .eq('status', 'approved')
+    .single();
+
+  if (!skill) {
+    return {
+      title: 'Skill non trouvé | ClawForge',
+    };
+  }
+
+  const priceText = skill.price === 0 ? 'Gratuit' : `${(skill.price / 100).toFixed(0)}€`;
+
+  return {
+    title: `${skill.name} - Skill OpenClaw | ClawForge`,
+    description: skill.description || `Découvrez ${skill.name}, un skill certifié pour OpenClaw. ${priceText}.`,
+    openGraph: {
+      title: `${skill.name} - ClawForge`,
+      description: skill.description || `Skill certifié pour OpenClaw - ${priceText}`,
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${skill.name} - ClawForge`,
+      description: skill.description || `Skill certifié pour OpenClaw`,
+    },
+  };
 }
 
 export default async function SkillDetailPage({ params }: PageProps) {
