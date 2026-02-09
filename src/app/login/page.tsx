@@ -2,17 +2,24 @@
 
 import { createClient } from '@/lib/supabase/client';
 import { useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 function LoginForm() {
-  const [loading, setLoading] = useState<'github' | 'google' | null>(null);
+  const router = useRouter();
+  const [oauthLoading, setOauthLoading] = useState<'github' | 'google' | null>(null);
+  const [emailLoading, setEmailLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/';
 
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  });
+
   const handleOAuthLogin = async (provider: 'github' | 'google') => {
-    setLoading(provider);
+    setOauthLoading(provider);
     setError(null);
 
     const supabase = createClient();
@@ -26,7 +33,35 @@ function LoginForm() {
 
     if (error) {
       setError(error.message);
-      setLoading(null);
+      setOauthLoading(null);
+    }
+  };
+
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEmailLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/auth/signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erreur de connexion');
+      }
+
+      // Redirect after successful login
+      router.push(redirect);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+    } finally {
+      setEmailLoading(false);
     }
   };
 
@@ -38,13 +73,14 @@ function LoginForm() {
         </div>
       )}
 
+      {/* OAuth Buttons */}
       <div className="mt-8 space-y-4">
         <button
           onClick={() => handleOAuthLogin('github')}
-          disabled={loading !== null}
+          disabled={oauthLoading !== null || emailLoading}
           className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-3 font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
         >
-          {loading === 'github' ? (
+          {oauthLoading === 'github' ? (
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
           ) : (
             <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -56,10 +92,10 @@ function LoginForm() {
 
         <button
           onClick={() => handleOAuthLogin('google')}
-          disabled={loading !== null}
+          disabled={oauthLoading !== null || emailLoading}
           className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-3 font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
         >
-          {loading === 'google' ? (
+          {oauthLoading === 'google' ? (
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
           ) : (
             <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -71,6 +107,71 @@ function LoginForm() {
           )}
           Continuer avec Google
         </button>
+      </div>
+
+      {/* Separator */}
+      <div className="relative mt-8">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-300" />
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="bg-white px-2 text-gray-500">ou</span>
+        </div>
+      </div>
+
+      {/* Email/Password Form */}
+      <form onSubmit={handleEmailLogin} className="mt-8 space-y-4">
+        <div>
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+            Email
+          </label>
+          <input
+            id="email"
+            type="email"
+            required
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="vous@exemple.com"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+            Mot de passe
+          </label>
+          <input
+            id="password"
+            type="password"
+            required
+            value={formData.password}
+            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+            className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="••••••••"
+          />
+        </div>
+
+        <div className="flex items-center justify-between text-sm">
+          <Link href="/auth/forgot-password" className="text-blue-600 hover:underline">
+            Mot de passe oublié ?
+          </Link>
+        </div>
+
+        <button
+          type="submit"
+          disabled={emailLoading || oauthLoading !== null}
+          className="w-full rounded-lg bg-gray-900 px-4 py-3 font-semibold text-white hover:bg-gray-800 disabled:opacity-50"
+        >
+          {emailLoading ? 'Connexion...' : 'Se connecter'}
+        </button>
+      </form>
+
+      {/* Register Link */}
+      <div className="mt-6 text-center text-sm">
+        <span className="text-gray-600">Pas encore de compte ? </span>
+        <Link href="/auth/register" className="text-blue-600 hover:underline">
+          Créer un compte
+        </Link>
       </div>
     </>
   );
@@ -94,18 +195,6 @@ export default function LoginPage() {
           <Suspense fallback={<div className="mt-8 text-center text-gray-500">Chargement...</div>}>
             <LoginForm />
           </Suspense>
-
-          <p className="mt-8 text-center text-sm text-gray-500">
-            En vous connectant, vous acceptez nos{' '}
-            <Link href="/terms" className="text-blue-600 hover:underline">
-              Conditions d'utilisation
-            </Link>{' '}
-            et notre{' '}
-            <Link href="/privacy" className="text-blue-600 hover:underline">
-              Politique de confidentialité
-            </Link>
-            .
-          </p>
         </div>
 
         <p className="mt-4 text-center text-sm text-gray-600">
