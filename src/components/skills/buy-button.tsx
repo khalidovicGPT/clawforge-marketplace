@@ -2,76 +2,88 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
-import type { Skill } from '@/types/database';
+import { Loader2, Download, CreditCard } from 'lucide-react';
 
 interface BuyButtonProps {
-  skill: Skill;
+  skillId: string;
+  skillSlug: string;
+  price: number;
+  currency: string;
 }
 
-export function BuyButton({ skill }: BuyButtonProps) {
+export function BuyButton({ skillId, skillSlug, price, currency }: BuyButtonProps) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const handleBuy = async () => {
+  const handleCheckout = async () => {
     setLoading(true);
-    setError(null);
-
+    
     try {
       const response = await fetch('/api/checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ skillId: skill.id }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          skillId,
+          skillSlug,
+          price,
+          currency,
+        }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        if (response.status === 401) {
-          // Redirect to login
-          router.push(`/login?redirect=/skills/${skill.slug}`);
-          return;
-        }
-        throw new Error(data.error || 'Erreur lors de l\'achat');
+        throw new Error(data.error || 'Erreur lors de la création du paiement');
       }
 
-      if (data.type === 'free' || data.type === 'already_purchased') {
-        // Redirect to download page
-        router.push(data.redirectUrl);
-      } else if (data.type === 'checkout' && data.url) {
+      if (data.url) {
         // Redirect to Stripe Checkout
         window.location.href = data.url;
+      } else if (data.free) {
+        // Free download - redirect to success
+        router.push(`/checkout/success?skill_id=${skillId}&free=true`);
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+    } catch (error) {
+      console.error('Checkout error:', error);
+      alert('Une erreur est survenue. Veuillez réessayer.');
     } finally {
       setLoading(false);
     }
   };
 
+  const isFree = price === 0;
+  const priceFormatted = isFree 
+    ? 'Gratuit' 
+    : new Intl.NumberFormat('fr-FR', {
+        style: 'currency',
+        currency: currency || 'EUR',
+        minimumFractionDigits: 0,
+      }).format(price / 100);
+
   return (
-    <div className="mt-4">
-      <button
-        onClick={handleBuy}
-        disabled={loading}
-        className="w-full rounded-lg bg-gray-900 px-4 py-3 font-semibold text-white transition hover:bg-gray-800 disabled:opacity-50"
-      >
-        {loading ? (
-          <span className="flex items-center justify-center gap-2">
-            <Loader2 className="h-5 w-5 animate-spin" />
-            Chargement...
-          </span>
-        ) : skill.price_type === 'free' ? (
-          'Télécharger gratuitement'
-        ) : (
-          'Acheter maintenant'
-        )}
-      </button>
-      
-      {error && (
-        <p className="mt-2 text-center text-sm text-red-600">{error}</p>
+    <button
+      onClick={handleCheckout}
+      disabled={loading}
+      className="mt-6 w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+    >
+      {loading ? (
+        <>
+          <Loader2 className="h-5 w-5 animate-spin" />
+          Redirection...
+        </>
+      ) : isFree ? (
+        <>
+          <Download className="h-5 w-5" />
+          Télécharger gratuitement
+        </>
+      ) : (
+        <>
+          <CreditCard className="h-5 w-5" />
+          Acheter pour {priceFormatted}
+        </>
       )}
-    </div>
+    </button>
   );
 }

@@ -1,108 +1,135 @@
-import { createClient } from '@/lib/supabase/server';
-import { createCheckoutSession } from '@/lib/stripe';
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
+import { createClient } from '@/lib/supabase/server';
+import Stripe from 'stripe';
 
-const checkoutSchema = z.object({
-  skillId: z.string().uuid(),
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2026-01-28.clover',
 });
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { skillId } = checkoutSchema.parse(body);
-
     const supabase = await createClient();
     
-    // Check if user is authenticated
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Check authentication
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Vous devez être connecté pour effectuer un achat' },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const { skillId, skillSlug, price, currency } = body;
+
+    if (!skillId || price === undefined) {
+      return NextResponse.json(
+        { error: 'Paramètres manquants' },
+        { status: 400 }
+      );
     }
 
     // Get skill details
     const { data: skill, error: skillError } = await supabase
       .from('skills')
-      .select(`
-        *,
-        creator:users!creator_id(id, stripe_account_id, stripe_onboarding_complete)
-      `)
+      .select('id, name, description, price, currency, creator_id')
       .eq('id', skillId)
-      .eq('status', 'published')
+      .eq('status', 'approved')
       .single();
 
     if (skillError || !skill) {
-      return NextResponse.json({ error: 'Skill not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Skill non trouvé' },
+        { status: 404 }
+      );
     }
 
-    // Check if skill is free
-    if (skill.price_type === 'free' || !skill.price) {
-      // Handle free download
-      const { error: purchaseError } = await supabase
-        .from('purchases')
-        .upsert({
-          user_id: user.id,
-          skill_id: skillId,
-          type: 'free_download',
-          price_paid: 0,
-        }, { onConflict: 'user_id,skill_id' });
-
-      if (purchaseError) {
-        console.error('Error creating free download:', purchaseError);
-        return NextResponse.json({ error: 'Failed to process download' }, { status: 500 });
-      }
-
-      return NextResponse.json({ 
-        type: 'free',
-        redirectUrl: `/skills/${skill.slug}/download` 
+    // Free skill - return free flag
+    if (skill.price === 0) {
+      // Create purchase record for free skill
+      await supabase.from('purchases').insert({
+        user_id: user.id,
+        skill_id: skill.id,
+        price: 0,
+        currency: skill.currency || 'EUR',
+        status: 'completed',
+        payment_method: 'free',
       });
+
+      return NextResponse.json({ free: true, skillId: skill.id });
     }
 
-    // Check if creator has completed Stripe onboarding
-    if (!skill.creator?.stripe_account_id || !skill.creator?.stripe_onboarding_complete) {
-      return NextResponse.json({ 
-        error: 'Creator has not completed payment setup' 
-      }, { status: 400 });
-    }
-
-    // Check if user already purchased
-    const { data: existingPurchase } = await supabase
-      .from('purchases')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('skill_id', skillId)
+    // Get user's stripe customer ID or create one
+    let { data: userData } = await supabase
+      .from('users')
+      .select('stripe_customer_id')
+      .eq('id', user.id)
       .single();
 
-    if (existingPurchase) {
-      return NextResponse.json({ 
-        type: 'already_purchased',
-        redirectUrl: `/skills/${skill.slug}/download` 
+    let customerId = userData?.stripe_customer_id;
+
+    if (!customerId) {
+      // Create Stripe customer
+      const customer = await stripe.customers.create({
+        email: user.email,
+        metadata: {
+          user_id: user.id,
+        },
       });
+      customerId = customer.id;
+
+      // Save customer ID
+      await supabase
+        .from('users')
+        .update({ stripe_customer_id: customerId })
+        .eq('id', user.id);
     }
 
-    // Create Stripe Checkout session
-    const origin = request.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL;
-    
-    const session = await createCheckoutSession({
-      skillId: skill.id,
-      skillTitle: skill.title,
-      priceInCents: skill.price,
-      creatorStripeAccountId: skill.creator.stripe_account_id,
-      successUrl: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancelUrl: `${origin}/skills/${skill.slug}`,
+    // Create Stripe Checkout Session
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      line_items: [
+        {
+          price_data: {
+            currency: skill.currency || 'eur',
+            product_data: {
+              name: skill.name,
+              description: skill.description?.substring(0, 500) || 'Skill OpenClaw',
+              metadata: {
+                skill_id: skill.id,
+              },
+            },
+            unit_amount: skill.price, // Price in cents
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'payment',
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://clawforge.com'}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://clawforge.com'}/skills/${skillSlug}`,
+      metadata: {
+        skill_id: skill.id,
+        user_id: user.id,
+        creator_id: skill.creator_id,
+      },
     });
 
-    return NextResponse.json({ 
-      type: 'checkout',
-      sessionId: session.id,
-      url: session.url 
+    // Create pending purchase record
+    await supabase.from('purchases').insert({
+      user_id: user.id,
+      skill_id: skill.id,
+      price: skill.price,
+      currency: skill.currency || 'EUR',
+      status: 'pending',
+      stripe_session_id: session.id,
     });
+
+    return NextResponse.json({ url: session.url });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Invalid request', details: error.issues }, { status: 400 });
-    }
     console.error('Checkout error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Erreur lors de la création du paiement' },
+      { status: 500 }
+    );
   }
 }

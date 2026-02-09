@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { Star, Download, ArrowLeft } from 'lucide-react';
+import { BuyButton } from '@/components/skills/buy-button';
 
 const CERTIFICATION_BADGES: Record<string, { emoji: string; label: string }> = {
   bronze: { emoji: '🥉', label: 'Bronze' },
@@ -173,11 +174,12 @@ export default async function SkillDetailPage({ params }: PageProps) {
               )}
             </div>
 
-            <button
-              className="mt-6 w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700"
-            >
-              {skill.price === 0 ? 'Télécharger gratuitement' : 'Acheter maintenant'}
-            </button>
+            <BuyButton
+              skillId={skill.id}
+              skillSlug={skill.slug}
+              price={skill.price}
+              currency={skill.currency || 'EUR'}
+            />
 
             <div className="mt-6 space-y-3 text-sm text-gray-600">
               <div className="flex items-center gap-2">
