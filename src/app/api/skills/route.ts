@@ -2,6 +2,73 @@ import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
+const VIRUSTOTAL_API_URL = 'https://www.virustotal.com/api/v3';
+
+// Helper function to scan file with VirusTotal
+async function scanWithVirusTotal(file: File): Promise<{ scanId: string }> {
+  const apiKey = process.env.VIRUSTOTAL_API_KEY;
+  if (!apiKey) {
+    throw new Error('VirusTotal API non configurée');
+  }
+
+  const vtFormData = new FormData();
+  vtFormData.append('file', file);
+
+  const response = await fetch(`${VIRUSTOTAL_API_URL}/files`, {
+    method: 'POST',
+    headers: {
+      'x-apikey': apiKey,
+    },
+    body: vtFormData,
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error?.message || 'Erreur VirusTotal');
+  }
+
+  const result = await response.json();
+  return { scanId: result.data.id };
+}
+
+// Helper function to check scan status
+async function getScanStatus(scanId: string): Promise<{ status: 'clean' | 'suspicious' | 'malicious' | 'pending' }> {
+  const apiKey = process.env.VIRUSTOTAL_API_KEY;
+  if (!apiKey) {
+    throw new Error('VirusTotal API non configurée');
+  }
+
+  const response = await fetch(`${VIRUSTOTAL_API_URL}/analyses/${scanId}`, {
+    headers: {
+      'x-apikey': apiKey,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Erreur lors de la vérification du scan');
+  }
+
+  const result = await response.json();
+  const attributes = result.data?.attributes;
+  
+  if (!attributes) {
+    throw new Error('Réponse VirusTotal invalide');
+  }
+
+  const scanStatus = attributes.status;
+  const stats = attributes.stats || {};
+
+  if (scanStatus === 'queued' || scanStatus === 'in-progress') {
+    return { status: 'pending' };
+  } else if (stats.malicious > 0) {
+    return { status: 'malicious' };
+  } else if (stats.suspicious > 0) {
+    return { status: 'suspicious' };
+  } else {
+    return { status: 'clean' };
+  }
+}
+
 // Query params schema - handle null values from searchParams.get()
 const querySchema = z.object({
   page: z.coerce.number().min(1).default(1),
@@ -104,5 +171,155 @@ export async function GET(request: NextRequest) {
     }
     console.error('Skills API error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+// POST - Create new skill with VirusTotal scan
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+    
+    // Check authentication
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Non authentifié' },
+        { status: 401 }
+      );
+    }
+
+    // Check if user is a creator
+    const { data: profile } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (!profile || (profile.role !== 'creator' && profile.role !== 'admin')) {
+      return NextResponse.json(
+        { error: 'Vous devez être créateur pour soumettre un skill' },
+        { status: 403 }
+      );
+    }
+
+    // Parse multipart form data
+    const formData = await request.formData();
+    const file = formData.get('file') as File;
+    const name = formData.get('name') as string;
+    const description = formData.get('description') as string;
+    const category = formData.get('category') as string;
+    const price = parseInt(formData.get('price') as string) || 0;
+
+    if (!file || !name || !description || !category) {
+      return NextResponse.json(
+        { error: 'Champs manquants' },
+        { status: 400 }
+      );
+    }
+
+    // Step 1: Scan with VirusTotal
+    console.log('Starting VirusTotal scan...');
+    let scanResult;
+    try {
+      scanResult = await scanWithVirusTotal(file);
+    } catch (error) {
+      console.error('VirusTotal scan failed:', error);
+      return NextResponse.json(
+        { error: 'Échec du scan antivirus' },
+        { status: 502 }
+      );
+    }
+
+    // Step 2: Wait a moment and check initial status (VirusTotal is often fast for known files)
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    
+    let scanStatus;
+    try {
+      scanStatus = await getScanStatus(scanResult.scanId);
+    } catch (error) {
+      console.error('Could not get scan status:', error);
+      // Continue anyway, we'll mark it for manual review
+      scanStatus = { status: 'pending' };
+    }
+
+    // Step 3: Reject if malicious
+    if (scanStatus.status === 'malicious') {
+      return NextResponse.json(
+        { 
+          error: 'Fichier rejeté', 
+          reason: 'Le fichier a été détecté comme malveillant par notre système de sécurité',
+          scanId: scanResult.scanId 
+        },
+        { status: 400 }
+      );
+    }
+
+    // Step 4: Upload file to storage
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const filePath = `skills/${user.id}/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('skills')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      console.error('Storage upload error:', uploadError);
+      return NextResponse.json(
+        { error: 'Erreur lors de l\'upload du fichier' },
+        { status: 500 }
+      );
+    }
+
+    // Step 5: Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('skills')
+      .getPublicUrl(filePath);
+
+    // Step 6: Create skill record
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    
+    const { data: skill, error: skillError } = await supabase
+      .from('skills')
+      .insert({
+        creator_id: user.id,
+        name,
+        slug: `${slug}-${Date.now().toString(36)}`,
+        description,
+        category,
+        price,
+        currency: 'EUR',
+        file_url: publicUrl,
+        status: scanStatus.status === 'clean' ? 'pending' : 'scanning',
+        certification_level: 'none',
+        vt_scan_id: scanResult.scanId,
+        vt_scan_status: scanStatus.status,
+        version: '1.0.0',
+      })
+      .select()
+      .single();
+
+    if (skillError) {
+      console.error('Skill creation error:', skillError);
+      return NextResponse.json(
+        { error: 'Erreur lors de la création du skill' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      skill,
+      scanStatus: scanStatus.status,
+      message: scanStatus.status === 'clean' 
+        ? 'Skill soumis avec succès et en attente de certification'
+        : 'Skill soumis, scan de sécurité en cours',
+    });
+  } catch (error) {
+    console.error('Create skill error:', error);
+    return NextResponse.json(
+      { error: 'Erreur serveur' },
+      { status: 500 }
+    );
   }
 }
