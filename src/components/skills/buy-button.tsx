@@ -1,58 +1,43 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Loader2, Download, CreditCard } from 'lucide-react';
 
-interface BuyButtonProps {
-  skillId: string;
+export function BuyButton({ skillId, skillSlug, price, currency }: { 
+  skillId: string; 
   skillSlug: string;
-  price: number;
+  price: number; 
   currency: string;
-}
-
-export function BuyButton({ skillId, skillSlug, price, currency }: BuyButtonProps) {
+}) {
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
-  const handleCheckout = async () => {
+  const handleClick = async () => {
+    if (loading) return;
     setLoading(true);
     
     try {
-      const response = await fetch('/api/checkout', {
+      const res = await fetch('/api/checkout', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          skillId,
-          skillSlug,
-          price,
-          currency,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ skillId, skillSlug, price, currency }),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Erreur lors de la création du paiement');
-      }
-
+      
+      const data = await res.json();
+      
       if (data.url) {
         window.location.href = data.url;
       } else if (data.free) {
-        router.push(`/checkout/success?skill_id=${skillId}&free=true`);
+        window.location.href = `/checkout/success?skill_id=${skillId}&free=true`;
+      } else if (data.error) {
+        alert(data.error);
       }
-    } catch (error) {
-      console.error('Checkout error:', error);
-      alert('Une erreur est survenue. Veuillez réessayer.');
+    } catch (e) {
+      alert('Erreur de connexion');
     } finally {
       setLoading(false);
     }
   };
 
-  const isFree = price === 0;
-  const priceFormatted = isFree 
+  const priceText = price === 0 
     ? 'Gratuit' 
     : new Intl.NumberFormat('fr-FR', {
         style: 'currency',
@@ -62,27 +47,12 @@ export function BuyButton({ skillId, skillSlug, price, currency }: BuyButtonProp
 
   return (
     <button
-      type="button"
-      onClick={handleCheckout}
+      onClick={handleClick}
       disabled={loading}
-      className="mt-6 w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+      style={{ cursor: 'pointer' }}
+      className="mt-6 w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
     >
-      {loading ? (
-        <>
-          <Loader2 className="h-5 w-5 animate-spin" />
-          Redirection...
-        </>
-      ) : isFree ? (
-        <>
-          <Download className="h-5 w-5" />
-          Télécharger gratuitement
-        </>
-      ) : (
-        <>
-          <CreditCard className="h-5 w-5" />
-          Acheter pour {priceFormatted}
-        </>
-      )}
+      {loading ? 'Redirection...' : price === 0 ? 'Télécharger gratuitement' : `Acheter pour ${priceText}`}
     </button>
   );
 }
