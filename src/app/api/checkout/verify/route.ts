@@ -41,6 +41,8 @@ export async function GET(request: NextRequest) {
 
     // Get skill details
     const skillId = session.metadata?.skill_id;
+    const creatorId = session.metadata?.creator_id;
+    
     if (!skillId) {
       return NextResponse.json(
         { error: 'Skill ID manquant' },
@@ -61,8 +63,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Verify purchase belongs to user
-    const { data: purchase } = await supabase
+    // Check if purchase exists
+    const { data: existingPurchase } = await supabase
       .from('purchases')
       .select('id')
       .eq('user_id', user.id)
@@ -70,11 +72,26 @@ export async function GET(request: NextRequest) {
       .eq('status', 'completed')
       .single();
 
-    if (!purchase) {
-      return NextResponse.json(
-        { error: 'Achat non trouvé' },
-        { status: 403 }
-      );
+    // Create purchase if not exists
+    if (!existingPurchase) {
+      const { error: purchaseError } = await supabase
+        .from('purchases')
+        .insert({
+          user_id: user.id,
+          skill_id: skillId,
+          creator_id: creatorId,
+          stripe_session_id: sessionId,
+          stripe_payment_intent_id: session.payment_intent,
+          amount: session.amount_total,
+          currency: session.currency,
+          status: 'completed',
+          purchased_at: new Date().toISOString(),
+        });
+
+      if (purchaseError) {
+        console.error('Purchase creation error:', purchaseError);
+        // Continue anyway, don't block the user
+      }
     }
 
     return NextResponse.json({ skill });
