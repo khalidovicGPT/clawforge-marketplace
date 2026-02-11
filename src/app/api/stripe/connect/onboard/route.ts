@@ -71,10 +71,10 @@ export async function POST() {
       );
     }
 
-    // Redirection vers le dashboard (Stripe sera configuré plus tard)
+    // Redirection vers le dashboard seller (Stripe sera configuré plus tard)
     return NextResponse.json({ 
-      url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?onboarding=skipped`,
-      message: 'Compte créateur activé. Configuration Stripe disponible prochainement.'
+      url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/seller`,
+      message: 'Compte créateur activé. Bienvenue sur votre dashboard vendeur !'
     });
   } catch (error) {
     console.error('Stripe Connect onboarding error:', error);
