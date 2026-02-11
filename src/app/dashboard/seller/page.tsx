@@ -35,7 +35,7 @@ export default async function SellerDashboardPage() {
     redirect('/become-creator');
   }
 
-  const hasStripeAccount = !!profile?.stripe_account_id && profile?.stripe_onboarding_complete;
+  const hasStripeAccount = !!profile?.stripe_account_id && profile?.stripe_account_id !== 'pending';
 
   // Get seller's skills
   const { data: skills } = await supabase
