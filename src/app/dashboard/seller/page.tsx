@@ -31,9 +31,10 @@ export default async function SellerDashboardPage() {
 
   const isCreator = profile?.role === 'creator' || profile?.role === 'admin';
   
-  if (!isCreator) {
-    redirect('/become-creator');
-  }
+  // TEMP: Afficher le dashboard même si pas creator pour debug
+  // if (!isCreator) {
+  //   redirect('/become-creator');
+  // }
 
   const hasStripeAccount = !!profile?.stripe_account_id && profile?.stripe_account_id !== 'pending';
 
