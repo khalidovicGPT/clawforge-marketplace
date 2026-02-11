@@ -161,13 +161,22 @@ export default async function DashboardPage() {
                   {mySkills?.length || 0} skill(s) • {totalCreatorDownloads} téléchargement(s) total
                 </p>
               </div>
-              <Link
-                href="/dashboard/new-skill"
-                className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-              >
-                <Upload className="h-4 w-4" />
-                Soumettre un skill
-              </Link>
+              <div className="flex gap-3">
+                <Link
+                  href="/dashboard/seller"
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  Dashboard vendeur
+                </Link>
+                <Link
+                  href="/dashboard/new-skill"
+                  className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+                >
+                  <Upload className="h-4 w-4" />
+                  Soumettre un skill
+                </Link>
+              </div>
             </div>
 
             {mySkills && mySkills.length > 0 ? (
