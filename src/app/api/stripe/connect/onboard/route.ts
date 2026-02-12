@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { stripe, createConnectAccount, createAccountLink } from '@/lib/stripe';
 import { ensureUserProfile } from '@/lib/ensure-profile';
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   const step = { current: 'init' };
   try {
     // Step 1: Check Stripe configured
@@ -33,12 +33,13 @@ export async function POST() {
 
     const email = profile.email || user.email;
 
-    // Step 4: App URL
+    // Step 4: App URL (auto-detect from request if env var missing)
     step.current = 'app_url_check';
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-    if (!appUrl) {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL
+      || `${request.headers.get('x-forwarded-proto') || 'https'}://${request.headers.get('host')}`;
+    if (!appUrl || appUrl === 'https://null') {
       return NextResponse.json(
-        { error: 'NEXT_PUBLIC_APP_URL non configuré', step: step.current },
+        { error: 'NEXT_PUBLIC_APP_URL non configuré et détection auto impossible', step: step.current },
         { status: 500 }
       );
     }
@@ -60,8 +61,8 @@ export async function POST() {
       step.current = 'resume_onboarding';
       const accountLink = await createAccountLink(
         existingId,
-        `${appUrl}/become-creator?refresh=true`,
-        `${appUrl}/dashboard?onboarding=complete`
+        `${appUrl}/dashboard/seller?refresh=true`,
+        `${appUrl}/dashboard/seller?onboarding=complete`
       );
       return NextResponse.json({ url: accountLink.url });
     }
@@ -102,8 +103,8 @@ export async function POST() {
     step.current = 'create_account_link';
     const accountLink = await createAccountLink(
       account.id,
-      `${appUrl}/become-creator?refresh=true`,
-      `${appUrl}/dashboard?onboarding=complete`
+      `${appUrl}/dashboard/seller?refresh=true`,
+      `${appUrl}/dashboard/seller?onboarding=complete`
     );
 
     return NextResponse.json({ url: accountLink.url });
