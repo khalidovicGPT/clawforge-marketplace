@@ -17,7 +17,7 @@ export async function GET() {
       .eq('id', user.id)
       .single();
 
-    if (!profile?.stripe_account_id) {
+    if (!profile?.stripe_account_id || !profile.stripe_account_id.startsWith('acct_')) {
       return NextResponse.json({ status: 'no_account' });
     }
 

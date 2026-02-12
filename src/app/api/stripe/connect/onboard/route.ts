@@ -37,8 +37,11 @@ export async function POST() {
       return NextResponse.json({ error: 'Configuration serveur manquante' }, { status: 500 });
     }
 
-    // If user already has a Stripe account
-    if (profile?.stripe_account_id) {
+    // If user already has a valid Stripe account (acct_*)
+    const hasValidStripeAccount = profile?.stripe_account_id
+      && profile.stripe_account_id.startsWith('acct_');
+
+    if (hasValidStripeAccount) {
       // Check if onboarding is complete
       if (profile.stripe_onboarding_complete) {
         return NextResponse.json(
@@ -57,8 +60,15 @@ export async function POST() {
       return NextResponse.json({ url: accountLink.url });
     }
 
+    if (!email) {
+      return NextResponse.json(
+        { error: 'Email manquant. Vérifiez votre profil.' },
+        { status: 400 }
+      );
+    }
+
     // Create a real Stripe Connect Express account
-    const account = await createConnectAccount(email!);
+    const account = await createConnectAccount(email);
 
     // Save account ID and upgrade role
     const { error: updateError } = await supabase
@@ -88,8 +98,9 @@ export async function POST() {
     return NextResponse.json({ url: accountLink.url });
   } catch (error) {
     console.error('Stripe Connect onboarding error:', error);
+    const message = error instanceof Error ? error.message : 'Erreur inconnue';
     return NextResponse.json(
-      { error: 'Erreur lors de la création du compte. Veuillez réessayer.' },
+      { error: `Erreur lors de la création du compte : ${message}` },
       { status: 500 }
     );
   }
