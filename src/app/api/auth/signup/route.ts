@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { authLimiter, checkRateLimit } from '@/lib/rate-limit';
 
 // Admin client for auth operations
 const supabaseAdmin = createClient(
@@ -15,6 +16,11 @@ const supabaseAdmin = createClient(
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const ip = request.headers.get('x-forwarded-for') ?? 'anonymous';
+    const rateLimitResponse = await checkRateLimit(authLimiter, `signup:${ip}`);
+    if (rateLimitResponse) return rateLimitResponse;
+
     const body = await request.json();
     const { email, password, name } = body;
 
@@ -63,9 +69,8 @@ export async function POST(request: NextRequest) {
       .insert({
         id: authData.user.id,
         email: authData.user.email,
-        name: name,
+        display_name: name,
         role: 'user',
-        auth_provider: 'email',
       });
 
     if (profileError) {
@@ -80,7 +85,7 @@ export async function POST(request: NextRequest) {
       user: {
         id: authData.user.id,
         email: authData.user.email,
-        name: name,
+        display_name: name,
       },
     });
   } catch (error) {

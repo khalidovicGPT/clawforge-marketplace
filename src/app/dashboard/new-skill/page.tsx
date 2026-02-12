@@ -30,7 +30,7 @@ export default function NewSkillPage() {
   const [isCreator, setIsCreator] = useState<boolean | null>(null);
   
   const [formData, setFormData] = useState({
-    name: '',
+    title: '',
     slug: '',
     category: 'productivity' as SkillCategory,
     description: '',
@@ -72,10 +72,10 @@ export default function NewSkillPage() {
 
   // Auto-generate slug from name
   useEffect(() => {
-    if (formData.name) {
-      setFormData(prev => ({ ...prev, slug: slugify(prev.name) }));
+    if (formData.title) {
+      setFormData(prev => ({ ...prev, slug: slugify(prev.title) }));
     }
-  }, [formData.name]);
+  }, [formData.title]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,10 +122,10 @@ export default function NewSkillPage() {
       const { error: insertError } = await supabase
         .from('skills')
         .insert({
-          name: formData.name,
+          title: formData.title,
           slug: formData.slug,
           category: formData.category,
-          description: formData.description,
+          description_short: formData.description,
           description_long: formData.descriptionLong || null,
           price: formData.price,
           price_type: formData.price === 0 ? 'free' : 'one_time',
@@ -135,7 +135,7 @@ export default function NewSkillPage() {
           file_size: file.size,
           creator_id: user.id,
           status: 'pending',
-          certification_level: 'none',
+          certification: 'none',
           version: '1.0.0',
         });
 
@@ -217,8 +217,8 @@ export default function NewSkillPage() {
                 id="name"
                 required
                 maxLength={100}
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Ex: Email Assistant"
               />

@@ -24,7 +24,6 @@ export async function GET(
       .select('id')
       .eq('user_id', user.id)
       .eq('skill_id', id)
-      .eq('status', 'completed')
       .single();
 
     if (!purchase) {
@@ -37,9 +36,9 @@ export async function GET(
     // Get skill details
     const { data: skill, error } = await supabase
       .from('skills')
-      .select('id, name, description, file_url, version')
+      .select('id, title, description_short, file_url, version')
       .eq('id', id)
-      .eq('status', 'approved')
+      .eq('status', 'published')
       .single();
 
     if (error || !skill) {

@@ -18,13 +18,13 @@ const CATEGORY_EMOJIS: Record<string, string> = {
 interface Skill {
   id: string;
   slug: string;
-  name: string;
-  description: string | null;
+  title: string;
+  description_short: string | null;
   category: string;
   price: number;
-  currency: string;
-  certification_level: string | null;
-  download_count: number;
+  currency?: string;
+  certification: string | null;
+  downloads_count: number;
   rating_avg: number | null;
   rating_count: number;
 }
@@ -44,8 +44,8 @@ function formatPrice(price: number, currency = 'EUR'): string {
 
 export function SkillCard({ skill }: SkillCardProps) {
   const categoryEmoji = CATEGORY_EMOJIS[skill.category] || '📦';
-  const certification = skill.certification_level 
-    ? CERTIFICATION_BADGES[skill.certification_level] 
+  const certification = skill.certification
+    ? CERTIFICATION_BADGES[skill.certification]
     : { emoji: '📦', label: 'Standard' };
 
   return (
@@ -59,15 +59,15 @@ export function SkillCard({ skill }: SkillCardProps) {
           <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-100 text-2xl group-hover:bg-blue-50">
             {categoryEmoji}
           </div>
-          
+
           <div>
             <h3 className="font-semibold text-gray-900 group-hover:text-blue-600">
-              {skill.name}
+              {skill.title}
             </h3>
             <p className="text-sm text-gray-500">{skill.category}</p>
           </div>
         </div>
-        
+
         <span className="text-xl" title={certification.label}>
           {certification.emoji}
         </span>
@@ -75,7 +75,7 @@ export function SkillCard({ skill }: SkillCardProps) {
 
       {/* Description */}
       <p className="mt-3 line-clamp-2 text-sm text-gray-600">
-        {skill.description || 'Aucune description disponible.'}
+        {skill.description_short || 'Aucune description disponible.'}
       </p>
 
       {/* Stats */}
@@ -89,7 +89,7 @@ export function SkillCard({ skill }: SkillCardProps) {
             <span>•</span>
           </>
         )}
-        <span>{skill.download_count.toLocaleString('fr-FR')} téléchargements</span>
+        <span>{skill.downloads_count.toLocaleString('fr-FR')} téléchargements</span>
       </div>
 
       {/* Footer: Price */}

@@ -24,8 +24,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+    if (!appUrl) {
+      return NextResponse.json({ error: 'Configuration serveur manquante' }, { status: 500 });
+    }
+
     const { error } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'https://clawforge.com'}/auth/reset-password`,
+      redirectTo: `${appUrl}/auth/reset-password`,
     });
 
     if (error) {

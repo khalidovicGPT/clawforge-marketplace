@@ -1,6 +1,10 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { SKILL_CATEGORIES, type SkillCategory } from '@/types/database';
+import { skillCreateLimiter, checkRateLimit } from '@/lib/rate-limit';
+
+const VALID_CATEGORIES = Object.keys(SKILL_CATEGORIES) as SkillCategory[];
 
 const VIRUSTOTAL_API_URL = 'https://www.virustotal.com/api/v3';
 
@@ -102,9 +106,9 @@ export async function GET(request: NextRequest) {
       .from('skills')
       .select(`
         *,
-        creator:users!skills_creator_id_fkey(id, name, avatar_url)
+        creator:users!skills_creator_id_fkey(id, display_name, avatar_url)
       `, { count: 'exact' })
-      .eq('status', 'approved');
+      .eq('status', 'published');
 
     // Apply filters
     if (params.category) {
@@ -112,7 +116,7 @@ export async function GET(request: NextRequest) {
     }
     
     if (params.certification) {
-      query = query.eq('certification_level', params.certification);
+      query = query.eq('certification', params.certification);
     }
     
     if (params.priceType === 'free') {
@@ -122,13 +126,13 @@ export async function GET(request: NextRequest) {
     }
     
     if (params.search) {
-      query = query.or(`name.ilike.%${params.search}%,description.ilike.%${params.search}%`);
+      query = query.or(`title.ilike.%${params.search}%,description_short.ilike.%${params.search}%`);
     }
 
     // Apply sorting
     switch (params.sortBy) {
       case 'popular':
-        query = query.order('download_count', { ascending: false });
+        query = query.order('downloads_count', { ascending: false });
         break;
       case 'rating':
         query = query.order('rating_avg', { ascending: false });
@@ -217,6 +221,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate category against allowed values
+    if (!VALID_CATEGORIES.includes(category as SkillCategory)) {
+      return NextResponse.json(
+        { error: `Catégorie invalide. Valeurs acceptées : ${VALID_CATEGORIES.join(', ')}` },
+        { status: 400 }
+      );
+    }
+
     // Step 1: Scan with VirusTotal
     console.log('Starting VirusTotal scan...');
     let scanResult;
@@ -283,17 +295,14 @@ export async function POST(request: NextRequest) {
       .from('skills')
       .insert({
         creator_id: user.id,
-        name,
+        title: name,
         slug: `${slug}-${Date.now().toString(36)}`,
-        description,
+        description_short: description,
         category,
         price,
-        currency: 'EUR',
         file_url: publicUrl,
-        status: scanStatus.status === 'clean' ? 'pending' : 'scanning',
-        certification_level: 'none',
-        vt_scan_id: scanResult.scanId,
-        vt_scan_status: scanStatus.status,
+        status: 'pending',
+        certification: 'none',
         version: '1.0.0',
       })
       .select()

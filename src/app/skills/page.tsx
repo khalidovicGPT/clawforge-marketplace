@@ -32,7 +32,7 @@ async function SkillsGrid({ searchParams }: { searchParams: PageProps['searchPar
   let query = supabase
     .from('skills')
     .select('*', { count: 'exact' })
-    .eq('status', 'approved');
+    .eq('status', 'published');
 
   // Apply filters
   if (params.category && params.category !== 'all') {
@@ -40,7 +40,7 @@ async function SkillsGrid({ searchParams }: { searchParams: PageProps['searchPar
   }
   
   if (params.certification && params.certification !== 'all') {
-    query = query.eq('certification_level', params.certification);
+    query = query.eq('certification', params.certification);
   }
   
   if (params.priceType === 'free') {
@@ -50,13 +50,13 @@ async function SkillsGrid({ searchParams }: { searchParams: PageProps['searchPar
   }
   
   if (params.search) {
-    query = query.or(`name.ilike.%${params.search}%,description.ilike.%${params.search}%`);
+    query = query.or(`title.ilike.%${params.search}%,description_short.ilike.%${params.search}%`);
   }
 
   // Apply sorting
   switch (params.sort) {
     case 'popular':
-      query = query.order('download_count', { ascending: false });
+      query = query.order('downloads_count', { ascending: false });
       break;
     case 'rating':
       query = query.order('rating_avg', { ascending: false, nullsFirst: false });
