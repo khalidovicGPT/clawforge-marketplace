@@ -57,14 +57,16 @@ export async function POST() {
       return NextResponse.json({ url: accountLink.url });
     }
 
-    // TEMPORAIRE : Stripe Connect n'est pas encore activé
-    // On crée juste le profil creator sans compte Stripe pour l'instant
+    // Create a real Stripe Connect Express account
+    const account = await createConnectAccount(email!);
+
+    // Save account ID and upgrade role
     const { error: updateError } = await supabase
       .from('users')
       .update({
-        stripe_account_id: 'pending',
+        stripe_account_id: account.id,
         stripe_onboarding_complete: false,
-        role: 'creator', // Upgrade role to creator
+        role: 'creator',
       })
       .eq('id', user.id);
 
@@ -76,11 +78,14 @@ export async function POST() {
       );
     }
 
-    // Redirection vers le dashboard seller (Stripe sera configuré plus tard)
-    return NextResponse.json({ 
-      url: `${appUrl}/dashboard/seller`,
-      message: 'Compte créateur activé. Bienvenue sur votre dashboard vendeur !'
-    });
+    // Create onboarding link to complete Stripe setup
+    const accountLink = await createAccountLink(
+      account.id,
+      `${appUrl}/become-creator?refresh=true`,
+      `${appUrl}/dashboard?onboarding=complete`
+    );
+
+    return NextResponse.json({ url: accountLink.url });
   } catch (error) {
     console.error('Stripe Connect onboarding error:', error);
     return NextResponse.json(

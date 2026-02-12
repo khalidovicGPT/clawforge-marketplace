@@ -41,18 +41,18 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protected routes - TEMPORAIREMENT DESACTIVE POUR DEBUG
-  // const protectedPaths = ['/dashboard', '/admin'];
-  // const isProtectedPath = protectedPaths.some((path) =>
-  //   request.nextUrl.pathname.startsWith(path)
-  // );
+  // Protected routes
+  const protectedPaths = ['/dashboard', '/admin'];
+  const isProtectedPath = protectedPaths.some((path) =>
+    request.nextUrl.pathname.startsWith(path)
+  );
 
-  // if (isProtectedPath && !user) {
-  //   const url = request.nextUrl.clone();
-  //   url.pathname = '/login';
-  //   url.searchParams.set('redirect', request.nextUrl.pathname);
-  //   return NextResponse.redirect(url);
-  // }
+  if (isProtectedPath && !user) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/login';
+    url.searchParams.set('redirect', request.nextUrl.pathname);
+    return NextResponse.redirect(url);
+  }
 
   return supabaseResponse;
 }
