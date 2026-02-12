@@ -20,6 +20,7 @@ export async function GET() {
     : 'MISSING';
   checks.NEXT_PUBLIC_APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'MISSING';
   checks.NEXT_PUBLIC_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ? 'set' : 'MISSING';
+  checks.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ? 'set' : 'MISSING';
 
   // 2. Stripe client initialized?
   checks.stripe_client = stripe ? 'initialized' : 'null (STRIPE_SECRET_KEY missing or invalid)';
