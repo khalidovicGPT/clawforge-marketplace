@@ -62,8 +62,8 @@ export default function NewSkillPage() {
       setIsCreator(isCreatorRole);
       
       if (!isCreatorRole) {
-        // Not a creator, redirect to become-creator
-        router.push('/become-creator');
+        // Not a creator, redirect to seller dashboard
+        router.push('/dashboard/seller');
       }
     };
 

@@ -57,31 +57,8 @@ export default function BecomeCreatorPage() {
       return;
     }
 
-    try {
-      // Call API to create Stripe Connect account and get onboarding URL
-      const response = await fetch('/api/stripe/connect/onboard', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Erreur lors de la création du compte Stripe');
-      }
-
-      // Redirect to Stripe onboarding
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error('URL de redirection manquante');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
-      setLoading(false);
-    }
+    // Redirect to the creator dashboard (Stripe config is a separate step there)
+    router.push('/dashboard/seller');
   };
 
   return (
