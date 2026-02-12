@@ -1,3 +1,4 @@
+import { createClient as createAdminClient } from '@supabase/supabase-js';
 import type { SupabaseClient, User } from '@supabase/supabase-js';
 
 /**
@@ -6,14 +7,14 @@ import type { SupabaseClient, User } from '@supabase/supabase-js';
  * but it may not fire for users created before the trigger was set up,
  * or if the trigger was not applied to the database.
  *
- * Uses a progressive insert strategy: tries full columns first, then
- * falls back to minimal (id + email) if the schema doesn't match.
+ * Uses the service role key to bypass RLS for the INSERT (same pattern
+ * as the signup route), since the `users` table has no INSERT policy.
  */
 export async function ensureUserProfile(
   supabase: SupabaseClient,
   user: User,
 ) {
-  // Try to fetch existing profile
+  // Try to fetch existing profile (uses user's session — SELECT is allowed by RLS)
   const { data: existing } = await supabase
     .from('users')
     .select('*')
@@ -22,24 +23,34 @@ export async function ensureUserProfile(
 
   if (existing) return existing;
 
+  // Need service role to bypass RLS for INSERT
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+  if (!serviceRoleKey || !supabaseUrl) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY non configuré — impossible de créer le profil');
+  }
+
+  const supabaseAdmin = createAdminClient(supabaseUrl, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
   // Profile missing — create it from auth metadata
   const meta = user.user_metadata || {};
   const displayName =
     meta.full_name || meta.name || user.email?.split('@')[0] || 'Utilisateur';
 
   // Try full insert first (matches schema.sql)
-  const fullRow = {
-    id: user.id,
-    email: user.email!,
-    display_name: displayName,
-    avatar_url: meta.avatar_url || null,
-    role: 'user',
-    stripe_onboarding_complete: false,
-  };
-
-  const { data: created, error } = await supabase
+  const { data: created, error } = await supabaseAdmin
     .from('users')
-    .insert(fullRow)
+    .insert({
+      id: user.id,
+      email: user.email!,
+      display_name: displayName,
+      avatar_url: meta.avatar_url || null,
+      role: 'user',
+      stripe_onboarding_complete: false,
+    })
     .select()
     .single();
 
@@ -47,9 +58,9 @@ export async function ensureUserProfile(
 
   // If column doesn't exist, fallback to minimal insert
   if (error.message.includes('column') || error.message.includes('schema cache')) {
-    console.warn('ensureUserProfile: full insert failed, trying minimal insert:', error.message);
+    console.warn('ensureUserProfile: full insert failed, trying minimal:', error.message);
 
-    const { data: minimal, error: minError } = await supabase
+    const { data: minimal, error: minError } = await supabaseAdmin
       .from('users')
       .insert({ id: user.id, email: user.email! })
       .select()
