@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Upload, ArrowLeft, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Upload, ArrowLeft, Loader2, CheckCircle, AlertCircle, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { SKILL_CATEGORIES, type SkillCategory } from '@/types/database';
 
@@ -12,6 +12,23 @@ const LICENSES = [
   { value: 'Apache-2.0', label: 'Apache 2.0' },
   { value: 'Proprietary', label: 'Propriétaire' },
 ];
+
+const PRICE_OPTIONS = [
+  { value: 0, label: 'Gratuit' },
+  { value: 200, label: '2 €' },
+  { value: 400, label: '4 €' },
+  { value: 500, label: '5 €' },
+  { value: 800, label: '8 €' },
+  { value: 1000, label: '10 €' },
+];
+
+const AVAILABLE_TAGS = [
+  'API', 'Authentification', 'Productivité', 'AI', 'Automatisation',
+  'Email', 'SEO', 'Analytics', 'DevOps', 'Database', 'Cloud',
+  'Scraping', 'Chatbot', 'CRM', 'Paiement',
+];
+
+const MAX_TAGS = 5;
 
 function slugify(text: string): string {
   return text
@@ -28,7 +45,9 @@ export default function NewSkillPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [isCreator, setIsCreator] = useState<boolean | null>(null);
-  
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [checkingName, setCheckingName] = useState(false);
+
   const [formData, setFormData] = useState({
     title: '',
     slug: '',
@@ -38,6 +57,7 @@ export default function NewSkillPage() {
     price: 0,
     license: 'MIT',
     supportUrl: '',
+    tags: [] as string[],
   });
   const [file, setFile] = useState<File | null>(null);
 
@@ -46,7 +66,7 @@ export default function NewSkillPage() {
     const checkCreatorStatus = async () => {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user) {
         router.push('/login?redirect=/dashboard/new-skill');
         return;
@@ -60,9 +80,8 @@ export default function NewSkillPage() {
 
       const isCreatorRole = profile?.role === 'creator' || profile?.role === 'admin';
       setIsCreator(isCreatorRole);
-      
+
       if (!isCreatorRole) {
-        // Not a creator, redirect to seller dashboard
         router.push('/dashboard/seller');
       }
     };
@@ -77,12 +96,58 @@ export default function NewSkillPage() {
     }
   }, [formData.title]);
 
+  // Check for duplicate skill name (debounced, case-insensitive)
+  useEffect(() => {
+    if (!formData.title || formData.title.length < 2) {
+      setNameError(null);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setCheckingName(true);
+      try {
+        const supabase = createClient();
+        const { data } = await supabase
+          .from('skills')
+          .select('id')
+          .ilike('title', formData.title)
+          .limit(1);
+
+        if (data && data.length > 0) {
+          setNameError('Ce nom est déjà utilisé');
+        } else {
+          setNameError(null);
+        }
+      } catch {
+        // Ignore check errors
+      } finally {
+        setCheckingName(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [formData.title]);
+
+  const toggleTag = (tag: string) => {
+    setFormData(prev => {
+      if (prev.tags.includes(tag)) {
+        return { ...prev, tags: prev.tags.filter(t => t !== tag) };
+      }
+      if (prev.tags.length >= MAX_TAGS) return prev;
+      return { ...prev, tags: [...prev.tags, tag] };
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
+      if (nameError) {
+        throw new Error(nameError);
+      }
+
       if (!file) {
         throw new Error('Veuillez sélectionner un fichier ZIP');
       }
@@ -130,13 +195,14 @@ export default function NewSkillPage() {
           price: formData.price,
           price_type: formData.price === 0 ? 'free' : 'one_time',
           license: formData.license,
-          support_url: formData.supportUrl,
+          support_url: formData.supportUrl || null,
           file_url: publicUrl,
           file_size: file.size,
           creator_id: user.id,
           status: 'pending',
           certification: 'none',
           version: '1.0.0',
+          tags: formData.tags.length > 0 ? formData.tags : null,
         });
 
       if (insertError) {
@@ -196,7 +262,7 @@ export default function NewSkillPage() {
         <div className="rounded-xl border bg-white p-8 shadow-sm">
           <h1 className="text-2xl font-bold text-gray-900">Soumettre un nouveau skill</h1>
           <p className="mt-2 text-gray-600">
-            Votre skill sera examiné par notre équipe avant d'être publié.
+            Votre skill sera examiné par notre équipe avant d&apos;être publié.
           </p>
 
           {error && (
@@ -207,27 +273,39 @@ export default function NewSkillPage() {
           )}
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-            {/* Name */}
+            {/* Name with duplicate check */}
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                 Nom du skill *
               </label>
-              <input
-                type="text"
-                id="name"
-                required
-                maxLength={100}
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Ex: Email Assistant"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  id="name"
+                  required
+                  maxLength={100}
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  className={`mt-1 block w-full rounded-lg border px-4 py-2 focus:outline-none focus:ring-2 ${
+                    nameError
+                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                      : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+                  }`}
+                  placeholder="Ex: Email Assistant"
+                />
+                {checkingName && (
+                  <Loader2 className="absolute right-3 top-3.5 h-4 w-4 animate-spin text-gray-400" />
+                )}
+              </div>
+              {nameError && (
+                <p className="mt-1 text-sm text-red-600">{nameError}</p>
+              )}
             </div>
 
-            {/* Slug */}
+            {/* Slug (auto-generated, editable) */}
             <div>
               <label htmlFor="slug" className="block text-sm font-medium text-gray-700">
-                Slug (URL)
+                Slug (URL) <span className="text-gray-400">— auto-généré, modifiable</span>
               </label>
               <input
                 type="text"
@@ -294,30 +372,56 @@ export default function NewSkillPage() {
               />
             </div>
 
-            {/* Price */}
+            {/* Price - Dropdown */}
             <div>
               <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-                Prix (€) *
+                Prix *
               </label>
-              <div className="mt-1 flex items-center gap-4">
-                <input
-                  type="number"
-                  id="price"
-                  required
-                  min={0}
-                  step={1}
-                  value={formData.price / 100}
-                  onChange={(e) => setFormData({ ...formData, price: Math.round(parseFloat(e.target.value) * 100) || 0 })}
-                  className="block w-32 rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="0"
-                />
-                <span className="text-sm text-gray-500">
-                  {formData.price === 0 ? '🆓 Gratuit' : `💰 ${(formData.price / 100).toFixed(0)}€`}
-                </span>
-              </div>
+              <select
+                id="price"
+                required
+                value={formData.price}
+                onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) })}
+                className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {PRICE_OPTIONS.map(({ value, label }) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
               <p className="mt-1 text-xs text-gray-500">
-                0 = gratuit. Vous recevez 80% du prix de vente.
+                Vous recevez 80% du prix de vente.
               </p>
+            </div>
+
+            {/* Tags - Chips */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Tags <span className="text-gray-400">({formData.tags.length}/{MAX_TAGS} max)</span>
+              </label>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {AVAILABLE_TAGS.map((tag) => {
+                  const isSelected = formData.tags.includes(tag);
+                  const isDisabled = !isSelected && formData.tags.length >= MAX_TAGS;
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => toggleTag(tag)}
+                      disabled={isDisabled}
+                      className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-medium transition ${
+                        isSelected
+                          ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                          : isDisabled
+                            ? 'cursor-not-allowed bg-gray-100 text-gray-400'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {tag}
+                      {isSelected && <X className="h-3 w-3" />}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* License */}
@@ -338,15 +442,14 @@ export default function NewSkillPage() {
               </select>
             </div>
 
-            {/* Support URL */}
+            {/* Support URL - Optional */}
             <div>
               <label htmlFor="supportUrl" className="block text-sm font-medium text-gray-700">
-                URL de support *
+                URL de support <span className="text-gray-400">(optionnel)</span>
               </label>
               <input
                 type="url"
                 id="supportUrl"
-                required
                 value={formData.supportUrl}
                 onChange={(e) => setFormData({ ...formData, supportUrl: e.target.value })}
                 className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -406,7 +509,7 @@ export default function NewSkillPage() {
               </Link>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !!nameError}
                 className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-6 py-2 font-medium text-white hover:bg-gray-800 disabled:opacity-50"
               >
                 {loading ? (
