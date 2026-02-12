@@ -33,8 +33,9 @@ export interface Skill {
   status: SkillStatus;
   certification: Certification;
   license: License;
-  support_url: string;
+  support_url: string | null;
   repository_url: string | null;
+  tags: string[] | null;
   file_url: string | null;
   file_size: number | null;
   file_hash: string | null;
@@ -147,8 +148,9 @@ export interface SkillSubmission {
   price_type: PriceType;
   price?: number;
   license: License;
-  support_url: string;
+  support_url?: string;
   repository_url?: string;
+  tags?: string[];
   version: string;
   openclaw_min_version?: string;
   file: File;

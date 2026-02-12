@@ -210,6 +210,8 @@ export async function POST(request: NextRequest) {
     const description = formData.get('description') as string;
     const category = formData.get('category') as string;
     const price = parseInt(formData.get('price') as string) || 0;
+    const tagsRaw = formData.get('tags') as string | null;
+    const tags = tagsRaw ? JSON.parse(tagsRaw) as string[] : null;
 
     if (!file || !name || !description || !category) {
       return NextResponse.json(
@@ -301,6 +303,7 @@ export async function POST(request: NextRequest) {
         status: 'pending',
         certification: 'none',
         version: '1.0.0',
+        tags,
       })
       .select()
       .single();
