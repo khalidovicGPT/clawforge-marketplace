@@ -45,7 +45,27 @@ export async function GET() {
     }
   }
 
-  // 5. Auth check
+  // 5. Introspect actual users table columns
+  try {
+    const supabase = await createClient();
+    // Insert an empty row to trigger validation — catch the error to see known columns
+    // Better approach: select a dummy row and inspect the shape
+    const { data: sampleRow, error: sampleErr } = await supabase
+      .from('users')
+      .select('*')
+      .limit(1);
+    if (sampleRow && sampleRow.length > 0) {
+      checks.users_table_columns = Object.keys(sampleRow[0]);
+    } else if (sampleErr) {
+      checks.users_table_columns = `error: ${sampleErr.message}`;
+    } else {
+      checks.users_table_columns = 'table empty (no rows to introspect)';
+    }
+  } catch (err) {
+    checks.users_table_columns = `error: ${err instanceof Error ? err.message : String(err)}`;
+  }
+
+  // 6. Auth check
   try {
     const supabase = await createClient();
     const { data: { user }, error } = await supabase.auth.getUser();
