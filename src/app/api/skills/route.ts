@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { SKILL_CATEGORIES, type SkillCategory } from '@/types/database';
 import { skillCreateLimiter, checkRateLimit } from '@/lib/rate-limit';
+import { ensureUserProfile } from '@/lib/ensure-profile';
 
 const VALID_CATEGORIES = Object.keys(SKILL_CATEGORIES) as SkillCategory[];
 
@@ -193,13 +194,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user is a creator
-    const { data: profile } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+    const profile = await ensureUserProfile(supabase, user);
 
-    if (!profile || (profile.role !== 'creator' && profile.role !== 'admin')) {
+    if (profile.role !== 'creator' && profile.role !== 'admin') {
       return NextResponse.json(
         { error: 'Vous devez être créateur pour soumettre un skill' },
         { status: 403 }

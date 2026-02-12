@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { createClient } from '@/lib/supabase/server';
+import { ensureUserProfile } from '@/lib/ensure-profile';
 
 /**
  * GET /api/stripe/debug
@@ -50,12 +51,13 @@ export async function GET() {
     const { data: { user }, error } = await supabase.auth.getUser();
     checks.auth = user ? `logged in as ${user.email}` : `not logged in (${error?.message || 'no session'})`;
     if (user) {
-      const { data: profile } = await supabase
-        .from('users')
-        .select('stripe_account_id, stripe_onboarding_complete, role, email')
-        .eq('id', user.id)
-        .single();
-      checks.user_profile = profile || 'not found in users table';
+      try {
+        const profile = await ensureUserProfile(supabase, user);
+        checks.user_profile = profile;
+        checks.profile_action = 'found or auto-created';
+      } catch (profileErr) {
+        checks.user_profile = `ensureUserProfile failed: ${profileErr instanceof Error ? profileErr.message : String(profileErr)}`;
+      }
     }
   } catch (err) {
     checks.auth = `error: ${err instanceof Error ? err.message : String(err)}`;

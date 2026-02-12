@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { ensureUserProfile } from '@/lib/ensure-profile';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -63,14 +64,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Configuration serveur manquante' }, { status: 500 });
     }
 
-    // Get user's stripe customer ID or create one
-    let { data: userData } = await supabase
-      .from('users')
-      .select('stripe_customer_id')
-      .eq('id', user.id)
-      .single();
-
-    let customerId = userData?.stripe_customer_id;
+    // Get or create user profile, then get stripe customer ID
+    const userProfile = await ensureUserProfile(supabase, user);
+    let customerId = userProfile.stripe_customer_id;
 
     if (!customerId) {
       // Create Stripe customer
