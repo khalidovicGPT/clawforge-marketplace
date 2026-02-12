@@ -32,6 +32,11 @@ export async function POST() {
 
     const email = profile?.email || user.email;
 
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+    if (!appUrl) {
+      return NextResponse.json({ error: 'Configuration serveur manquante' }, { status: 500 });
+    }
+
     // If user already has a Stripe account
     if (profile?.stripe_account_id) {
       // Check if onboarding is complete
@@ -45,8 +50,8 @@ export async function POST() {
       // Create new account link for incomplete onboarding
       const accountLink = await createAccountLink(
         profile.stripe_account_id,
-        `${process.env.NEXT_PUBLIC_APP_URL}/become-creator?refresh=true`,
-        `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?onboarding=complete`
+        `${appUrl}/become-creator?refresh=true`,
+        `${appUrl}/dashboard?onboarding=complete`
       );
 
       return NextResponse.json({ url: accountLink.url });
@@ -73,7 +78,7 @@ export async function POST() {
 
     // Redirection vers le dashboard seller (Stripe sera configuré plus tard)
     return NextResponse.json({ 
-      url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/seller`,
+      url: `${appUrl}/dashboard/seller`,
       message: 'Compte créateur activé. Bienvenue sur votre dashboard vendeur !'
     });
   } catch (error) {

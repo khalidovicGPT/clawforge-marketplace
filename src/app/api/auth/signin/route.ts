@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { authLimiter, checkRateLimit } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const ip = request.headers.get('x-forwarded-for') ?? 'anonymous';
+    const rateLimitResponse = await checkRateLimit(authLimiter, `signin:${ip}`);
+    if (rateLimitResponse) return rateLimitResponse;
+
     const supabase = await createClient();
     const body = await request.json();
     const { email, password } = body;
@@ -41,9 +47,8 @@ export async function POST(request: NextRequest) {
       await supabase.from('users').insert({
         id: data.user.id,
         email: data.user.email,
-        name: data.user.user_metadata?.display_name || email.split('@')[0],
+        display_name: data.user.user_metadata?.display_name || email.split('@')[0],
         role: 'user',
-        auth_provider: 'email',
       });
     }
 

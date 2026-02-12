@@ -7,8 +7,8 @@ import { CheckCircle, Download, ArrowLeft, Loader2 } from 'lucide-react';
 
 interface Skill {
   id: string;
-  name: string;
-  description: string;
+  title: string;
+  description_short: string;
   file_url: string;
   version: string;
 }
@@ -113,8 +113,8 @@ export function SuccessContent() {
 
           {skill && (
             <div className="mt-8 rounded-xl bg-gray-50 p-6 text-left">
-              <h2 className="text-lg font-semibold text-gray-900">{skill.name}</h2>
-              <p className="mt-1 text-sm text-gray-600 line-clamp-2">{skill.description}</p>
+              <h2 className="text-lg font-semibold text-gray-900">{skill.title}</h2>
+              <p className="mt-1 text-sm text-gray-600 line-clamp-2">{skill.description_short}</p>
               <p className="mt-2 text-sm text-gray-500">Version {skill.version || '1.0.0'}</p>
             </div>
           )}

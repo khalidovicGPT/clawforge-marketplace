@@ -15,14 +15,14 @@ export const metadata: Metadata = {
 
 async function getPopularSkills() {
   const supabase = await createClient();
-  
+
   const { data: skills } = await supabase
     .from('skills')
     .select('*')
-    .eq('status', 'approved')
-    .order('download_count', { ascending: false })
+    .eq('status', 'published')
+    .order('downloads_count', { ascending: false })
     .limit(6);
-  
+
   return skills || [];
 }
 
@@ -39,10 +39,10 @@ export default async function HomePage() {
             <span className="text-blue-600">OpenClaw</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-600">
-            Découvrez des skills certifiés et sécurisés pour étendre les capacités 
+            Découvrez des skills certifiés et sécurisés pour étendre les capacités
             de votre agent IA. Si c'est sur ClawForge, ça marche.
           </p>
-          
+
           {/* Search Bar */}
           <form action="/skills" method="GET" className="mx-auto mt-10 max-w-xl">
             <div className="relative">
@@ -53,7 +53,7 @@ export default async function HomePage() {
                 placeholder="Rechercher un skill..."
                 className="w-full rounded-full border border-gray-300 bg-white py-4 pl-12 pr-32 text-gray-900 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <button 
+              <button
                 type="submit"
                 className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-gray-900 px-6 py-2 text-sm font-medium text-white hover:bg-gray-800"
               >
@@ -99,13 +99,13 @@ export default async function HomePage() {
               Voir tout →
             </Link>
           </div>
-          
+
           <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {popularSkills.length > 0 ? (
               popularSkills.map((skill) => {
                 const category = SKILL_CATEGORIES[skill.category as keyof typeof SKILL_CATEGORIES];
-                const cert = CERTIFICATION_BADGES[skill.certification_level as keyof typeof CERTIFICATION_BADGES] || CERTIFICATION_BADGES.none;
-                
+                const cert = CERTIFICATION_BADGES[skill.certification as keyof typeof CERTIFICATION_BADGES] || CERTIFICATION_BADGES.none;
+
                 return (
                   <Link
                     key={skill.id}
@@ -116,13 +116,13 @@ export default async function HomePage() {
                       <div className="flex items-center gap-3">
                         <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-100 text-2xl">
                           {skill.icon_url ? (
-                            <img src={skill.icon_url} alt={skill.name} className="h-10 w-10 rounded-lg" />
+                            <img src={skill.icon_url} alt={skill.title} className="h-10 w-10 rounded-lg" />
                           ) : (
                             category?.emoji || '📦'
                           )}
                         </div>
                         <div>
-                          <h3 className="font-semibold text-gray-900">{skill.name}</h3>
+                          <h3 className="font-semibold text-gray-900">{skill.title}</h3>
                           <p className="text-sm text-gray-500">
                             {category?.label || skill.category}
                           </p>
@@ -132,11 +132,11 @@ export default async function HomePage() {
                         {cert.emoji}
                       </span>
                     </div>
-                    
+
                     <p className="mt-3 text-sm text-gray-600 line-clamp-2">
-                      {skill.description}
+                      {skill.description_short}
                     </p>
-                    
+
                     <div className="mt-4 flex items-center gap-2 text-sm text-gray-500">
                       {skill.rating_avg && (
                         <>
@@ -147,9 +147,9 @@ export default async function HomePage() {
                           <span>•</span>
                         </>
                       )}
-                      <span>{skill.download_count || 0} téléchargements</span>
+                      <span>{skill.downloads_count || 0} téléchargements</span>
                     </div>
-                    
+
                     <div className="mt-4 flex items-center justify-between">
                       <span className="font-semibold text-gray-900">
                         {skill.price === 0 ? 'Gratuit' : `${(skill.price / 100).toFixed(0)}€`}
@@ -162,7 +162,6 @@ export default async function HomePage() {
                 );
               })
             ) : (
-              // Fallback placeholder cards when no skills available
               <div className="col-span-full rounded-lg border bg-white p-12 text-center">
                 <p className="text-4xl">🚀</p>
                 <h3 className="mt-4 text-lg font-semibold text-gray-900">
@@ -189,7 +188,7 @@ export default async function HomePage() {
           <h2 className="text-center text-2xl font-bold text-gray-900">
             Pourquoi ClawForge ?
           </h2>
-          
+
           <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             <div className="text-center">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 text-blue-600">
@@ -202,7 +201,7 @@ export default async function HomePage() {
                 Chaque skill est audité : sécurité, qualité de code, documentation complète.
               </p>
             </div>
-            
+
             <div className="text-center">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-100 text-green-600">
                 <Wallet className="h-7 w-7" />
@@ -214,7 +213,7 @@ export default async function HomePage() {
                 Rémunération équitable : les créateurs gardent 80% de chaque vente.
               </p>
             </div>
-            
+
             <div className="text-center">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-purple-100 text-purple-600">
                 <Zap className="h-7 w-7" />
@@ -237,7 +236,7 @@ export default async function HomePage() {
             Vous créez des skills OpenClaw ?
           </h2>
           <p className="mt-4 text-lg text-gray-300">
-            Rejoignez ClawForge et monétisez votre expertise. 
+            Rejoignez ClawForge et monétisez votre expertise.
             Gardez 80% de vos revenus, on s'occupe du reste.
           </p>
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">

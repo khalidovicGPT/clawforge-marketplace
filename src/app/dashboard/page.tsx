@@ -34,11 +34,11 @@ export default async function DashboardPage() {
       *,
       skill:skills(
         id,
-        name,
-        description,
+        title,
+        description_short,
         category,
-        certification_level,
-        download_count,
+        certification,
+        downloads_count,
         file_url,
         icon_url,
         version
@@ -58,7 +58,7 @@ export default async function DashboardPage() {
     .order('created_at', { ascending: false }) : { data: null };
 
   // Calculate total downloads for creator's skills
-  const totalCreatorDownloads = mySkills?.reduce((sum, skill) => sum + (skill.download_count || 0), 0) || 0;
+  const totalCreatorDownloads = mySkills?.reduce((sum, skill) => sum + (skill.downloads_count || 0), 0) || 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -183,23 +183,23 @@ export default async function DashboardPage() {
               <div className="divide-y">
                 {mySkills.map((skill) => {
                   const category = SKILL_CATEGORIES[skill.category as keyof typeof SKILL_CATEGORIES];
-                  const cert = CERTIFICATION_BADGES[skill.certification_level as keyof typeof CERTIFICATION_BADGES] || CERTIFICATION_BADGES.none;
+                  const cert = CERTIFICATION_BADGES[skill.certification as keyof typeof CERTIFICATION_BADGES] || CERTIFICATION_BADGES.none;
                   const status = STATUS_CONFIG[skill.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.pending;
                   const StatusIcon = status.icon;
-                  
+
                   return (
                     <div key={skill.id} className="flex items-center justify-between p-6">
                       <div className="flex items-center gap-4">
                         <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gray-100 text-2xl">
                           {skill.icon_url ? (
-                            <img src={skill.icon_url} alt={skill.name} className="h-10 w-10 rounded-lg" />
+                            <img src={skill.icon_url} alt={skill.title} className="h-10 w-10 rounded-lg" />
                           ) : (
                             category?.emoji || '📦'
                           )}
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <h3 className="font-semibold text-gray-900">{skill.name}</h3>
+                            <h3 className="font-semibold text-gray-900">{skill.title}</h3>
                             <span title={cert.label}>{cert.emoji}</span>
                           </div>
                           <p className="text-sm text-gray-500">
@@ -208,7 +208,7 @@ export default async function DashboardPage() {
                             {skill.price === 0 && ' • Gratuit'}
                           </p>
                           <p className="mt-1 text-xs text-gray-400">
-                            {skill.download_count || 0} téléchargement(s) • Créé le {new Date(skill.created_at).toLocaleDateString('fr-FR')}
+                            {skill.downloads_count || 0} téléchargement(s) • Créé le {new Date(skill.created_at).toLocaleDateString('fr-FR')}
                           </p>
                         </div>
                       </div>
@@ -266,21 +266,21 @@ export default async function DashboardPage() {
                 if (!skill) return null;
                 
                 const category = SKILL_CATEGORIES[skill.category as keyof typeof SKILL_CATEGORIES];
-                const cert = CERTIFICATION_BADGES[skill.certification_level as keyof typeof CERTIFICATION_BADGES] || CERTIFICATION_BADGES.none;
-                
+                const cert = CERTIFICATION_BADGES[skill.certification as keyof typeof CERTIFICATION_BADGES] || CERTIFICATION_BADGES.none;
+
                 return (
                   <div key={purchase.id} className="flex items-center justify-between p-6">
                     <div className="flex items-center gap-4">
                       <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gray-100 text-2xl">
                         {skill.icon_url ? (
-                          <img src={skill.icon_url} alt={skill.name} className="h-10 w-10 rounded-lg" />
+                          <img src={skill.icon_url} alt={skill.title} className="h-10 w-10 rounded-lg" />
                         ) : (
                           category?.emoji || '📦'
                         )}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-gray-900">{skill.name}</h3>
+                          <h3 className="font-semibold text-gray-900">{skill.title}</h3>
                           <span title={cert.label}>{cert.emoji}</span>
                         </div>
                         <p className="text-sm text-gray-500">

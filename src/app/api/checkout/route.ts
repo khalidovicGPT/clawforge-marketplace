@@ -32,9 +32,9 @@ export async function POST(request: NextRequest) {
     // Get skill details
     const { data: skill, error: skillError } = await supabase
       .from('skills')
-      .select('id, name, description, price, currency, creator_id')
+      .select('id, title, description_short, price, creator_id')
       .eq('id', skillId)
-      .eq('status', 'approved')
+      .eq('status', 'published')
       .single();
 
     if (skillError || !skill) {
@@ -50,13 +50,17 @@ export async function POST(request: NextRequest) {
       await supabase.from('purchases').insert({
         user_id: user.id,
         skill_id: skill.id,
-        price: 0,
-        currency: skill.currency || 'EUR',
-        status: 'completed',
-        payment_method: 'free',
+        type: 'free_download',
+        price_paid: 0,
+        currency: 'EUR',
       });
 
       return NextResponse.json({ free: true, skillId: skill.id });
+    }
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+    if (!appUrl) {
+      return NextResponse.json({ error: 'Configuration serveur manquante' }, { status: 500 });
     }
 
     // Get user's stripe customer ID or create one
@@ -91,10 +95,10 @@ export async function POST(request: NextRequest) {
       line_items: [
         {
           price_data: {
-            currency: skill.currency || 'eur',
+            currency: 'eur',
             product_data: {
-              name: skill.name,
-              description: skill.description?.substring(0, 500) || 'Skill OpenClaw',
+              name: skill.title,
+              description: skill.description_short?.substring(0, 500) || 'Skill OpenClaw',
               metadata: {
                 skill_id: skill.id,
               },
@@ -105,23 +109,13 @@ export async function POST(request: NextRequest) {
         },
       ],
       mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://clawforge-marketplace.vercel.app'}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://clawforge-marketplace.vercel.app'}/skills/${skillSlug}`,
+      success_url: `${appUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${appUrl}/skills/${skillSlug}`,
       metadata: {
         skill_id: skill.id,
         user_id: user.id,
         creator_id: skill.creator_id,
       },
-    });
-
-    // Create pending purchase record
-    await supabase.from('purchases').insert({
-      user_id: user.id,
-      skill_id: skill.id,
-      price: skill.price,
-      currency: skill.currency || 'EUR',
-      status: 'pending',
-      stripe_session_id: session.id,
     });
 
     return NextResponse.json({ url: session.url });

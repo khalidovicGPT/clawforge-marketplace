@@ -38,9 +38,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const { data: skill } = await supabase
     .from('skills')
-    .select('name, description, price')
+    .select('title, description_short, price')
     .eq('slug', slug)
-    .eq('status', 'approved')
+    .eq('status', 'published')
     .single();
 
   if (!skill) {
@@ -52,17 +52,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const priceText = skill.price === 0 ? 'Gratuit' : `${(skill.price / 100).toFixed(0)}€`;
 
   return {
-    title: `${skill.name} - Skill OpenClaw | ClawForge`,
-    description: skill.description || `Découvrez ${skill.name}, un skill certifié pour OpenClaw. ${priceText}.`,
+    title: `${skill.title} - Skill OpenClaw | ClawForge`,
+    description: skill.description_short || `Découvrez ${skill.title}, un skill certifié pour OpenClaw. ${priceText}.`,
     openGraph: {
-      title: `${skill.name} - ClawForge`,
-      description: skill.description || `Skill certifié pour OpenClaw - ${priceText}`,
+      title: `${skill.title} - ClawForge`,
+      description: skill.description_short || `Skill certifié pour OpenClaw - ${priceText}`,
       type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${skill.name} - ClawForge`,
-      description: skill.description || `Skill certifié pour OpenClaw`,
+      title: `${skill.title} - ClawForge`,
+      description: skill.description_short || `Skill certifié pour OpenClaw`,
     },
   };
 }
@@ -75,7 +75,7 @@ export default async function SkillDetailPage({ params }: PageProps) {
     .from('skills')
     .select('*')
     .eq('slug', slug)
-    .eq('status', 'approved')
+    .eq('status', 'published')
     .single();
 
   if (error || !skill) {
@@ -83,8 +83,8 @@ export default async function SkillDetailPage({ params }: PageProps) {
   }
 
   const categoryEmoji = CATEGORY_EMOJIS[skill.category] || '📦';
-  const certification = skill.certification_level 
-    ? CERTIFICATION_BADGES[skill.certification_level] 
+  const certification = skill.certification
+    ? CERTIFICATION_BADGES[skill.certification]
     : { emoji: '📦', label: 'Standard' };
 
   return (
@@ -106,7 +106,7 @@ export default async function SkillDetailPage({ params }: PageProps) {
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold text-gray-900">{skill.name}</h1>
+                <h1 className="text-2xl font-bold text-gray-900">{skill.title}</h1>
                 <span className="text-2xl" title={certification.label}>
                   {certification.emoji}
                 </span>
@@ -122,7 +122,7 @@ export default async function SkillDetailPage({ params }: PageProps) {
                 )}
                 <div className="flex items-center gap-1">
                   <Download className="h-4 w-4" />
-                  <span>{skill.download_count.toLocaleString('fr-FR')} téléchargements</span>
+                  <span>{skill.downloads_count.toLocaleString('fr-FR')} téléchargements</span>
                 </div>
               </div>
             </div>
@@ -132,7 +132,7 @@ export default async function SkillDetailPage({ params }: PageProps) {
           <div className="mt-8">
             <h2 className="text-lg font-semibold text-gray-900">Description</h2>
             <p className="mt-3 text-gray-600 whitespace-pre-wrap">
-              {skill.long_description || skill.description || 'Aucune description disponible.'}
+              {skill.description_long || skill.description_short || 'Aucune description disponible.'}
             </p>
           </div>
 
@@ -167,7 +167,7 @@ export default async function SkillDetailPage({ params }: PageProps) {
           <div className="sticky top-24 rounded-2xl border bg-white p-6 shadow-sm">
             <div className="text-center">
               <p className="text-3xl font-bold text-gray-900">
-                {formatPrice(skill.price, skill.currency)}
+                {formatPrice(skill.price)}
               </p>
               {skill.price > 0 && (
                 <p className="mt-1 text-sm text-gray-500">Paiement unique</p>
@@ -178,7 +178,7 @@ export default async function SkillDetailPage({ params }: PageProps) {
               skillId={skill.id}
               skillSlug={skill.slug}
               price={skill.price}
-              currency={skill.currency || 'EUR'}
+              currency={'EUR'}
             />
 
             <div className="mt-6 space-y-3 text-sm text-gray-600">

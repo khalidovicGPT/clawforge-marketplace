@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
 
     const { data: skill, error: skillError } = await supabase
       .from('skills')
-      .select('id, name, description, file_url, version')
+      .select('id, title, description_short, file_url, version')
       .eq('id', skillId)
       .single();
 
@@ -69,7 +69,6 @@ export async function GET(request: NextRequest) {
       .select('id')
       .eq('user_id', user.id)
       .eq('skill_id', skillId)
-      .eq('status', 'completed')
       .single();
 
     // Create purchase if not exists
@@ -79,13 +78,11 @@ export async function GET(request: NextRequest) {
         .insert({
           user_id: user.id,
           skill_id: skillId,
-          creator_id: creatorId,
-          stripe_session_id: sessionId,
-          stripe_payment_intent_id: session.payment_intent,
-          amount: session.amount_total,
-          currency: session.currency,
-          status: 'completed',
-          purchased_at: new Date().toISOString(),
+          type: 'purchase',
+          price_paid: session.amount_total || 0,
+          currency: session.currency?.toUpperCase() || 'EUR',
+          stripe_checkout_session_id: sessionId,
+          stripe_payment_intent_id: session.payment_intent as string,
         });
 
       if (purchaseError) {
