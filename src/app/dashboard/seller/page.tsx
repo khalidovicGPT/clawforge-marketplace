@@ -102,8 +102,9 @@ export default function SellerDashboardPage() {
       if (data.url) {
         window.location.href = data.url;
       }
-    } catch (err) {
-      setStripeError(err instanceof Error ? err.message : 'Une erreur est survenue');
+    } catch {
+      setStripeStatus('error');
+      setStripeError(null);
       setConnectLoading(false);
     }
   }
@@ -240,39 +241,77 @@ export default function SellerDashboardPage() {
               </div>
             )}
 
-            {(stripeStatus === 'no_account' || stripeStatus === 'error') && (
-              <div className="flex items-start gap-4 rounded-lg bg-gray-50 p-4">
-                <CreditCard className="h-6 w-6 flex-shrink-0 text-gray-400" />
+            {stripeStatus === 'no_account' && (
+              <div className="flex items-start gap-4 rounded-lg bg-blue-50 p-4">
+                <CreditCard className="h-6 w-6 flex-shrink-0 text-blue-600" />
                 <div>
-                  <h3 className="font-semibold text-gray-900">Paiements non configures</h3>
+                  <h3 className="font-semibold text-gray-900">Configurer mes paiements</h3>
                   <p className="mt-1 text-sm text-gray-600">
-                    {stripeStatus === 'error'
-                      ? "Le service de paiement est temporairement indisponible. Vous pouvez quand meme creer des skills, mais vous ne pourrez pas les vendre tant que Stripe n'est pas configure."
-                      : "Connectez votre compte Stripe pour vendre des skills payants. Les skills gratuits restent disponibles sans configuration Stripe."
-                    }
+                    Pour vendre des skills payants, connectez votre compte Stripe.
+                    C&apos;est securise et prend 2 minutes. ClawForge preleve 20% de commission, vous gardez 80%.
                   </p>
-                  {stripeError && (
-                    <p className="mt-2 rounded bg-red-50 p-2 text-xs text-red-600">
-                      Detail : {stripeError}
-                    </p>
-                  )}
-                  <button
-                    onClick={handleConnectStripe}
-                    disabled={connectLoading}
-                    className="mt-4 inline-flex items-center gap-2 rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
-                  >
-                    {connectLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Connexion en cours...
-                      </>
-                    ) : (
-                      <>
-                        Connecter mon compte Stripe
-                        <ExternalLink className="h-4 w-4" />
-                      </>
-                    )}
-                  </button>
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <button
+                      onClick={handleConnectStripe}
+                      disabled={connectLoading}
+                      className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+                    >
+                      {connectLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Connexion en cours...
+                        </>
+                      ) : (
+                        <>
+                          Connecter mon compte Stripe
+                          <ExternalLink className="h-4 w-4" />
+                        </>
+                      )}
+                    </button>
+                    <Link
+                      href="/faq"
+                      className="text-sm font-medium text-gray-500 hover:text-gray-700"
+                    >
+                      En savoir plus sur les frais
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {stripeStatus === 'error' && (
+              <div className="flex items-start gap-4 rounded-lg bg-amber-50 border border-amber-200 p-4">
+                <AlertTriangle className="h-6 w-6 flex-shrink-0 text-amber-500" />
+                <div>
+                  <h3 className="font-semibold text-gray-900">Service de paiement temporairement indisponible</h3>
+                  <p className="mt-1 text-sm text-gray-600">
+                    Nous rencontrons un probleme technique avec notre partenaire de paiement.
+                    Vous pouvez continuer a creer des skills gratuitement.
+                    La vente de skills payants sera disponible prochainement.
+                  </p>
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <button
+                      onClick={handleConnectStripe}
+                      disabled={connectLoading}
+                      className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+                    >
+                      {connectLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Chargement...
+                        </>
+                      ) : (
+                        'Reessayer'
+                      )}
+                    </button>
+                    <Link
+                      href="/dashboard/new-skill"
+                      className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Creer un skill gratuit
+                    </Link>
+                  </div>
                 </div>
               </div>
             )}
