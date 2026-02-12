@@ -65,19 +65,29 @@ export default function SellerDashboardPage() {
 
     setSkillCount(count || 0);
 
-    // Check Stripe status
-    try {
-      const res = await fetch('/api/stripe/connect/status');
-      const data = await res.json();
-      if (data.error) {
-        setStripeStatus('error');
-        setStripeError(data.error);
-      } else {
-        setStripeStatus(data.status);
+    // Determine Stripe status from profile data (no API call if no account)
+    const stripeId = profileData?.stripe_account_id as string | null;
+    const hasStripeAccount = stripeId && stripeId.startsWith('acct_');
+
+    if (!hasStripeAccount) {
+      // No Stripe account in DB → simple "not configured" state, no API call needed
+      setStripeStatus('no_account');
+    } else if (profileData?.stripe_onboarding_complete) {
+      setStripeStatus('complete');
+    } else {
+      // Has account but not complete → check with Stripe API
+      try {
+        const res = await fetch('/api/stripe/connect/status');
+        const data = await res.json();
+        if (data.error) {
+          // API error while checking existing account → show pending (not error)
+          setStripeStatus('pending');
+        } else {
+          setStripeStatus(data.status);
+        }
+      } catch {
+        setStripeStatus('pending');
       }
-    } catch {
-      setStripeStatus('error');
-      setStripeError('Impossible de verifier le statut Stripe');
     }
 
     setLoading(false);
