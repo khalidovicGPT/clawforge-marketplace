@@ -3,46 +3,62 @@ import { createClient } from '@/lib/supabase/server';
 import { stripe, createConnectAccount, createAccountLink } from '@/lib/stripe';
 
 export async function POST() {
+  const step = { current: 'init' };
   try {
-    // Check if Stripe is configured
+    // Step 1: Check Stripe configured
+    step.current = 'stripe_check';
     if (!stripe) {
       return NextResponse.json(
-        { error: 'Stripe n\'est pas configuré. Contactez l\'administrateur.' },
+        { error: 'Stripe n\'est pas configuré. Vérifiez STRIPE_SECRET_KEY.', step: step.current },
         { status: 503 }
       );
     }
 
-    // Get authenticated user
+    // Step 2: Auth
+    step.current = 'auth';
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (!user) {
       return NextResponse.json(
-        { error: 'Vous devez être connecté' },
+        { error: `Vous devez être connecté. ${authError?.message || ''}`, step: step.current },
         { status: 401 }
       );
     }
 
-    // Get user profile
-    const { data: profile } = await supabase
+    // Step 3: Get profile
+    step.current = 'profile_fetch';
+    const { data: profile, error: profileError } = await supabase
       .from('users')
       .select('stripe_account_id, stripe_onboarding_complete, email')
       .eq('id', user.id)
       .single();
 
-    const email = profile?.email || user.email;
-
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-    if (!appUrl) {
-      return NextResponse.json({ error: 'Configuration serveur manquante' }, { status: 500 });
+    if (profileError) {
+      return NextResponse.json(
+        { error: `Profil introuvable : ${profileError.message}`, step: step.current },
+        { status: 500 }
+      );
     }
 
-    // If user already has a valid Stripe account (acct_*)
-    const hasValidStripeAccount = profile?.stripe_account_id
-      && profile.stripe_account_id.startsWith('acct_');
+    const email = profile?.email || user.email;
+
+    // Step 4: App URL
+    step.current = 'app_url_check';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+    if (!appUrl) {
+      return NextResponse.json(
+        { error: 'NEXT_PUBLIC_APP_URL non configuré', step: step.current },
+        { status: 500 }
+      );
+    }
+
+    // Step 5: Check existing Stripe account
+    step.current = 'existing_account_check';
+    const existingId = profile?.stripe_account_id;
+    const hasValidStripeAccount = existingId && existingId.startsWith('acct_');
 
     if (hasValidStripeAccount) {
-      // Check if onboarding is complete
       if (profile.stripe_onboarding_complete) {
         return NextResponse.json(
           { error: 'Vous êtes déjà inscrit comme créateur', redirect: '/dashboard' },
@@ -50,27 +66,31 @@ export async function POST() {
         );
       }
 
-      // Create new account link for incomplete onboarding
+      // Resume onboarding for existing valid account
+      step.current = 'resume_onboarding';
       const accountLink = await createAccountLink(
-        profile.stripe_account_id,
+        existingId,
         `${appUrl}/become-creator?refresh=true`,
         `${appUrl}/dashboard?onboarding=complete`
       );
-
       return NextResponse.json({ url: accountLink.url });
     }
 
+    // Step 6: Validate email
+    step.current = 'email_check';
     if (!email) {
       return NextResponse.json(
-        { error: 'Email manquant. Vérifiez votre profil.' },
+        { error: 'Email manquant sur le profil et sur l\'auth.', step: step.current },
         { status: 400 }
       );
     }
 
-    // Create a real Stripe Connect Express account
+    // Step 7: Create Stripe Connect account
+    step.current = 'create_connect_account';
     const account = await createConnectAccount(email);
 
-    // Save account ID and upgrade role
+    // Step 8: Save to DB
+    step.current = 'save_to_db';
     const { error: updateError } = await supabase
       .from('users')
       .update({
@@ -81,14 +101,15 @@ export async function POST() {
       .eq('id', user.id);
 
     if (updateError) {
-      console.error('Error updating user profile:', updateError);
+      console.error('DB update error:', updateError);
       return NextResponse.json(
-        { error: 'Erreur lors de la mise à jour du profil' },
+        { error: `Erreur DB : ${updateError.message}`, step: step.current },
         { status: 500 }
       );
     }
 
-    // Create onboarding link to complete Stripe setup
+    // Step 9: Create onboarding link
+    step.current = 'create_account_link';
     const accountLink = await createAccountLink(
       account.id,
       `${appUrl}/become-creator?refresh=true`,
@@ -97,10 +118,10 @@ export async function POST() {
 
     return NextResponse.json({ url: accountLink.url });
   } catch (error) {
-    console.error('Stripe Connect onboarding error:', error);
-    const message = error instanceof Error ? error.message : 'Erreur inconnue';
+    console.error(`Stripe onboarding error at step [${step.current}]:`, error);
+    const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { error: `Erreur lors de la création du compte : ${message}` },
+      { error: `Échec à l'étape "${step.current}" : ${message}`, step: step.current },
       { status: 500 }
     );
   }
