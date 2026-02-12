@@ -47,6 +47,7 @@ export default function NewSkillPage() {
   const [isCreator, setIsCreator] = useState<boolean | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
   const [checkingName, setCheckingName] = useState(false);
+  const [uploadStep, setUploadStep] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -142,6 +143,7 @@ export default function NewSkillPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setUploadStep(null);
 
     try {
       if (nameError) {
@@ -160,30 +162,82 @@ export default function NewSkillPage() {
         throw new Error('Le fichier doit être au format ZIP');
       }
 
+      // Step 1: Auth
+      setUploadStep('Vérification de l\'authentification...');
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+      if (authError) {
+        console.error('[1/4] Auth error:', authError);
+        throw new Error(`Erreur d'authentification : ${authError.message}`);
+      }
 
       if (!user) {
         throw new Error('Vous devez être connecté');
       }
+      console.log('[1/4] Auth OK - user:', user.id);
 
-      // Upload file to Supabase Storage
+      // Step 2: Check bucket exists
+      setUploadStep('Vérification du stockage...');
+      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+      console.log('[2/4] Buckets disponibles:', buckets?.map(b => b.name), 'Error:', bucketsError);
+
+      if (bucketsError) {
+        throw new Error(`Erreur stockage : ${bucketsError.message}`);
+      }
+
+      const skillsBucket = buckets?.find(b => b.name === 'skills');
+      if (!skillsBucket) {
+        throw new Error(
+          'Le bucket de stockage "skills" n\'existe pas. ' +
+          'Créez-le dans Supabase Dashboard > Storage > New bucket (nom: skills, public: activé).'
+        );
+      }
+      console.log('[2/4] Bucket "skills" trouvé, public:', skillsBucket.public);
+
+      // Step 3: Upload file
+      setUploadStep(`Upload du fichier (${(file.size / 1024 / 1024).toFixed(1)} MB)...`);
       const fileName = `${user.id}/${formData.slug}-${Date.now()}.zip`;
+      console.log('[3/4] Upload vers:', fileName, 'Taille:', file.size);
+
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('skills')
-        .upload(fileName, file);
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false,
+        });
 
       if (uploadError) {
-        console.error('Upload error:', uploadError);
-        throw new Error('Erreur lors de l\'upload du fichier');
+        console.error('[3/4] Upload error:', JSON.stringify(uploadError));
+        const msg = (uploadError as { message?: string; statusCode?: string }).message || 'Erreur inconnue';
+        const code = (uploadError as { statusCode?: string }).statusCode || '';
+
+        if (msg.includes('Bucket not found') || code === '404') {
+          throw new Error(
+            'Bucket "skills" introuvable. Créez-le dans Supabase Dashboard > Storage.'
+          );
+        }
+        if (msg.includes('row-level security') || msg.includes('policy') || code === '403') {
+          throw new Error(
+            'Permission refusée. Ajoutez une Storage Policy dans Supabase : ' +
+            'Allow authenticated users to upload (INSERT) dans le bucket "skills".'
+          );
+        }
+        if (msg.includes('Payload too large') || code === '413') {
+          throw new Error('Fichier trop volumineux pour le stockage Supabase.');
+        }
+        throw new Error(`Upload échoué : ${msg}`);
       }
+      console.log('[3/4] Upload OK:', uploadData);
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('skills')
         .getPublicUrl(fileName);
+      console.log('[3/4] Public URL:', publicUrl);
 
-      // Create skill in database
+      // Step 4: Create skill in database
+      setUploadStep('Enregistrement du skill...');
       const { error: insertError } = await supabase
         .from('skills')
         .insert({
@@ -206,9 +260,10 @@ export default function NewSkillPage() {
         });
 
       if (insertError) {
-        console.error('Insert error:', insertError);
-        throw new Error('Erreur lors de la création du skill');
+        console.error('[4/4] Insert error:', JSON.stringify(insertError));
+        throw new Error(`Erreur base de données : ${insertError.message}`);
       }
+      console.log('[4/4] Skill créé avec succès');
 
       setSuccess(true);
       setTimeout(() => {
@@ -216,9 +271,11 @@ export default function NewSkillPage() {
       }, 2000);
 
     } catch (err) {
+      console.error('Submit error:', err);
       setError(err instanceof Error ? err.message : 'Une erreur est survenue');
     } finally {
       setLoading(false);
+      setUploadStep(null);
     }
   };
 
@@ -498,6 +555,14 @@ export default function NewSkillPage() {
                 </label>
               </div>
             </div>
+
+            {/* Upload progress */}
+            {uploadStep && (
+              <div className="flex items-center gap-3 rounded-lg bg-blue-50 p-4 text-sm text-blue-700">
+                <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" />
+                <span>{uploadStep}</span>
+              </div>
+            )}
 
             {/* Submit */}
             <div className="flex items-center justify-end gap-4 border-t pt-6">
