@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { stripe, createConnectAccount, createAccountLink } from '@/lib/stripe';
+import { ensureUserProfile } from '@/lib/ensure-profile';
 
 export async function POST() {
   const step = { current: 'init' };
@@ -26,22 +27,11 @@ export async function POST() {
       );
     }
 
-    // Step 3: Get profile
-    step.current = 'profile_fetch';
-    const { data: profile, error: profileError } = await supabase
-      .from('users')
-      .select('stripe_account_id, stripe_onboarding_complete, email')
-      .eq('id', user.id)
-      .single();
+    // Step 3: Get or create profile
+    step.current = 'ensure_profile';
+    const profile = await ensureUserProfile(supabase, user);
 
-    if (profileError) {
-      return NextResponse.json(
-        { error: `Profil introuvable : ${profileError.message}`, step: step.current },
-        { status: 500 }
-      );
-    }
-
-    const email = profile?.email || user.email;
+    const email = profile.email || user.email;
 
     // Step 4: App URL
     step.current = 'app_url_check';
@@ -55,7 +45,7 @@ export async function POST() {
 
     // Step 5: Check existing Stripe account
     step.current = 'existing_account_check';
-    const existingId = profile?.stripe_account_id;
+    const existingId = profile.stripe_account_id;
     const hasValidStripeAccount = existingId && existingId.startsWith('acct_');
 
     if (hasValidStripeAccount) {
