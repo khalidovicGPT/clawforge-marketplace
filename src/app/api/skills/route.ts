@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
       .from('skills')
       .select(`
         *,
-        creator:users!skills_creator_id_fkey(id, display_name, avatar_url)
+        creator:users!skills_creator_id_fkey(id, name, avatar_url)
       `, { count: 'exact' })
       .eq('status', 'published');
 
@@ -277,7 +277,7 @@ export async function POST(request: NextRequest) {
     if (uploadError) {
       console.error('Storage upload error:', uploadError);
       return NextResponse.json(
-        { error: 'Erreur lors de l\'upload du fichier' },
+        { error: 'Erreur lors de l\\'upload du fihier' },
         { status: 500 }
       );
     }
