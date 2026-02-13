@@ -56,7 +56,7 @@ interface SkillWithCreatorAndTest {
 
 const STATUS_CONFIG: Record<string, { label: string; icon: typeof Clock; color: string }> = {
   pending: { label: 'En attente', icon: Clock, color: 'text-amber-600 bg-amber-100' },
-  certified: { label: 'Certifie', icon: CheckCircle, color: 'text-green-600 bg-green-100' },
+  approved: { label: 'Approuve', icon: CheckCircle, color: 'text-green-600 bg-green-100' },
   published: { label: 'Publie', icon: CheckCircle, color: 'text-blue-600 bg-blue-100' },
   rejected: { label: 'Rejete', icon: XCircle, color: 'text-red-600 bg-red-100' },
   draft: { label: 'Brouillon', icon: FileText, color: 'text-gray-600 bg-gray-100' },
@@ -257,7 +257,7 @@ export default function AdminSkillsPage() {
 
         {/* Stats */}
         <div className="mb-6 grid gap-4 sm:grid-cols-4">
-          {(['pending', 'certified', 'published', 'rejected'] as const).map((status) => {
+          {(['pending', 'approved', 'published', 'rejected'] as const).map((status) => {
             const config = STATUS_CONFIG[status];
             const count = skills.filter(s => s.status === status).length;
             const Icon = config.icon;
