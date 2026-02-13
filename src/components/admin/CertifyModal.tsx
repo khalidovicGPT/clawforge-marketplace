@@ -1,0 +1,172 @@
+'use client';
+
+import { useState } from 'react';
+import { X, Shield, AlertTriangle } from 'lucide-react';
+
+type CertificationLevel = 'bronze' | 'silver' | 'gold' | 'rejected';
+
+interface CertifyModalProps {
+  skill: {
+    id: string;
+    title: string;
+    status: string;
+    certification: string;
+  };
+  onClose: () => void;
+  onCertify: (skillId: string, certification: CertificationLevel, comment?: string) => Promise<void>;
+}
+
+const CERT_OPTIONS: { value: CertificationLevel; label: string; emoji: string; description: string; color: string }[] = [
+  {
+    value: 'bronze',
+    label: 'Bronze',
+    emoji: '🥉',
+    description: 'Structure valide, tests basiques passes',
+    color: 'border-amber-400 bg-amber-50 hover:bg-amber-100 text-amber-800',
+  },
+  {
+    value: 'silver',
+    label: 'Silver',
+    emoji: '🥈',
+    description: 'Code de qualite, bien documente, securise',
+    color: 'border-slate-400 bg-slate-50 hover:bg-slate-100 text-slate-800',
+  },
+  {
+    value: 'gold',
+    label: 'Gold',
+    emoji: '🥇',
+    description: 'Excellence, tests complets, audit securite',
+    color: 'border-yellow-400 bg-yellow-50 hover:bg-yellow-100 text-yellow-800',
+  },
+  {
+    value: 'rejected',
+    label: 'Rejeter',
+    emoji: '❌',
+    description: 'Ne repond pas aux criteres de qualite',
+    color: 'border-red-400 bg-red-50 hover:bg-red-100 text-red-800',
+  },
+];
+
+export function CertifyModal({ skill, onClose, onCertify }: CertifyModalProps) {
+  const [selected, setSelected] = useState<CertificationLevel | null>(null);
+  const [comment, setComment] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!selected) return;
+    setLoading(true);
+    try {
+      await onCertify(skill.id, selected, comment || undefined);
+      onClose();
+    } catch {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-lg rounded-xl bg-white shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b p-6">
+          <div className="flex items-center gap-3">
+            <Shield className="h-5 w-5 text-blue-600" />
+            <h2 className="text-lg font-bold text-gray-900">Certification</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Skill info */}
+        <div className="border-b bg-gray-50 px-6 py-4">
+          <p className="text-sm text-gray-500">Skill a certifier</p>
+          <p className="font-semibold text-gray-900">{skill.title}</p>
+        </div>
+
+        {/* Certification options */}
+        <div className="space-y-3 p-6">
+          <p className="text-sm font-medium text-gray-700">Niveau de certification</p>
+          <div className="grid grid-cols-2 gap-3">
+            {CERT_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => {
+                  setSelected(opt.value);
+                  setConfirmOpen(false);
+                }}
+                className={`flex flex-col items-center gap-1 rounded-lg border-2 p-4 transition ${
+                  selected === opt.value
+                    ? opt.color + ' ring-2 ring-offset-1 ring-blue-500'
+                    : 'border-gray-200 bg-white hover:border-gray-300'
+                }`}
+              >
+                <span className="text-2xl">{opt.emoji}</span>
+                <span className="text-sm font-semibold">{opt.label}</span>
+                <span className="text-center text-xs text-gray-500">{opt.description}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Comment */}
+          <div className="mt-4">
+            <label htmlFor="cert-comment" className="mb-1 block text-sm font-medium text-gray-700">
+              Commentaire (optionnel)
+            </label>
+            <textarea
+              id="cert-comment"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              rows={3}
+              placeholder="Feedback pour le createur..."
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            />
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center justify-between border-t p-6">
+          <button
+            onClick={onClose}
+            disabled={loading}
+            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            Annuler
+          </button>
+
+          {!confirmOpen ? (
+            <button
+              onClick={() => setConfirmOpen(true)}
+              disabled={!selected || loading}
+              className="rounded-lg bg-gray-900 px-6 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Valider
+            </button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+              <span className="text-sm text-gray-600">Confirmer ?</span>
+              <button
+                onClick={() => setConfirmOpen(false)}
+                disabled={loading}
+                className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
+              >
+                Non
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={loading}
+                className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              >
+                {loading ? 'En cours...' : 'Oui, confirmer'}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
