@@ -7,6 +7,8 @@ import { SKILL_CATEGORIES, CERTIFICATION_BADGES } from '@/types/database';
 const STATUS_CONFIG = {
   pending: { label: 'En attente', icon: Clock, color: 'text-amber-600 bg-amber-100' },
   approved: { label: 'Approuvé', icon: CheckCircle, color: 'text-green-600 bg-green-100' },
+  published: { label: 'Publié', icon: CheckCircle, color: 'text-green-600 bg-green-100' },
+  certified: { label: 'Certifié', icon: CheckCircle, color: 'text-blue-600 bg-blue-100' },
   rejected: { label: 'Refusé', icon: XCircle, color: 'text-red-600 bg-red-100' },
   draft: { label: 'Brouillon', icon: Clock, color: 'text-gray-600 bg-gray-100' },
 };
