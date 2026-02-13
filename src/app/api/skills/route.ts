@@ -294,6 +294,7 @@ export async function POST(request: NextRequest) {
       .from('skills')
       .insert({
         creator_id: user.id,
+        name: name,
         title: name,
         slug: `${slug}-${Date.now().toString(36)}`,
         description_short: description,
