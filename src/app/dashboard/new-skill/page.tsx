@@ -241,6 +241,7 @@ export default function NewSkillPage() {
       const { error: insertError } = await supabase
         .from('skills')
         .insert({
+          name: formData.title,
           title: formData.title,
           slug: formData.slug,
           category: formData.category,
