@@ -295,6 +295,7 @@ export async function POST(request: NextRequest) {
       .insert({
         creator_id: user.id,
         title: name,
+        name: name,
         slug: `${slug}-${Date.now().toString(36)}`,
         description_short: description,
         category,
