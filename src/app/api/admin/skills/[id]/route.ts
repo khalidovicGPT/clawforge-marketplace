@@ -41,44 +41,43 @@ export async function POST(
 
     const { certification, comment } = parsed.data;
 
-    // Service role for bypassing RLS
+    // Use service role if available, fallback to user session (admin RLS policy exists)
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
-    if (!serviceRoleKey || !supabaseUrl) {
-      return NextResponse.json(
-        { error: 'Configuration serveur incomplete' },
-        { status: 500 }
-      );
+    let db = supabase;
+    if (serviceRoleKey && supabaseUrl) {
+      db = createAdminClient(supabaseUrl, serviceRoleKey, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+    } else {
+      console.warn('[ADMIN] SUPABASE_SERVICE_ROLE_KEY not set, using user session with admin RLS');
     }
 
-    const supabaseAdmin = createAdminClient(supabaseUrl, serviceRoleKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
-
     // Verify skill exists
-    const { data: skill, error: fetchError } = await supabaseAdmin
+    const { data: skill, error: fetchError } = await db
       .from('skills')
       .select('id, title, status')
       .eq('id', skillId)
       .single();
 
     if (fetchError || !skill) {
-      return NextResponse.json({ error: 'Skill introuvable' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Skill introuvable', details: fetchError?.message },
+        { status: 404 }
+      );
     }
 
     // Build update
-    const now = new Date().toISOString();
     const isRejected = certification === 'rejected';
 
     const updateData: Record<string, unknown> = {
       status: isRejected ? 'rejected' : 'certified',
       certification: isRejected ? 'none' : certification,
-      certified_at: isRejected ? null : now,
-      updated_at: now,
+      certified_at: isRejected ? null : new Date().toISOString(),
     };
 
-    const { error: updateError } = await supabaseAdmin
+    const { error: updateError } = await db
       .from('skills')
       .update(updateData)
       .eq('id', skillId);
@@ -86,7 +85,7 @@ export async function POST(
     if (updateError) {
       console.error('Skill certification update error:', updateError);
       return NextResponse.json(
-        { error: 'Erreur lors de la mise a jour' },
+        { error: 'Erreur lors de la mise a jour', details: updateError.message },
         { status: 500 }
       );
     }
@@ -111,6 +110,9 @@ export async function POST(
       );
     }
     console.error('Certify API error:', error);
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Erreur serveur', details: error instanceof Error ? error.message : 'Unknown' },
+      { status: 500 }
+    );
   }
 }
