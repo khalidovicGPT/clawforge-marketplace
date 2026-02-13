@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import { ensureUserProfile } from '@/lib/ensure-profile';
 
@@ -6,6 +7,7 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
 
+    // Auth check with user session
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: 'Non authentifie' }, { status: 401 });
@@ -16,10 +18,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Acces interdit' }, { status: 403 });
     }
 
+    // Use service role to bypass RLS for admin queries
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+    if (!serviceRoleKey || !supabaseUrl) {
+      return NextResponse.json(
+        { error: 'Configuration serveur incomplete' },
+        { status: 500 }
+      );
+    }
+
+    const supabaseAdmin = createAdminClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+
     const { searchParams } = new URL(request.url);
     const filter = searchParams.get('status') || 'pending';
 
-    let query = supabase
+    let query = supabaseAdmin
       .from('skills')
       .select(`
         *,
@@ -41,7 +58,7 @@ export async function GET(request: NextRequest) {
     // Fetch VirusTotal test results for each skill
     const skillIds = (skills || []).map(s => s.id);
     const { data: tests } = skillIds.length > 0
-      ? await supabase
+      ? await supabaseAdmin
           .from('skill_tests')
           .select('*')
           .in('skill_id', skillIds)
