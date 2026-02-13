@@ -48,16 +48,17 @@ export function Header() {
         {/* Desktop Navigation */}
         <div className="hidden md:flex md:items-center md:gap-8">
           <Link
+            href="/"
+            className="text-sm font-medium text-gray-700 hover:text-gray-900"
+          >
+            Accueil
+          </Link>
+          <Link
             href="/skills"
             className="text-sm font-medium text-gray-700 hover:text-gray-900"
           >
             Catalogue
           </Link>
-          <div className="relative">
-            <button className="text-sm font-medium text-gray-700 hover:text-gray-900">
-              Catégories
-            </button>
-          </div>
           <Link
             href="/creators"
             className="text-sm font-medium text-gray-700 hover:text-gray-900"
@@ -141,6 +142,12 @@ export function Header() {
       {mobileMenuOpen && (
         <div className="md:hidden">
           <div className="space-y-1 px-4 pb-4">
+            <Link
+              href="/"
+              className="block rounded-lg px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100"
+            >
+              Accueil
+            </Link>
             <Link
               href="/skills"
               className="block rounded-lg px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100"
