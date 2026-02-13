@@ -116,12 +116,13 @@ export default function AdminSkillsPage() {
           setIsAdmin(false);
           return;
         }
-        throw new Error('Erreur serveur');
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.details || err.error || `Erreur ${res.status}`);
       }
       const data = await res.json();
       setSkills(data.skills || []);
-    } catch {
-      showToast('Erreur lors du chargement des skills', 'error');
+    } catch (e) {
+      showToast(`Erreur : ${e instanceof Error ? e.message : 'inconnue'}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -138,13 +139,16 @@ export default function AdminSkillsPage() {
       body: JSON.stringify({ certification, comment }),
     });
 
+    const data = await res.json();
+
     if (!res.ok) {
-      const err = await res.json();
-      showToast(err.error || 'Erreur lors de la certification', 'error');
-      throw new Error(err.error);
+      const msg = data.details
+        ? `${data.error} : ${data.details}`
+        : data.error || 'Erreur lors de la certification';
+      showToast(msg, 'error');
+      throw new Error(msg);
     }
 
-    const data = await res.json();
     showToast(data.message || 'Skill certifie !', 'success');
     fetchSkills();
   };
