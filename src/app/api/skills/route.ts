@@ -296,7 +296,6 @@ export async function POST(request: NextRequest) {
         creator_id: user.id,
         name: name,
         title: name,
-        name: name,
         slug: `${slug}-${Date.now().toString(36)}`,
         description_short: description,
         category,
