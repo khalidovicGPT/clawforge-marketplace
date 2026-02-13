@@ -19,8 +19,8 @@ const CATEGORY_EMOJIS: Record<string, string> = {
   'Intégration': '🔗',
 };
 
-function formatPrice(price: number, currency = 'EUR'): string {
-  if (price === 0) return 'Gratuit';
+function formatPrice(price: number | null | undefined, currency = 'EUR'): string {
+  if (!price || price === 0) return 'Gratuit';
   return new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency,
@@ -49,7 +49,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
-  const priceText = skill.price === 0 ? 'Gratuit' : `${(skill.price / 100).toFixed(0)}€`;
+  const priceText = !skill.price || skill.price === 0 ? 'Gratuit' : `${(skill.price / 100).toFixed(0)}€`;
 
   return {
     title: `${skill.title} - Skill OpenClaw | ClawForge`,
@@ -122,7 +122,7 @@ export default async function SkillDetailPage({ params }: PageProps) {
                 )}
                 <div className="flex items-center gap-1">
                   <Download className="h-4 w-4" />
-                  <span>{skill.downloads_count.toLocaleString('fr-FR')} téléchargements</span>
+                  <span>{(skill.downloads_count ?? 0).toLocaleString('fr-FR')} téléchargements</span>
                 </div>
               </div>
             </div>
@@ -169,7 +169,7 @@ export default async function SkillDetailPage({ params }: PageProps) {
               <p className="text-3xl font-bold text-gray-900">
                 {formatPrice(skill.price)}
               </p>
-              {skill.price > 0 && (
+              {skill.price && skill.price > 0 && (
                 <p className="mt-1 text-sm text-gray-500">Paiement unique</p>
               )}
             </div>

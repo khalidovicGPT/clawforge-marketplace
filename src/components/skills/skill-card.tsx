@@ -21,20 +21,20 @@ interface Skill {
   title: string;
   description_short: string | null;
   category: string;
-  price: number;
+  price: number | null;
   currency?: string;
   certification: string | null;
-  downloads_count: number;
+  downloads_count: number | null;
   rating_avg: number | null;
-  rating_count: number;
+  rating_count: number | null;
 }
 
 interface SkillCardProps {
   skill: Skill;
 }
 
-function formatPrice(price: number, currency = 'EUR'): string {
-  if (price === 0) return 'Gratuit';
+function formatPrice(price: number | null | undefined, currency = 'EUR'): string {
+  if (!price || price === 0) return 'Gratuit';
   return new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency,
@@ -89,12 +89,12 @@ export function SkillCard({ skill }: SkillCardProps) {
             <span>•</span>
           </>
         )}
-        <span>{skill.downloads_count.toLocaleString('fr-FR')} téléchargements</span>
+        <span>{(skill.downloads_count ?? 0).toLocaleString('fr-FR')} téléchargements</span>
       </div>
 
       {/* Footer: Price */}
       <div className="mt-4 flex items-center justify-end border-t pt-4">
-        <span className={`font-semibold ${skill.price === 0 ? 'text-green-600' : 'text-gray-900'}`}>
+        <span className={`font-semibold ${!skill.price || skill.price === 0 ? 'text-green-600' : 'text-gray-900'}`}>
           {formatPrice(skill.price, skill.currency)}
         </span>
       </div>
