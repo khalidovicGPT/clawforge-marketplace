@@ -72,9 +72,10 @@ export async function POST(
     const isRejected = certification === 'rejected';
 
     const updateData: Record<string, unknown> = {
-      status: isRejected ? 'rejected' : 'approved',
+      status: isRejected ? 'rejected' : 'published',
       certification: isRejected ? 'none' : certification,
       certified_at: isRejected ? null : new Date().toISOString(),
+      published_at: isRejected ? null : new Date().toISOString(),
     };
 
     const { error: updateError } = await db
