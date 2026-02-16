@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
+import { ensureUserProfile } from '@/lib/ensure-profile';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Download, Star, Package, User, CreditCard, Plus, Clock, CheckCircle, XCircle, Upload } from 'lucide-react';
@@ -23,12 +24,8 @@ export default async function DashboardPage() {
     redirect('/login?redirect=/dashboard');
   }
 
-  // Get user profile
-  const { data: profile } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', user.id)
-    .single();
+  // Ensure user profile exists (OAuth users may not have one yet)
+  const profile = await ensureUserProfile(supabase, user);
 
   // Get purchased skills (use service client to bypass RLS on joined skills table)
   const serviceClient = createServiceClient();

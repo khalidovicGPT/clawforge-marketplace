@@ -31,6 +31,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Ensure user profile exists in public.users (required for FK on purchases)
+    // Must be called before any purchase insert — OAuth users may not have a profile yet
+    await ensureUserProfile(supabase, user);
+
     // Get skill details (use service client to bypass RLS)
     const serviceClient = createServiceClient();
     const { data: skill, error: skillError } = await serviceClient
@@ -47,16 +51,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Free skill - return free flag
+    // Free skill - create purchase and return
     if (skill.price === 0) {
-      // Create purchase record for free skill
-      await serviceClient.from('purchases').insert({
+      const { error: insertError } = await serviceClient.from('purchases').insert({
         user_id: user.id,
         skill_id: skill.id,
         type: 'free_download',
         price_paid: 0,
         currency: 'EUR',
       });
+
+      if (insertError) {
+        console.error('Free purchase insert error:', insertError);
+        return NextResponse.json(
+          { error: 'Erreur lors de l\'enregistrement du téléchargement' },
+          { status: 500 }
+        );
+      }
 
       return NextResponse.json({ free: true, skillId: skill.id });
     }
@@ -66,7 +77,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Configuration serveur manquante' }, { status: 500 });
     }
 
-    // Get or create user profile, then get stripe customer ID
+    // Get user profile for Stripe customer ID
     const userProfile = await ensureUserProfile(supabase, user);
     let customerId = userProfile.stripe_customer_id;
 
