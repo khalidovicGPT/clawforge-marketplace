@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/service';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Download, Star, Package, User, CreditCard, Plus, Clock, CheckCircle, XCircle, Upload } from 'lucide-react';
@@ -29,8 +30,9 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single();
 
-  // Get purchased skills
-  const { data: purchases } = await supabase
+  // Get purchased skills (use service client to bypass RLS on joined skills table)
+  const serviceClient = createServiceClient();
+  const { data: purchases } = await serviceClient
     .from('purchases')
     .select(`
       *,
