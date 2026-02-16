@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     // Free skill - return free flag
     if (skill.price === 0) {
       // Create purchase record for free skill
-      await supabase.from('purchases').insert({
+      await serviceClient.from('purchases').insert({
         user_id: user.id,
         skill_id: skill.id,
         type: 'free_download',
