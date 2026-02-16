@@ -66,8 +66,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check if purchase exists
-    const { data: existingPurchase } = await supabase
+    // Check if purchase exists (use service client to bypass RLS)
+    const { data: existingPurchase } = await serviceClient
       .from('purchases')
       .select('id')
       .eq('user_id', user.id)
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
 
     // Create purchase if not exists
     if (!existingPurchase) {
-      const { error: purchaseError } = await supabase
+      const { error: purchaseError } = await serviceClient
         .from('purchases')
         .insert({
           user_id: user.id,
