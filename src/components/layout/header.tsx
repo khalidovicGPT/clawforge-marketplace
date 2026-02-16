@@ -65,6 +65,14 @@ export function Header() {
           >
             Créateurs
           </Link>
+          {user && (
+            <Link
+              href="/dashboard"
+              className="text-sm font-medium text-gray-700 hover:text-gray-900"
+            >
+              Tableau de bord
+            </Link>
+          )}
         </div>
 
         {/* Search & Auth */}
@@ -167,7 +175,7 @@ export function Header() {
                   href="/dashboard"
                   className="block rounded-lg px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100"
                 >
-                  Dashboard
+                  Tableau de bord
                 </Link>
                 <button
                   onClick={handleSignOut}
