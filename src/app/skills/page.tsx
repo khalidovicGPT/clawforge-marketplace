@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { Metadata } from 'next';
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/service';
 import { SkillCard } from '@/components/skills/skill-card';
 import { SkillFilters } from '@/components/skills/skill-filters';
 
@@ -26,7 +26,7 @@ interface PageProps {
 
 async function SkillsGrid({ searchParams }: { searchParams: PageProps['searchParams'] }) {
   const params = await searchParams;
-  const supabase = await createClient();
+  const supabase = createServiceClient();
   
   // Build query - simple select without join for now
   let query = supabase

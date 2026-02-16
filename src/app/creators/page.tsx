@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/service';
 import Link from 'next/link';
 import { Package, Download, Star, Users } from 'lucide-react';
 
@@ -8,7 +8,7 @@ export const metadata = {
 };
 
 export default async function CreatorsPage() {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   // Fetch creators who have at least one published skill
   const { data: skills } = await supabase

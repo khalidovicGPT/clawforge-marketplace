@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Metadata } from 'next';
 import { Search, Shield, Zap, Wallet, Star } from 'lucide-react';
 import { SKILL_CATEGORIES, CERTIFICATION_BADGES } from '@/types/database';
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/service';
 
 export const metadata: Metadata = {
   title: 'ClawForge - Marketplace Skills OpenClaw',
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 };
 
 async function getPopularSkills() {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   const { data: skills } = await supabase
     .from('skills')

@@ -309,6 +309,14 @@ CREATE TRIGGER on_auth_user_created
   EXECUTE FUNCTION handle_new_user();
 
 -- ============================================
+-- GRANTS (allow anon role to read public data)
+-- ============================================
+
+GRANT SELECT ON skills TO anon;
+GRANT SELECT ON users TO anon;
+GRANT SELECT ON reviews TO anon;
+
+-- ============================================
 -- STORAGE BUCKETS
 -- ============================================
 
