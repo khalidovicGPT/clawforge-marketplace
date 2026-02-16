@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Metadata } from 'next';
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/service';
 import { Star, Download, ArrowLeft } from 'lucide-react';
 import { BuyButton } from '@/components/skills/buy-button';
 
@@ -34,7 +34,7 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   const { data: skill } = await supabase
     .from('skills')
@@ -69,7 +69,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function SkillDetailPage({ params }: PageProps) {
   const { slug } = await params;
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   const { data: skill, error } = await supabase
     .from('skills')
