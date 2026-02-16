@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/service';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -50,7 +51,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { data: skill, error: skillError } = await supabase
+    // Use service client to bypass RLS for reading skill data
+    const serviceClient = createServiceClient();
+    const { data: skill, error: skillError } = await serviceClient
       .from('skills')
       .select('id, title, description_short, file_url, version')
       .eq('id', skillId)

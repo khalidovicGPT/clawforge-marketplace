@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/service';
 import { ensureUserProfile } from '@/lib/ensure-profile';
 import Stripe from 'stripe';
 
@@ -30,8 +31,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get skill details
-    const { data: skill, error: skillError } = await supabase
+    // Get skill details (use service client to bypass RLS)
+    const serviceClient = createServiceClient();
+    const { data: skill, error: skillError } = await serviceClient
       .from('skills')
       .select('id, title, description_short, price, creator_id')
       .eq('id', skillId)

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/service';
 
 export async function GET(
   request: Request,
@@ -33,8 +34,9 @@ export async function GET(
       );
     }
 
-    // Get skill details
-    const { data: skill, error } = await supabase
+    // Get skill details (use service client to bypass RLS)
+    const serviceClient = createServiceClient();
+    const { data: skill, error } = await serviceClient
       .from('skills')
       .select('id, title, description_short, file_url, version')
       .eq('id', id)
