@@ -49,7 +49,7 @@ export default async function DashboardPage() {
       )
     `)
     .eq('user_id', user.id)
-    .order('purchased_at', { ascending: false });
+    .order('created_at', { ascending: false });
 
   const isCreator = profile?.role === 'creator' || profile?.role === 'admin';
   const hasStripeAccount = !!profile?.stripe_account_id && profile?.stripe_onboarding_complete;
