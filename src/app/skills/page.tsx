@@ -28,10 +28,10 @@ async function SkillsGrid({ searchParams }: { searchParams: PageProps['searchPar
   const params = await searchParams;
   const supabase = createServiceClient();
   
-  // Build query - simple select without join for now
+  // Build query with purchase count
   let query = supabase
     .from('skills')
-    .select('*', { count: 'exact' })
+    .select('*, purchases(count)', { count: 'exact' })
     .eq('status', 'published');
 
   // Apply filters
