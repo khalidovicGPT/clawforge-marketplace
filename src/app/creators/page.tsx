@@ -32,20 +32,23 @@ export default async function CreatorsPage() {
 
   const creatorIds = Object.keys(creatorStats);
 
-  // Fetch creator profiles
+  // Fetch creator profiles (use select('*') to avoid column name issues)
   const { data: creators } = creatorIds.length > 0
     ? await supabase
         .from('users')
-        .select('id, display_name, name, avatar_url')
+        .select('*')
         .in('id', creatorIds)
     : { data: [] };
 
-  const creatorsWithStats = (creators || []).map(creator => {
-    const stats = creatorStats[creator.id];
+  const creatorsWithStats = (creators || []).map((c) => {
+    const creator = c as Record<string, unknown>;
+    const stats = creatorStats[creator.id as string];
     const avgRating = stats.ratingCount > 0
       ? (stats.avgRating / stats.ratingCount)
       : null;
-    return { ...creator, ...stats, avgRating };
+    const creatorName = String(creator.display_name || creator.name || creator.email || 'Createur');
+    const avatarUrl = creator.avatar_url as string | null;
+    return { id: creator.id as string, creatorName, avatarUrl, ...stats, avgRating };
   }).sort((a, b) => b.downloads - a.downloads);
 
   return (
@@ -85,20 +88,20 @@ export default async function CreatorsPage() {
               >
                 {/* Avatar */}
                 <div className="flex h-20 w-20 items-center justify-center rounded-full bg-blue-100 text-3xl">
-                  {creator.avatar_url ? (
+                  {creator.avatarUrl ? (
                     <img
-                      src={creator.avatar_url}
-                      alt={creator.display_name || creator.name || 'Createur'}
+                      src={creator.avatarUrl}
+                      alt={creator.creatorName}
                       className="h-20 w-20 rounded-full object-cover"
                     />
                   ) : (
-                    <span>{(creator.display_name || creator.name || '?')[0].toUpperCase()}</span>
+                    <span>{creator.creatorName[0].toUpperCase()}</span>
                   )}
                 </div>
 
                 {/* Name */}
                 <h2 className="mt-4 text-lg font-semibold text-gray-900">
-                  {creator.display_name || creator.name || 'Createur anonyme'}
+                  {creator.creatorName}
                 </h2>
 
                 {/* Stats */}
