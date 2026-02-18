@@ -77,12 +77,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Configuration serveur manquante' }, { status: 500 });
     }
 
-    // Get user profile for Stripe customer ID
-    const userProfile = await ensureUserProfile(supabase, user);
-    let customerId = userProfile.stripe_customer_id;
+    // Find or create Stripe customer by email
+    let customerId: string;
+    const existingCustomers = await stripe.customers.list({
+      email: user.email!,
+      limit: 1,
+    });
 
-    if (!customerId) {
-      // Create Stripe customer
+    if (existingCustomers.data.length > 0) {
+      customerId = existingCustomers.data[0].id;
+    } else {
       const customer = await stripe.customers.create({
         email: user.email,
         metadata: {
@@ -90,12 +94,6 @@ export async function POST(request: NextRequest) {
         },
       });
       customerId = customer.id;
-
-      // Save customer ID
-      await supabase
-        .from('users')
-        .update({ stripe_customer_id: customerId })
-        .eq('id', user.id);
     }
 
     // Create Stripe Checkout Session
