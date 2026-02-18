@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Star, ShoppingCart } from 'lucide-react';
+import { Star, ShoppingCart, User } from 'lucide-react';
 
 const CERTIFICATION_BADGES: Record<string, { emoji: string; label: string }> = {
   bronze: { emoji: '🥉', label: 'Bronze' },
@@ -32,6 +32,7 @@ interface Skill {
 
 interface SkillCardProps {
   skill: Skill;
+  creatorName?: string;
 }
 
 function formatPrice(price: number | null | undefined, currency = 'EUR'): string {
@@ -43,7 +44,7 @@ function formatPrice(price: number | null | undefined, currency = 'EUR'): string
   }).format(price / 100);
 }
 
-export function SkillCard({ skill }: SkillCardProps) {
+export function SkillCard({ skill, creatorName }: SkillCardProps) {
   const categoryEmoji = CATEGORY_EMOJIS[skill.category] || '📦';
   const certification = skill.certification
     ? CERTIFICATION_BADGES[skill.certification]
@@ -66,6 +67,12 @@ export function SkillCard({ skill }: SkillCardProps) {
               {skill.title}
             </h3>
             <p className="text-sm text-gray-500">{skill.category}</p>
+            {creatorName && (
+              <p className="mt-0.5 flex items-center gap-1 text-xs text-gray-400">
+                <User className="h-3 w-3" />
+                {creatorName}
+              </p>
+            )}
           </div>
         </div>
 
