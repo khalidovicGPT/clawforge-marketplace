@@ -193,7 +193,7 @@ export default async function DashboardPage() {
               <div>
                 <h2 className="text-xl font-bold text-gray-900">Mes skills</h2>
                 <p className="mt-1 text-sm text-gray-500">
-                  {mySkills?.length || 0} skill(s) • {totalPurchases} achat(s) • {(totalRevenue / 100).toFixed(0)}€ de revenus
+                  {mySkills?.length || 0} skill(s) • {totalPurchases} achat(s) • {((totalRevenue * 0.8) / 100).toFixed(2)}€ de revenus (80%)
                 </p>
               </div>
               <div className="flex gap-3">
@@ -246,7 +246,7 @@ export default async function DashboardPage() {
                             <ShoppingCart className="mr-1 inline h-3 w-3" />
                             {skillPurchaseStats[skill.id]?.count || 0} achat(s)
                             {' • '}
-                            {((skillPurchaseStats[skill.id]?.revenue || 0) / 100).toFixed(0)}€ de revenus
+                            {(((skillPurchaseStats[skill.id]?.revenue || 0) * 0.8) / 100).toFixed(2)}€ de revenus
                             {' • '}
                             Créé le {new Date(skill.created_at).toLocaleDateString('fr-FR')}
                           </p>

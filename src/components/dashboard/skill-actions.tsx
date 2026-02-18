@@ -42,7 +42,7 @@ export function SkillActions({ skillId, skillSlug, status, publishedAt, certifie
 
   const canWithdraw = status === 'published';
   const canRepublish = status === 'draft' && !!publishedAt && !!certifiedAt;
-  const canEdit = status === 'published' || status === 'draft';
+  const canEdit = status === 'published' || status === 'draft' || status === 'rejected';
 
   return (
     <div className="flex items-center gap-2">
