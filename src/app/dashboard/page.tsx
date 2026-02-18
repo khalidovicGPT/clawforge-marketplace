@@ -39,7 +39,7 @@ export default async function DashboardPage() {
         description_short,
         category,
         certification,
-        downloads_count,
+        download_count,
         file_url,
         icon_url,
         version
@@ -59,7 +59,7 @@ export default async function DashboardPage() {
     .order('created_at', { ascending: false }) : { data: null };
 
   // Calculate total downloads for creator's skills
-  const totalCreatorDownloads = mySkills?.reduce((sum, skill) => sum + (skill.downloads_count || 0), 0) || 0;
+  const totalCreatorDownloads = mySkills?.reduce((sum, skill) => sum + (skill.download_count || 0), 0) || 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -68,7 +68,7 @@ export default async function DashboardPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
           <p className="mt-2 text-gray-600">
-            Bienvenue, {profile?.display_name || user.email?.split('@')[0]} !
+            Bienvenue, {profile?.name || user.email?.split('@')[0]} !
           </p>
         </div>
 
@@ -209,7 +209,7 @@ export default async function DashboardPage() {
                             {skill.price === 0 && ' • Gratuit'}
                           </p>
                           <p className="mt-1 text-xs text-gray-400">
-                            {skill.downloads_count || 0} téléchargement(s) • Créé le {new Date(skill.created_at).toLocaleDateString('fr-FR')}
+                            {skill.download_count || 0} téléchargement(s) • Créé le {new Date(skill.created_at).toLocaleDateString('fr-FR')}
                           </p>
                         </div>
                       </div>

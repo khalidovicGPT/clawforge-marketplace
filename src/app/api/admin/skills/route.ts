@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     {
       let query = db
         .from('skills')
-        .select(`*, creator:users(id, display_name, email, avatar_url)`)
+        .select(`*, creator:users(id, name, email, avatar_url)`)
         .order('created_at', { ascending: false });
 
       if (filter !== 'all') {
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
       const { data: creators } = creatorIds.length > 0
         ? await db
             .from('users')
-            .select('id, display_name, email, avatar_url')
+            .select('id, name, email, avatar_url')
             .in('id', creatorIds)
         : { data: [] };
 

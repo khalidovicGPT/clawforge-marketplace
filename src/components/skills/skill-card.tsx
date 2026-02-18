@@ -24,7 +24,7 @@ interface Skill {
   price: number | null;
   currency?: string;
   certification: string | null;
-  downloads_count: number | null;
+  download_count: number | null;
   rating_avg: number | null;
   rating_count: number | null;
 }
@@ -89,7 +89,7 @@ export function SkillCard({ skill }: SkillCardProps) {
             <span>•</span>
           </>
         )}
-        <span>{(skill.downloads_count ?? 0).toLocaleString('fr-FR')} téléchargements</span>
+        <span>{(skill.download_count ?? 0).toLocaleString('fr-FR')} téléchargements</span>
       </div>
 
       {/* Footer: Price */}

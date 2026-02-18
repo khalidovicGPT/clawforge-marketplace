@@ -56,7 +56,7 @@ async function SkillsGrid({ searchParams }: { searchParams: PageProps['searchPar
   // Apply sorting
   switch (params.sort) {
     case 'popular':
-      query = query.order('downloads_count', { ascending: false });
+      query = query.order('download_count', { ascending: false });
       break;
     case 'rating':
       query = query.order('rating_avg', { ascending: false, nullsFirst: false });

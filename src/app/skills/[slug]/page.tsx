@@ -122,7 +122,7 @@ export default async function SkillDetailPage({ params }: PageProps) {
                 )}
                 <div className="flex items-center gap-1">
                   <Download className="h-4 w-4" />
-                  <span>{(skill.downloads_count ?? 0).toLocaleString('fr-FR')} téléchargements</span>
+                  <span>{(skill.download_count ?? 0).toLocaleString('fr-FR')} téléchargements</span>
                 </div>
               </div>
             </div>
