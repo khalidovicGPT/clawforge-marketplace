@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Download, Star, Package, User, CreditCard, Plus, Clock, CheckCircle, XCircle, Upload, ShoppingCart } from 'lucide-react';
 import { StarRating } from '@/components/skills/star-rating';
+import { SkillActions } from '@/components/dashboard/skill-actions';
 import { SKILL_CATEGORIES, CERTIFICATION_BADGES } from '@/types/database';
 
 const STATUS_CONFIG = {
@@ -72,6 +73,27 @@ export default async function DashboardPage() {
 
   // Calculate total downloads for creator's skills
   const totalCreatorDownloads = mySkills?.reduce((sum, skill) => sum + (skill.download_count || 0), 0) || 0;
+
+  // Fetch purchase stats for creator's skills (purchases count + revenue per skill)
+  const skillIds = (mySkills || []).map(s => s.id);
+  const skillPurchaseStats: Record<string, { count: number; revenue: number }> = {};
+  let totalRevenue = 0;
+  let totalPurchases = 0;
+  if (skillIds.length > 0) {
+    const { data: skillPurchases } = await serviceClient
+      .from('purchases')
+      .select('skill_id, price_paid')
+      .in('skill_id', skillIds);
+    (skillPurchases || []).forEach(p => {
+      if (!skillPurchaseStats[p.skill_id]) {
+        skillPurchaseStats[p.skill_id] = { count: 0, revenue: 0 };
+      }
+      skillPurchaseStats[p.skill_id].count++;
+      skillPurchaseStats[p.skill_id].revenue += p.price_paid || 0;
+      totalRevenue += p.price_paid || 0;
+      totalPurchases++;
+    });
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -171,7 +193,7 @@ export default async function DashboardPage() {
               <div>
                 <h2 className="text-xl font-bold text-gray-900">Mes skills</h2>
                 <p className="mt-1 text-sm text-gray-500">
-                  {mySkills?.length || 0} skill(s) • {totalCreatorDownloads} téléchargement(s) total
+                  {mySkills?.length || 0} skill(s) • {totalPurchases} achat(s) • {(totalRevenue / 100).toFixed(0)}€ de revenus
                 </p>
               </div>
               <div className="flex gap-3">
@@ -221,7 +243,12 @@ export default async function DashboardPage() {
                             {skill.price === 0 && ' • Gratuit'}
                           </p>
                           <p className="mt-1 text-xs text-gray-400">
-                            {skill.download_count || 0} téléchargement(s) • Créé le {new Date(skill.created_at).toLocaleDateString('fr-FR')}
+                            <ShoppingCart className="mr-1 inline h-3 w-3" />
+                            {skillPurchaseStats[skill.id]?.count || 0} achat(s)
+                            {' • '}
+                            {((skillPurchaseStats[skill.id]?.revenue || 0) / 100).toFixed(0)}€ de revenus
+                            {' • '}
+                            Créé le {new Date(skill.created_at).toLocaleDateString('fr-FR')}
                           </p>
                         </div>
                       </div>
@@ -231,14 +258,13 @@ export default async function DashboardPage() {
                           <StatusIcon className="h-3 w-3" />
                           {status.label}
                         </span>
-                        {skill.status === 'approved' && (
-                          <Link
-                            href={`/skills/${skill.slug || skill.id}`}
-                            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                          >
-                            Voir →
-                          </Link>
-                        )}
+                        <SkillActions
+                          skillId={skill.id}
+                          skillSlug={skill.slug || skill.id}
+                          status={skill.status}
+                          publishedAt={skill.published_at}
+                          certifiedAt={skill.certified_at}
+                        />
                       </div>
                     </div>
                   );
