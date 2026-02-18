@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       const { error: insertError } = await serviceClient.from('purchases').insert({
         user_id: user.id,
         skill_id: skill.id,
-        type: 'free_download',
+        type: 'purchase',
         price_paid: 0,
         currency: 'EUR',
       });
