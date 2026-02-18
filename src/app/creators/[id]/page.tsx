@@ -19,7 +19,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     .eq('id', id)
     .single();
 
-  const name = (creator as Record<string, unknown>)?.display_name || (creator as Record<string, unknown>)?.name || 'Createur';
+  const c = creator as Record<string, unknown>;
+  const emailMeta = c?.email as string | undefined;
+  const pseudoMeta = emailMeta ? emailMeta.split('@')[0] : null;
+  const name = String(c?.display_name || c?.name || pseudoMeta || 'Createur');
 
   return {
     title: `${name} — Createur ClawForge`,
@@ -43,7 +46,9 @@ export default async function CreatorProfilePage({ params }: PageProps) {
   }
 
   const creator = creatorData as Record<string, unknown>;
-  const creatorName = String(creator.display_name || creator.name || creator.email || 'Createur');
+  const emailStr = creator.email as string | undefined;
+  const pseudoFromEmail = emailStr ? emailStr.split('@')[0] : null;
+  const creatorName = String(creator.display_name || creator.name || pseudoFromEmail || 'Createur');
 
   // Fetch creator's published skills with purchase counts
   const { data: skills } = await supabase
