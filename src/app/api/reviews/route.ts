@@ -20,8 +20,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Verify user has purchased this skill
   const serviceClient = createServiceClient();
+
+  // Verify user has purchased this skill
   const { data: purchase } = await serviceClient
     .from('purchases')
     .select('id')
@@ -59,24 +60,40 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Manually recalculate rating_avg and rating_count on the skill
-  // (in case the DB trigger is not active)
-  const { data: stats } = await serviceClient
+  // Manually recalculate and update rating_avg / rating_count on the skill
+  const { data: allReviews, error: fetchError } = await serviceClient
     .from('reviews')
     .select('rating')
     .eq('skill_id', skill_id);
 
-  if (stats && stats.length > 0) {
-    const count = stats.length;
-    const avg = stats.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / count;
-    await serviceClient
-      .from('skills')
-      .update({
-        rating_avg: parseFloat(avg.toFixed(1)),
-        rating_count: count,
-      })
-      .eq('id', skill_id);
+  if (fetchError) {
+    console.error('Error fetching reviews for recalc:', fetchError);
   }
 
-  return NextResponse.json({ review });
+  let updatedAvg: number | null = null;
+  let updatedCount = 0;
+
+  if (allReviews && allReviews.length > 0) {
+    updatedCount = allReviews.length;
+    const sum = allReviews.reduce((s: number, r: { rating: number }) => s + r.rating, 0);
+    updatedAvg = Math.round((sum / updatedCount) * 10) / 10;
+
+    const { error: updateError } = await serviceClient
+      .from('skills')
+      .update({
+        rating_avg: updatedAvg,
+        rating_count: updatedCount,
+      })
+      .eq('id', skill_id);
+
+    if (updateError) {
+      console.error('Error updating skill rating:', updateError);
+    }
+  }
+
+  return NextResponse.json({
+    review,
+    rating_avg: updatedAvg,
+    rating_count: updatedCount,
+  });
 }

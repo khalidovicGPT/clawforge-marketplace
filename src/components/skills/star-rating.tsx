@@ -2,6 +2,7 @@
 
 import { Star } from 'lucide-react';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface StarRatingProps {
   skillId: string;
@@ -12,12 +13,13 @@ export function StarRating({ skillId, initialRating = 0 }: StarRatingProps) {
   const [rating, setRating] = useState(initialRating);
   const [hover, setHover] = useState(0);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const router = useRouter();
 
   async function handleRate(value: number) {
     if (saving) return;
     setSaving(true);
-    setSaved(false);
+    setMessage(null);
 
     try {
       const res = await fetch('/api/reviews', {
@@ -26,13 +28,21 @@ export function StarRating({ skillId, initialRating = 0 }: StarRatingProps) {
         body: JSON.stringify({ skill_id: skillId, rating: value }),
       });
 
+      const data = await res.json();
+
       if (res.ok) {
         setRating(value);
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2000);
+        setMessage({ text: `${value}/5 enregistre !`, type: 'success' });
+        // Refresh server components to update displayed ratings
+        router.refresh();
+        setTimeout(() => setMessage(null), 3000);
+      } else {
+        setMessage({ text: data.error || 'Erreur', type: 'error' });
+        setTimeout(() => setMessage(null), 3000);
       }
     } catch {
-      // silently fail
+      setMessage({ text: 'Erreur reseau', type: 'error' });
+      setTimeout(() => setMessage(null), 3000);
     } finally {
       setSaving(false);
     }
@@ -63,8 +73,10 @@ export function StarRating({ skillId, initialRating = 0 }: StarRatingProps) {
           </button>
         );
       })}
-      {saved && (
-        <span className="ml-1 text-xs text-green-600">Enregistre !</span>
+      {message && (
+        <span className={`ml-1 text-xs ${message.type === 'success' ? 'text-green-600' : 'text-red-500'}`}>
+          {message.text}
+        </span>
       )}
       {saving && (
         <span className="ml-1 text-xs text-gray-400">...</span>
