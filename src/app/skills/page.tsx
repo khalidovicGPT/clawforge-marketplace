@@ -81,6 +81,22 @@ async function SkillsGrid({ searchParams }: { searchParams: PageProps['searchPar
   
   const { data: skills, error } = await query.range(from, to);
 
+  // Fetch creator names for all skills
+  const creatorIds = [...new Set((skills || []).map(s => s.creator_id).filter(Boolean))];
+  const creatorNameMap: Record<string, string> = {};
+  if (creatorIds.length > 0) {
+    const { data: creators } = await supabase
+      .from('users')
+      .select('*')
+      .in('id', creatorIds);
+    (creators || []).forEach((c) => {
+      const u = c as Record<string, unknown>;
+      const email = u.email as string | undefined;
+      const pseudo = email ? email.split('@')[0] : null;
+      creatorNameMap[u.id as string] = String(u.display_name || u.name || pseudo || 'Createur');
+    });
+  }
+
   if (error) {
     console.error('Supabase error:', error);
     return (
@@ -108,7 +124,7 @@ async function SkillsGrid({ searchParams }: { searchParams: PageProps['searchPar
   return (
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {skills.map((skill) => (
-        <SkillCard key={skill.id} skill={skill} />
+        <SkillCard key={skill.id} skill={skill} creatorName={creatorNameMap[skill.creator_id]} />
       ))}
     </div>
   );

@@ -138,7 +138,7 @@ export default async function CreatorProfilePage({ params }: PageProps) {
         {skills && skills.length > 0 ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {skills.map((skill) => (
-              <SkillCard key={skill.id} skill={skill} />
+              <SkillCard key={skill.id} skill={skill} creatorName={creatorName} />
             ))}
           </div>
         ) : (
