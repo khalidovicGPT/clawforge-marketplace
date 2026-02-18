@@ -58,6 +58,8 @@ export interface Purchase {
   skill_id: string;
   type: PurchaseType;
   price_paid: number;
+  platform_fee: number;
+  creator_amount: number;
   currency: string;
   stripe_payment_intent_id: string | null;
   stripe_checkout_session_id: string | null;

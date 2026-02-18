@@ -3,7 +3,7 @@ import { createServiceClient } from '@/lib/supabase/service';
 import { ensureUserProfile } from '@/lib/ensure-profile';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { Download, Star, Package, User, CreditCard, Plus, Clock, CheckCircle, XCircle, Upload, ShoppingCart } from 'lucide-react';
+import { Download, Star, Package, User, CreditCard, Plus, Clock, CheckCircle, XCircle, Upload, ShoppingCart, FileDown } from 'lucide-react';
 import { StarRating } from '@/components/skills/star-rating';
 import { SkillActions } from '@/components/dashboard/skill-actions';
 import { SKILL_CATEGORIES, CERTIFICATION_BADGES } from '@/types/database';
@@ -193,7 +193,7 @@ export default async function DashboardPage() {
               <div>
                 <h2 className="text-xl font-bold text-gray-900">Mes skills</h2>
                 <p className="mt-1 text-sm text-gray-500">
-                  {mySkills?.length || 0} skill(s) • {totalPurchases} achat(s) • {((totalRevenue * 0.8) / 100).toFixed(2)}€ de revenus (80%)
+                  {mySkills?.length || 0} skill(s) • {totalPurchases} achat(s)
                 </p>
               </div>
               <div className="flex gap-3">
@@ -213,6 +213,43 @@ export default async function DashboardPage() {
                 </Link>
               </div>
             </div>
+
+            {/* Revenue Breakdown */}
+            {totalRevenue > 0 && (
+              <div className="border-b p-6">
+                <div className="grid gap-4 sm:grid-cols-4">
+                  <div className="rounded-lg bg-gray-50 p-4">
+                    <p className="text-xs font-medium text-gray-500">Ventes ce mois</p>
+                    <p className="mt-1 text-xl font-bold text-gray-900">{totalPurchases} skill(s)</p>
+                  </div>
+                  <div className="rounded-lg bg-gray-50 p-4">
+                    <p className="text-xs font-medium text-gray-500">Revenu brut TTC</p>
+                    <p className="mt-1 text-xl font-bold text-gray-900">{(totalRevenue / 100).toFixed(2)} €</p>
+                  </div>
+                  <div className="rounded-lg bg-gray-50 p-4">
+                    <p className="text-xs font-medium text-gray-500">Commission ClawForge (20%)</p>
+                    <p className="mt-1 text-xl font-bold text-red-600">-{((totalRevenue * 0.2) / 100).toFixed(2)} €</p>
+                  </div>
+                  <div className="rounded-lg bg-green-50 p-4">
+                    <p className="text-xs font-medium text-green-700">Votre revenu net TTC</p>
+                    <p className="mt-1 text-xl font-bold text-green-700">{((totalRevenue * 0.8) / 100).toFixed(2)} €</p>
+                  </div>
+                </div>
+                <div className="mt-3 flex items-center justify-between">
+                  <p className="text-xs text-gray-500">
+                    Ce montant est versé TTC. En tant que créateur, vous êtes responsable de la déclaration de votre TVA.
+                  </p>
+                  <a
+                    href="/api/export/sales"
+                    download
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    <FileDown className="h-3.5 w-3.5" />
+                    Export CSV
+                  </a>
+                </div>
+              </div>
+            )}
 
             {mySkills && mySkills.length > 0 ? (
               <div className="divide-y">
@@ -239,14 +276,14 @@ export default async function DashboardPage() {
                           </div>
                           <p className="text-sm text-gray-500">
                             {category?.label || skill.category} • v{skill.version}
-                            {skill.price > 0 && ` • ${(skill.price / 100).toFixed(0)}€`}
+                            {skill.price > 0 && ` • ${(skill.price / 100).toFixed(0)}€ TTC`}
                             {skill.price === 0 && ' • Gratuit'}
                           </p>
                           <p className="mt-1 text-xs text-gray-400">
                             <ShoppingCart className="mr-1 inline h-3 w-3" />
                             {skillPurchaseStats[skill.id]?.count || 0} achat(s)
                             {' • '}
-                            {(((skillPurchaseStats[skill.id]?.revenue || 0) * 0.8) / 100).toFixed(2)}€ de revenus
+                            {(((skillPurchaseStats[skill.id]?.revenue || 0) * 0.8) / 100).toFixed(2)}€ net TTC
                             {' • '}
                             Créé le {new Date(skill.created_at).toLocaleDateString('fr-FR')}
                           </p>
@@ -326,7 +363,7 @@ export default async function DashboardPage() {
                           {category?.label || skill.category} • v{skill.version}
                         </p>
                         <p className="mt-1 text-xs text-gray-400">
-                          {!purchase.price_paid || purchase.price_paid === 0 ? 'Gratuit' : `${(purchase.price_paid / 100).toFixed(0)}€`}
+                          {!purchase.price_paid || purchase.price_paid === 0 ? 'Gratuit' : `${(purchase.price_paid / 100).toFixed(0)}€ TTC`}
                           {' • '}
                           Acquis le {new Date(purchase.created_at).toLocaleDateString('fr-FR')}
                         </p>
