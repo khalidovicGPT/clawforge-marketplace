@@ -128,7 +128,7 @@ export default async function DashboardPage() {
               <div>
                 <p className="text-sm text-gray-500">Téléchargements</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {purchases?.filter(p => p.type === 'free_download').length || 0}
+                  {purchases?.filter(p => !p.price_paid || p.price_paid === 0).length || 0}
                 </p>
               </div>
             </div>
@@ -326,7 +326,7 @@ export default async function DashboardPage() {
                           {category?.label || skill.category} • v{skill.version}
                         </p>
                         <p className="mt-1 text-xs text-gray-400">
-                          {purchase.type === 'free_download' ? 'Gratuit' : `${(purchase.price_paid / 100).toFixed(0)}€`}
+                          {!purchase.price_paid || purchase.price_paid === 0 ? 'Gratuit' : `${(purchase.price_paid / 100).toFixed(0)}€`}
                           {' • '}
                           Acquis le {new Date(purchase.created_at).toLocaleDateString('fr-FR')}
                         </p>
