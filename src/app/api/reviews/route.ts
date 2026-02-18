@@ -59,5 +59,24 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Manually recalculate rating_avg and rating_count on the skill
+  // (in case the DB trigger is not active)
+  const { data: stats } = await serviceClient
+    .from('reviews')
+    .select('rating')
+    .eq('skill_id', skill_id);
+
+  if (stats && stats.length > 0) {
+    const count = stats.length;
+    const avg = stats.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / count;
+    await serviceClient
+      .from('skills')
+      .update({
+        rating_avg: parseFloat(avg.toFixed(1)),
+        rating_count: count,
+      })
+      .eq('id', skill_id);
+  }
+
   return NextResponse.json({ review });
 }
