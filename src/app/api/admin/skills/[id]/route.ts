@@ -54,10 +54,10 @@ export async function POST(
       console.warn('[ADMIN] SUPABASE_SERVICE_ROLE_KEY not set, using user session with admin RLS');
     }
 
-    // Verify skill exists
+    // Verify skill exists (include price and creator info)
     const { data: skill, error: fetchError } = await db
       .from('skills')
-      .select('id, title, status')
+      .select('id, title, status, price, creator_id')
       .eq('id', skillId)
       .single();
 
@@ -71,8 +71,22 @@ export async function POST(
     // Build update
     const isRejected = certification === 'rejected';
 
+    // Check if paid skill and creator has Stripe configured
+    let finalStatus: string = isRejected ? 'rejected' : 'published';
+    if (!isRejected && skill.price && skill.price > 0) {
+      const { data: creator } = await db
+        .from('users')
+        .select('stripe_account_id, stripe_onboarding_complete')
+        .eq('id', skill.creator_id)
+        .single();
+
+      if (!creator?.stripe_account_id || !creator?.stripe_onboarding_complete) {
+        finalStatus = 'pending_payment_setup';
+      }
+    }
+
     const updateData: Record<string, unknown> = {
-      status: isRejected ? 'rejected' : 'published',
+      status: finalStatus,
       certification: isRejected ? 'none' : certification,
       certified_at: isRejected ? null : new Date().toISOString(),
       published_at: isRejected ? null : new Date().toISOString(),
@@ -93,15 +107,18 @@ export async function POST(
 
     // Log the action
     console.log(
-      `[ADMIN] ${user.email} (${user.id}) ${isRejected ? 'rejected' : 'certified'} skill "${skill.title}" (${skillId}) as ${certification}` +
+      `[ADMIN] ${user.email} (${user.id}) ${isRejected ? 'rejected' : 'certified'} skill "${skill.title}" (${skillId}) as ${certification} → status: ${finalStatus}` +
         (comment ? ` — comment: ${comment}` : '')
     );
 
     return NextResponse.json({
       success: true,
+      status: finalStatus,
       message: isRejected
         ? 'Skill rejete avec succes'
-        : `Skill certifie ${certification} avec succes`,
+        : finalStatus === 'pending_payment_setup'
+          ? `Skill certifie ${certification} — en attente configuration Stripe du createur`
+          : `Skill certifie ${certification} avec succes`,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

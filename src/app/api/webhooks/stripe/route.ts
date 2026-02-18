@@ -84,10 +84,36 @@ export async function POST(request: Request) {
         const account = event.data.object as Stripe.Account;
         const isOnboarded = account.details_submitted && account.charges_enabled;
 
-        await supabaseAdmin
+        // Update user's onboarding status
+        const { data: updatedUser } = await supabaseAdmin
           .from('users')
           .update({ stripe_onboarding_complete: isOnboarded })
-          .eq('stripe_account_id', account.id);
+          .eq('stripe_account_id', account.id)
+          .select('id')
+          .single();
+
+        // If onboarding just completed, auto-publish pending_payment_setup skills
+        if (isOnboarded && updatedUser) {
+          const { data: pendingSkills, error: pendingError } = await supabaseAdmin
+            .from('skills')
+            .update({
+              status: 'published',
+              published_at: new Date().toISOString(),
+            })
+            .eq('creator_id', updatedUser.id)
+            .eq('status', 'pending_payment_setup')
+            .select('id, title');
+
+          if (pendingSkills && pendingSkills.length > 0) {
+            console.log(
+              `[STRIPE] Auto-published ${pendingSkills.length} skills for creator ${updatedUser.id}:`,
+              pendingSkills.map(s => s.title)
+            );
+          }
+          if (pendingError) {
+            console.error('[STRIPE] Error auto-publishing skills:', pendingError);
+          }
+        }
 
         console.log(`Account ${account.id} updated: onboarded=${isOnboarded}`);
         break;

@@ -24,6 +24,7 @@ interface Skill {
   price: number | null;
   currency?: string;
   certification: string | null;
+  status?: string;
   download_count: number | null;
   rating_avg: number | null;
   rating_count: number | null;
@@ -104,8 +105,13 @@ export function SkillCard({ skill, creatorName }: SkillCardProps) {
       </div>
 
       {/* Footer: Price */}
-      <div className="mt-4 flex items-center justify-end border-t pt-4">
-        <span className={`font-semibold ${!skill.price || skill.price === 0 ? 'text-green-600' : 'text-gray-900'}`}>
+      <div className="mt-4 flex items-center justify-between border-t pt-4">
+        {skill.status === 'pending_payment_setup' && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+            Paiement non configure
+          </span>
+        )}
+        <span className={`ml-auto font-semibold ${!skill.price || skill.price === 0 ? 'text-green-600' : skill.status === 'pending_payment_setup' ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
           {formatPrice(skill.price, skill.currency)}
         </span>
       </div>

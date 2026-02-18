@@ -10,7 +10,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ============================================
 
 CREATE TYPE user_role AS ENUM ('user', 'creator', 'admin');
-CREATE TYPE skill_status AS ENUM ('draft', 'pending', 'certified', 'published', 'rejected');
+CREATE TYPE skill_status AS ENUM ('draft', 'pending', 'certified', 'published', 'pending_payment_setup', 'rejected');
 CREATE TYPE certification AS ENUM ('none', 'bronze', 'silver', 'gold');
 CREATE TYPE license_type AS ENUM ('MIT', 'Apache-2.0', 'Proprietary');
 CREATE TYPE price_type AS ENUM ('free', 'one_time');
@@ -220,7 +220,7 @@ CREATE POLICY "Anyone can view creator profiles"
 -- Skills policies
 CREATE POLICY "Anyone can view published skills"
   ON skills FOR SELECT
-  USING (status = 'published');
+  USING (status IN ('published', 'pending_payment_setup'));
 
 CREATE POLICY "Creators can view their own skills"
   ON skills FOR SELECT

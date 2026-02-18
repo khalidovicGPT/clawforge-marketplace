@@ -2,7 +2,7 @@
 // Auto-generated from Supabase schema
 
 export type UserRole = 'user' | 'creator' | 'admin';
-export type SkillStatus = 'draft' | 'pending' | 'approved' | 'published' | 'rejected';
+export type SkillStatus = 'draft' | 'pending' | 'approved' | 'published' | 'pending_payment_setup' | 'rejected';
 export type Certification = 'none' | 'bronze' | 'silver' | 'gold';
 export type License = 'MIT' | 'Apache-2.0' | 'Proprietary';
 export type PriceType = 'free' | 'one_time';
