@@ -36,7 +36,7 @@ export default async function CreatorsPage() {
   const { data: creators } = creatorIds.length > 0
     ? await supabase
         .from('users')
-        .select('id, name, avatar_url')
+        .select('id, display_name, name, avatar_url')
         .in('id', creatorIds)
     : { data: [] };
 
@@ -88,17 +88,17 @@ export default async function CreatorsPage() {
                   {creator.avatar_url ? (
                     <img
                       src={creator.avatar_url}
-                      alt={creator.name || 'Createur'}
+                      alt={creator.display_name || creator.name || 'Createur'}
                       className="h-20 w-20 rounded-full object-cover"
                     />
                   ) : (
-                    <span>{(creator.name || '?')[0].toUpperCase()}</span>
+                    <span>{(creator.display_name || creator.name || '?')[0].toUpperCase()}</span>
                   )}
                 </div>
 
                 {/* Name */}
                 <h2 className="mt-4 text-lg font-semibold text-gray-900">
-                  {creator.name || 'Createur anonyme'}
+                  {creator.display_name || creator.name || 'Createur anonyme'}
                 </h2>
 
                 {/* Stats */}

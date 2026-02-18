@@ -45,7 +45,7 @@ export async function ensureUserProfile(
     .insert({
       id: user.id,
       email: user.email!,
-      name: userName,
+      display_name: userName,
       avatar_url: meta.avatar_url || null,
       role: 'user',
       stripe_onboarding_complete: false,

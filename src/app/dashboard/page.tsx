@@ -80,7 +80,7 @@ export default async function DashboardPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
           <p className="mt-2 text-gray-600">
-            Bienvenue, {profile?.name || user.email?.split('@')[0]} !
+            Bienvenue, {profile?.display_name || profile?.name || user.email?.split('@')[0]} !
           </p>
         </div>
 
