@@ -37,16 +37,15 @@ export async function ensureUserProfile(
 
   // Profile missing — create it from auth metadata
   const meta = user.user_metadata || {};
-  const displayName =
+  const userName =
     meta.full_name || meta.name || user.email?.split('@')[0] || 'Utilisateur';
 
-  // Try full insert first (matches schema.sql)
   const { data: created, error } = await supabaseAdmin
     .from('users')
     .insert({
       id: user.id,
       email: user.email!,
-      display_name: displayName,
+      name: userName,
       avatar_url: meta.avatar_url || null,
       role: 'user',
       stripe_onboarding_complete: false,
@@ -55,22 +54,6 @@ export async function ensureUserProfile(
     .single();
 
   if (!error) return created;
-
-  // If column doesn't exist, fallback to minimal insert
-  if (error.message.includes('column') || error.message.includes('schema cache')) {
-    console.warn('ensureUserProfile: full insert failed, trying minimal:', error.message);
-
-    const { data: minimal, error: minError } = await supabaseAdmin
-      .from('users')
-      .insert({ id: user.id, email: user.email! })
-      .select()
-      .single();
-
-    if (!minError) return minimal;
-
-    console.error('ensureUserProfile minimal insert error:', minError);
-    throw new Error(`Impossible de créer le profil : ${minError.message}`);
-  }
 
   console.error('ensureUserProfile insert error:', error);
   throw new Error(`Impossible de créer le profil : ${error.message}`);

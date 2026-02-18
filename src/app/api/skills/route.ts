@@ -133,7 +133,7 @@ export async function GET(request: NextRequest) {
     // Apply sorting
     switch (params.sortBy) {
       case 'popular':
-        query = query.order('downloads_count', { ascending: false });
+        query = query.order('download_count', { ascending: false });
         break;
       case 'rating':
         query = query.order('rating_avg', { ascending: false });

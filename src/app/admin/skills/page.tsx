@@ -35,14 +35,14 @@ interface SkillWithCreatorAndTest {
   creator_id: string;
   file_url: string | null;
   file_size: number | null;
-  downloads_count: number;
+  download_count: number;
   version: string;
   created_at: string;
   submitted_at: string | null;
   certified_at: string | null;
   creator: {
     id: string;
-    display_name: string | null;
+    name: string | null;
     email: string;
     avatar_url: string | null;
   } | null;
@@ -356,7 +356,7 @@ export default function AdminSkillsPage() {
                     {/* Creator */}
                     <div className="col-span-2 min-w-0">
                       <p className="truncate text-sm font-medium text-gray-900">
-                        {skill.creator?.display_name || 'Inconnu'}
+                        {skill.creator?.name || 'Inconnu'}
                       </p>
                       <p className="truncate text-xs text-gray-500">
                         {skill.creator?.email || ''}

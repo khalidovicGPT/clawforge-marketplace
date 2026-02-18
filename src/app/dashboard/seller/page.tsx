@@ -131,7 +131,7 @@ export default function SellerDashboardPage() {
     );
   }
 
-  const displayName = (profile?.display_name as string) || (profile?.email as string)?.split('@')[0] || 'Createur';
+  const displayName = (profile?.name as string) || (profile?.email as string)?.split('@')[0] || 'Createur';
 
   return (
     <div className="min-h-screen bg-gray-50">

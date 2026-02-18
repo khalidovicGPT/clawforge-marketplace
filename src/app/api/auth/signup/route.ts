@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       .insert({
         id: authData.user.id,
         email: authData.user.email,
-        display_name: name,
+        name: name,
         role: 'user',
       });
 
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
       user: {
         id: authData.user.id,
         email: authData.user.email,
-        display_name: name,
+        name: name,
       },
     });
   } catch (error) {

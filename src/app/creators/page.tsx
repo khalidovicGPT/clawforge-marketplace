@@ -13,7 +13,7 @@ export default async function CreatorsPage() {
   // Fetch creators who have at least one published skill
   const { data: skills } = await supabase
     .from('skills')
-    .select('creator_id, downloads_count, rating_avg')
+    .select('creator_id, download_count, rating_avg')
     .eq('status', 'published');
 
   // Aggregate stats per creator
@@ -23,7 +23,7 @@ export default async function CreatorsPage() {
       creatorStats[s.creator_id] = { skillCount: 0, downloads: 0, avgRating: 0, ratingCount: 0 };
     }
     creatorStats[s.creator_id].skillCount++;
-    creatorStats[s.creator_id].downloads += s.downloads_count || 0;
+    creatorStats[s.creator_id].downloads += s.download_count || 0;
     if (s.rating_avg) {
       creatorStats[s.creator_id].avgRating += s.rating_avg;
       creatorStats[s.creator_id].ratingCount++;
@@ -36,7 +36,7 @@ export default async function CreatorsPage() {
   const { data: creators } = creatorIds.length > 0
     ? await supabase
         .from('users')
-        .select('id, display_name, avatar_url')
+        .select('id, name, avatar_url')
         .in('id', creatorIds)
     : { data: [] };
 
@@ -88,17 +88,17 @@ export default async function CreatorsPage() {
                   {creator.avatar_url ? (
                     <img
                       src={creator.avatar_url}
-                      alt={creator.display_name || 'Createur'}
+                      alt={creator.name || 'Createur'}
                       className="h-20 w-20 rounded-full object-cover"
                     />
                   ) : (
-                    <span>{(creator.display_name || '?')[0].toUpperCase()}</span>
+                    <span>{(creator.name || '?')[0].toUpperCase()}</span>
                   )}
                 </div>
 
                 {/* Name */}
                 <h2 className="mt-4 text-lg font-semibold text-gray-900">
-                  {creator.display_name || 'Createur anonyme'}
+                  {creator.name || 'Createur anonyme'}
                 </h2>
 
                 {/* Stats */}
@@ -121,7 +121,7 @@ export default async function CreatorsPage() {
 
                 {/* CTA */}
                 <Link
-                  href={`/skills?search=${encodeURIComponent(creator.display_name || '')}`}
+                  href={`/skills?search=${encodeURIComponent(creator.name || '')}`}
                   className="mt-6 inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
                   Voir les skills

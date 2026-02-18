@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       await supabase.from('users').insert({
         id: data.user.id,
         email: data.user.email,
-        display_name: data.user.user_metadata?.display_name || email.split('@')[0],
+        name: data.user.user_metadata?.name || data.user.user_metadata?.display_name || email.split('@')[0],
         role: 'user',
       });
     }

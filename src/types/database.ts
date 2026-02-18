@@ -11,7 +11,7 @@ export type PurchaseType = 'purchase' | 'free_download';
 export interface User {
   id: string;
   email: string;
-  display_name: string | null;
+  name: string | null;
   avatar_url: string | null;
   role: UserRole;
   stripe_account_id: string | null;
@@ -40,7 +40,7 @@ export interface Skill {
   file_size: number | null;
   file_hash: string | null;
   icon_url: string | null;
-  downloads_count: number;
+  download_count: number;
   rating_avg: number | null;
   rating_count: number;
   version: string;
@@ -61,7 +61,7 @@ export interface Purchase {
   currency: string;
   stripe_payment_intent_id: string | null;
   stripe_checkout_session_id: string | null;
-  purchased_at: string;
+  created_at: string;
 }
 
 export interface Review {
@@ -136,7 +136,7 @@ export interface PaginatedResponse<T> {
 
 // Skill with creator info for display
 export interface SkillWithCreator extends Skill {
-  creator: Pick<User, 'id' | 'display_name' | 'avatar_url'>;
+  creator: Pick<User, 'id' | 'name' | 'avatar_url'>;
 }
 
 // Skill submission form data

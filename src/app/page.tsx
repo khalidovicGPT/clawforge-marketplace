@@ -20,7 +20,7 @@ async function getPopularSkills() {
     .from('skills')
     .select('*')
     .eq('status', 'published')
-    .order('downloads_count', { ascending: false })
+    .order('download_count', { ascending: false })
     .limit(6);
 
   return skills || [];
@@ -147,7 +147,7 @@ export default async function HomePage() {
                           <span>•</span>
                         </>
                       )}
-                      <span>{skill.downloads_count || 0} téléchargements</span>
+                      <span>{skill.download_count || 0} téléchargements</span>
                     </div>
 
                     <div className="mt-4 flex items-center justify-between">
