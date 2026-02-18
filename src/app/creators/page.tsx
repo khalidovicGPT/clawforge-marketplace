@@ -46,7 +46,9 @@ export default async function CreatorsPage() {
     const avgRating = stats.ratingCount > 0
       ? (stats.avgRating / stats.ratingCount)
       : null;
-    const creatorName = String(creator.display_name || creator.name || creator.email || 'Createur');
+    const email = creator.email as string | undefined;
+    const pseudoFromEmail = email ? email.split('@')[0] : null;
+    const creatorName = String(creator.display_name || creator.name || pseudoFromEmail || 'Createur');
     const avatarUrl = creator.avatar_url as string | null;
     return { id: creator.id as string, creatorName, avatarUrl, ...stats, avgRating };
   }).sort((a, b) => b.downloads - a.downloads);
