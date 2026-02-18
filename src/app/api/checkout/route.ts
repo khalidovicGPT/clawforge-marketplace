@@ -52,7 +52,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Free skill - create purchase and return
-    if (skill.price === 0) {
+    if (!skill.price || skill.price === 0) {
+      // Check if already downloaded (UNIQUE constraint on user_id, skill_id)
+      const { data: existingPurchase } = await serviceClient
+        .from('purchases')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('skill_id', skill.id)
+        .single();
+
+      if (existingPurchase) {
+        return NextResponse.json({ free: true, skillId: skill.id });
+      }
+
       const { error: insertError } = await serviceClient.from('purchases').insert({
         user_id: user.id,
         skill_id: skill.id,
@@ -62,9 +74,13 @@ export async function POST(request: NextRequest) {
       });
 
       if (insertError) {
-        console.error('Free purchase insert error:', insertError);
+        console.error('Free purchase insert error:', JSON.stringify(insertError));
+        // Duplicate key = already downloaded, treat as success
+        if (insertError.code === '23505') {
+          return NextResponse.json({ free: true, skillId: skill.id });
+        }
         return NextResponse.json(
-          { error: 'Erreur lors de l\'enregistrement du téléchargement' },
+          { error: `Erreur : ${insertError.message}` },
           { status: 500 }
         );
       }
