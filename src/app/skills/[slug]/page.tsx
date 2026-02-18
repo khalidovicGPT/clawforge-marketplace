@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Metadata } from 'next';
 import { createServiceClient } from '@/lib/supabase/service';
-import { Star, Download, ArrowLeft } from 'lucide-react';
+import { Star, Download, ArrowLeft, ShoppingCart, MessageSquare } from 'lucide-react';
 import { BuyButton } from '@/components/skills/buy-button';
 
 const CERTIFICATION_BADGES: Record<string, { emoji: string; label: string }> = {
@@ -73,7 +73,7 @@ export default async function SkillDetailPage({ params }: PageProps) {
 
   const { data: skill, error } = await supabase
     .from('skills')
-    .select('*')
+    .select('*, purchases(count)')
     .eq('slug', slug)
     .eq('status', 'published')
     .single();
@@ -81,6 +81,17 @@ export default async function SkillDetailPage({ params }: PageProps) {
   if (error || !skill) {
     notFound();
   }
+
+  // Fetch reviews for this skill
+  const { data: reviews } = await supabase
+    .from('reviews')
+    .select('id, rating, comment, created_at, user_id, users(display_name)')
+    .eq('skill_id', skill.id)
+    .order('created_at', { ascending: false });
+
+  const purchaseCount = (skill as Record<string, unknown>).purchases
+    ? ((skill as Record<string, unknown>).purchases as { count: number }[])?.[0]?.count ?? 0
+    : 0;
 
   const categoryEmoji = CATEGORY_EMOJIS[skill.category] || '📦';
   const certification = skill.certification
@@ -112,14 +123,20 @@ export default async function SkillDetailPage({ params }: PageProps) {
                 </span>
               </div>
               <p className="mt-1 text-gray-600">{skill.category}</p>
-              <div className="mt-2 flex items-center gap-4 text-sm text-gray-500">
-                {skill.rating_avg && skill.rating_avg > 0 && (
-                  <div className="flex items-center gap-1">
-                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <span>{skill.rating_avg.toFixed(1)}</span>
-                    <span className="text-gray-400">({skill.rating_count} avis)</span>
-                  </div>
-                )}
+              <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-gray-500">
+                <div className="flex items-center gap-1">
+                  <Star className={`h-4 w-4 ${skill.rating_avg && skill.rating_avg > 0 ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
+                  <span>
+                    {skill.rating_avg && skill.rating_avg > 0
+                      ? `${skill.rating_avg.toFixed(1)}`
+                      : 'Pas de note'}
+                  </span>
+                  <span className="text-gray-400">({skill.rating_count || 0} avis)</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <ShoppingCart className="h-4 w-4" />
+                  <span>{purchaseCount.toLocaleString('fr-FR')} achat(s)</span>
+                </div>
                 <div className="flex items-center gap-1">
                   <Download className="h-4 w-4" />
                   <span>{(skill.download_count ?? 0).toLocaleString('fr-FR')} téléchargements</span>
@@ -159,6 +176,60 @@ export default async function SkillDetailPage({ params }: PageProps) {
                 </dd>
               </div>
             </dl>
+          </div>
+
+          {/* Reviews Section */}
+          <div className="mt-8">
+            <h2 className="text-lg font-semibold text-gray-900">
+              <span className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5" />
+                Avis ({reviews?.length || 0})
+              </span>
+            </h2>
+
+            {reviews && reviews.length > 0 ? (
+              <div className="mt-4 space-y-4">
+                {reviews.map((review: Record<string, unknown>) => {
+                  const user = review.users as { display_name: string | null } | null;
+                  return (
+                    <div key={review.id as string} className="rounded-lg border bg-gray-50 p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-0.5">
+                            {[1, 2, 3, 4, 5].map((v) => (
+                              <Star
+                                key={v}
+                                className={`h-4 w-4 ${
+                                  v <= (review.rating as number)
+                                    ? 'fill-yellow-400 text-yellow-400'
+                                    : 'text-gray-300'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-sm font-medium text-gray-700">
+                            {user?.display_name || 'Utilisateur'}
+                          </span>
+                        </div>
+                        <span className="text-xs text-gray-400">
+                          {new Date(review.created_at as string).toLocaleDateString('fr-FR')}
+                        </span>
+                      </div>
+                      {review.comment ? (
+                        <p className="mt-2 text-sm text-gray-600">{String(review.comment)}</p>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="mt-4 rounded-lg border bg-gray-50 p-6 text-center">
+                <Star className="mx-auto h-8 w-8 text-gray-300" />
+                <p className="mt-2 text-sm text-gray-500">
+                  Aucun avis pour le moment. Achetez ce skill pour laisser le premier avis !
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

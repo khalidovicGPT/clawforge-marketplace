@@ -3,7 +3,8 @@ import { createServiceClient } from '@/lib/supabase/service';
 import { ensureUserProfile } from '@/lib/ensure-profile';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { Download, Star, Package, User, CreditCard, Plus, Clock, CheckCircle, XCircle, Upload } from 'lucide-react';
+import { Download, Star, Package, User, CreditCard, Plus, Clock, CheckCircle, XCircle, Upload, ShoppingCart } from 'lucide-react';
+import { StarRating } from '@/components/skills/star-rating';
 import { SKILL_CATEGORIES, CERTIFICATION_BADGES } from '@/types/database';
 
 const STATUS_CONFIG = {
@@ -48,6 +49,16 @@ export default async function DashboardPage() {
     `)
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
+
+  // Get user's existing reviews
+  const { data: userReviews } = await serviceClient
+    .from('reviews')
+    .select('skill_id, rating')
+    .eq('user_id', user.id);
+
+  const reviewMap = new Map(
+    (userReviews || []).map((r: { skill_id: string; rating: number }) => [r.skill_id, r.rating])
+  );
 
   const isCreator = profile?.role === 'creator' || profile?.role === 'admin';
   const hasStripeAccount = !!profile?.stripe_account_id && profile?.stripe_onboarding_complete;
@@ -293,6 +304,13 @@ export default async function DashboardPage() {
                           {' • '}
                           Acquis le {new Date(purchase.created_at).toLocaleDateString('fr-FR')}
                         </p>
+                        <div className="mt-2 flex items-center gap-2">
+                          <span className="text-xs text-gray-500">Votre note :</span>
+                          <StarRating
+                            skillId={skill.id}
+                            initialRating={reviewMap.get(skill.id) || 0}
+                          />
+                        </div>
                       </div>
                     </div>
                     

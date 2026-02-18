@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Star } from 'lucide-react';
+import { Star, ShoppingCart } from 'lucide-react';
 
 const CERTIFICATION_BADGES: Record<string, { emoji: string; label: string }> = {
   bronze: { emoji: '🥉', label: 'Bronze' },
@@ -27,6 +27,7 @@ interface Skill {
   download_count: number | null;
   rating_avg: number | null;
   rating_count: number | null;
+  purchases?: { count: number }[];
 }
 
 interface SkillCardProps {
@@ -79,17 +80,20 @@ export function SkillCard({ skill }: SkillCardProps) {
       </p>
 
       {/* Stats */}
-      <div className="mt-4 flex items-center gap-3 text-sm text-gray-500">
-        {skill.rating_avg && skill.rating_avg > 0 && (
-          <>
-            <div className="flex items-center gap-1">
-              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-              <span>{skill.rating_avg.toFixed(1)}</span>
-            </div>
-            <span>•</span>
-          </>
-        )}
-        <span>{(skill.download_count ?? 0).toLocaleString('fr-FR')} téléchargements</span>
+      <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-gray-500">
+        <div className="flex items-center gap-1">
+          <Star className={`h-4 w-4 ${skill.rating_avg && skill.rating_avg > 0 ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
+          <span>
+            {skill.rating_avg && skill.rating_avg > 0
+              ? `${skill.rating_avg.toFixed(1)} (${skill.rating_count || 0})`
+              : 'Pas de note'}
+          </span>
+        </div>
+        <span>•</span>
+        <div className="flex items-center gap-1">
+          <ShoppingCart className="h-3.5 w-3.5" />
+          <span>{(skill.purchases?.[0]?.count ?? 0).toLocaleString('fr-FR')} achat(s)</span>
+        </div>
       </div>
 
       {/* Footer: Price */}
