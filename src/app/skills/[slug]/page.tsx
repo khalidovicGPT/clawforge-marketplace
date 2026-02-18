@@ -25,7 +25,7 @@ function formatPrice(price: number | null | undefined, currency = 'EUR'): string
     style: 'currency',
     currency,
     minimumFractionDigits: 0,
-  }).format(price / 100);
+  }).format(price / 100) + ' TTC';
 }
 
 interface PageProps {
@@ -241,7 +241,7 @@ export default async function SkillDetailPage({ params }: PageProps) {
                 {formatPrice(skill.price)}
               </p>
               {skill.price && skill.price > 0 && (
-                <p className="mt-1 text-sm text-gray-500">Paiement unique</p>
+                <p className="mt-1 text-sm text-gray-500" title="Prix toutes taxes comprises">Paiement unique — prix TTC</p>
               )}
             </div>
 

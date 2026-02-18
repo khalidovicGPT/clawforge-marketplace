@@ -78,12 +78,14 @@ CREATE TABLE purchases (
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   skill_id UUID NOT NULL REFERENCES skills(id) ON DELETE CASCADE,
   type purchase_type NOT NULL,
-  price_paid INTEGER NOT NULL DEFAULT 0, -- in cents
+  price_paid INTEGER NOT NULL DEFAULT 0, -- in cents, TTC
+  platform_fee INTEGER NOT NULL DEFAULT 0, -- commission ClawForge 20%, in cents
+  creator_amount INTEGER NOT NULL DEFAULT 0, -- revenu créateur 80%, in cents
   currency TEXT NOT NULL DEFAULT 'EUR',
   stripe_payment_intent_id TEXT,
   stripe_checkout_session_id TEXT,
   purchased_at TIMESTAMPTZ DEFAULT NOW(),
-  
+
   -- Each user can only purchase a skill once
   UNIQUE(user_id, skill_id)
 );

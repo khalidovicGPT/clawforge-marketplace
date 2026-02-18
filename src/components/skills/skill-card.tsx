@@ -41,7 +41,7 @@ function formatPrice(price: number | null | undefined, currency = 'EUR'): string
     style: 'currency',
     currency,
     minimumFractionDigits: 0,
-  }).format(price / 100);
+  }).format(price / 100) + ' TTC';
 }
 
 export function SkillCard({ skill, creatorName }: SkillCardProps) {

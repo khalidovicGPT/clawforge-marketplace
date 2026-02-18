@@ -134,6 +134,7 @@ export function SuccessContent() {
             <p>✓ Le skill est aussi disponible dans votre <Link href="/dashboard" className="text-blue-600 hover:underline">dashboard</Link></p>
             <p>✓ Mises à jour gratuites à vie</p>
             <p>✓ Support créateur inclus</p>
+            {!isFree && <p className="text-xs text-gray-400">Le prix payé inclut toutes les taxes applicables (TTC).</p>}
           </div>
         </div>
 

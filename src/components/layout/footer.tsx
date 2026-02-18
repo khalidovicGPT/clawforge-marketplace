@@ -116,7 +116,13 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-8 flex flex-col items-center justify-between border-t pt-8 md:flex-row">
+        <div className="mt-8 border-t pt-6">
+          <p className="text-xs text-gray-400">
+            Politique de prix : Tous les prix affichés sur ClawForge sont TTC (Toutes Taxes Comprises). La TVA est incluse dans le prix affiché. Les créateurs sont responsables de leur propre déclaration de TVA.
+          </p>
+        </div>
+
+        <div className="mt-4 flex flex-col items-center justify-between border-t pt-8 md:flex-row">
           <p className="text-sm text-gray-500">
             © {new Date().getFullYear()} ClawForge (ESK CONSEIL). Tous droits réservés.
           </p>

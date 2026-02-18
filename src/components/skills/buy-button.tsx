@@ -39,13 +39,13 @@ export function BuyButton({ skillId, skillSlug, price, currency }: {
     setLoading(false);
   };
 
-  const priceText = price === 0 
-    ? 'Gratuit' 
+  const priceText = price === 0
+    ? 'Gratuit'
     : new Intl.NumberFormat('fr-FR', {
         style: 'currency',
         currency: currency || 'EUR',
         minimumFractionDigits: 0,
-      }).format(price / 100);
+      }).format(price / 100) + ' TTC';
 
   return (
     <form onSubmit={onSubmit} className="mt-6">
@@ -56,6 +56,11 @@ export function BuyButton({ skillId, skillSlug, price, currency }: {
       >
         {loading ? 'Redirection...' : price === 0 ? 'Télécharger gratuitement' : `Acheter pour ${priceText}`}
       </button>
+      {price > 0 && (
+        <p className="mt-2 text-center text-xs text-gray-500">
+          Le prix inclut toutes les taxes applicables
+        </p>
+      )}
     </form>
   );
 }
