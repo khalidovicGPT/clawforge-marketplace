@@ -15,11 +15,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const { data: creator } = await supabase
     .from('users')
-    .select('display_name, name')
+    .select('*')
     .eq('id', id)
     .single();
 
-  const name = creator?.display_name || creator?.name || 'Createur';
+  const name = (creator as Record<string, unknown>)?.display_name || (creator as Record<string, unknown>)?.name || 'Createur';
 
   return {
     title: `${name} — Createur ClawForge`,
@@ -31,18 +31,19 @@ export default async function CreatorProfilePage({ params }: PageProps) {
   const { id } = await params;
   const supabase = createServiceClient();
 
-  // Fetch creator profile
-  const { data: creator, error } = await supabase
+  // Fetch creator profile (use select('*') to avoid column name issues)
+  const { data: creatorData, error } = await supabase
     .from('users')
-    .select('id, display_name, name, avatar_url, created_at')
+    .select('*')
     .eq('id', id)
     .single();
 
-  if (error || !creator) {
+  if (error || !creatorData) {
     notFound();
   }
 
-  const creatorName = creator.display_name || creator.name || 'Createur anonyme';
+  const creator = creatorData as Record<string, unknown>;
+  const creatorName = String(creator.display_name || creator.name || creator.email || 'Createur');
 
   // Fetch creator's published skills with purchase counts
   const { data: skills } = await supabase
@@ -84,7 +85,7 @@ export default async function CreatorProfilePage({ params }: PageProps) {
             <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-blue-100 text-4xl">
               {creator.avatar_url ? (
                 <img
-                  src={creator.avatar_url}
+                  src={String(creator.avatar_url)}
                   alt={creatorName}
                   className="h-24 w-24 rounded-full object-cover"
                 />
@@ -96,7 +97,7 @@ export default async function CreatorProfilePage({ params }: PageProps) {
             <div className="text-center sm:text-left">
               <h1 className="text-2xl font-bold text-gray-900">{creatorName}</h1>
               <p className="mt-1 text-sm text-gray-500">
-                Membre depuis {new Date(creator.created_at).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+                Membre depuis {new Date(String(creator.created_at)).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
               </p>
 
               {/* Stats */}
