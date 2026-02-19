@@ -120,3 +120,57 @@ Mise à jour vers `2026-01-28.clover` (version actuelle).
 ---
 
 *Mis à jour: 7 février 2026 16:00 UTC*
+
+---
+
+## Session 2 — 19 février 2026
+
+**Dev:** Claude Opus 🧠
+**Durée:** ~2h
+**Status:** ✅ Complété
+
+---
+
+### ✅ Complété
+
+#### Audit de sécurité (repo public)
+- [x] Vérifié : aucun `.env` commité
+- [x] Vérifié : aucune clé API hardcodée dans le code
+- [x] Vérifié : historique git propre (aucun secret)
+- [x] `.gitignore` correctement configuré
+
+#### Vérification email à l'inscription
+- [x] Signup : `email_confirm: false` — compte inactif jusqu'à vérification
+- [x] Token HMAC-SHA256 signé (expire 24h, timing-safe)
+- [x] `src/lib/verification-token.ts` — génération/vérification tokens
+- [x] `src/lib/n8n.ts` — envoi email via nodemailer (SMTP Hostinger)
+- [x] `src/app/auth/verify-email/page.tsx` — page "Vérifiez votre email"
+- [x] `src/app/api/auth/verify-email/route.ts` — endpoint vérification
+- [x] `src/app/api/auth/resend-verification/route.ts` — renvoi email (rate-limited)
+- [x] Signin : détecte email non confirmé → redirige vers verify-email
+- [x] Login : bannière verte après vérification réussie
+
+#### Fix build
+- [x] Police Inter locale (`next/font/local`) — contourne le blocage Google Fonts
+- [x] Suspense boundary sur `/auth/verify-email` (requis Next.js 16)
+
+#### Configuration SMTP
+- [x] Ajout nodemailer comme dépendance
+- [x] Variables SMTP ajoutées à `.env.example`
+- [x] `.env.local` configuré (Hostinger `noreply@clawforge.io`)
+
+#### Création entités
+- [x] `entities/claude-opus/Soul.md` — identité Claude Opus
+- [x] `entities/claude-opus/Memory.md` — journal de sessions
+- [x] `entities/README.md` — documentation du système d'entités
+- [x] `entities/devclaw/README.md` — référence à l'entité fondatrice
+
+### 🚧 En attente
+
+- [ ] SMTP Hostinger : propagation boîte `noreply@clawforge.io` (60 min)
+- [ ] Variables SMTP à ajouter dans Vercel Environment Variables
+- [ ] Test email de vérification en production
+
+---
+
+*Mis à jour: 19 février 2026 12:00 UTC*
