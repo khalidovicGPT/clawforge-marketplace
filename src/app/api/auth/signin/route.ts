@@ -29,6 +29,15 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Signin error:', error);
+
+      // Supabase returns "Email not confirmed" for unverified accounts
+      if (error.message?.toLowerCase().includes('email not confirmed')) {
+        return NextResponse.json(
+          { error: 'Veuillez vérifier votre email avant de vous connecter. Consultez votre boîte de réception.', code: 'EMAIL_NOT_CONFIRMED' },
+          { status: 403 }
+        );
+      }
+
       return NextResponse.json(
         { error: 'Email ou mot de passe incorrect' },
         { status: 401 }

@@ -12,6 +12,7 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/';
+  const verified = searchParams.get('verified') === 'true';
 
   const [formData, setFormData] = useState({
     email: '',
@@ -52,6 +53,11 @@ function LoginForm() {
       const data = await response.json();
 
       if (!response.ok) {
+        // Redirect to verify-email page if email not confirmed
+        if (data.code === 'EMAIL_NOT_CONFIRMED') {
+          router.push(`/auth/verify-email?email=${encodeURIComponent(formData.email)}`);
+          return;
+        }
         throw new Error(data.error || 'Erreur de connexion');
       }
 
@@ -67,6 +73,12 @@ function LoginForm() {
 
   return (
     <>
+      {verified && (
+        <div className="mt-6 rounded-lg bg-green-50 border border-green-200 p-4 text-sm text-green-700">
+          Votre email a été vérifié avec succès ! Vous pouvez maintenant vous connecter.
+        </div>
+      )}
+
       {error && (
         <div className="mt-6 rounded-lg bg-red-50 p-4 text-sm text-red-600">
           {error}

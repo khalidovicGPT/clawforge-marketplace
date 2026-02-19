@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { authLimiter, checkRateLimit } from '@/lib/rate-limit';
+import { generateVerificationToken } from '@/lib/verification-token';
+import { sendEmail, buildVerificationEmail } from '@/lib/n8n';
 
 // Admin client for auth operations
 const supabaseAdmin = createClient(
@@ -39,11 +41,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create user in Supabase Auth
+    // Create user in Supabase Auth (email NOT confirmed)
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
-      email_confirm: true, // Auto-confirm for beta
+      email_confirm: false,
       user_metadata: {
         display_name: name,
       },
@@ -75,18 +77,27 @@ export async function POST(request: NextRequest) {
 
     if (profileError) {
       console.error('Profile creation error:', profileError);
-      // Don't fail - user can still log in
     }
 
-    // Return success - user will need to sign in
+    // Generate verification token and send email
+    const token = generateVerificationToken(authData.user.id);
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const verificationLink = `${appUrl}/api/auth/verify-email?token=${token}`;
+
+    try {
+      await sendEmail(
+        email,
+        'Activez votre compte ClawForge',
+        buildVerificationEmail(name, verificationLink),
+      );
+    } catch (emailError) {
+      console.error('Failed to send verification email:', emailError);
+      // User is created — they can request a resend later
+    }
+
     return NextResponse.json({
       success: true,
-      message: 'Compte créé avec succès',
-      user: {
-        id: authData.user.id,
-        email: authData.user.email,
-        name: name,
-      },
+      message: 'Un email de vérification a été envoyé. Vérifiez votre boîte de réception.',
     });
   } catch (error) {
     console.error('Signup error:', error);
