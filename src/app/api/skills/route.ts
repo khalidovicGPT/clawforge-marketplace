@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
         *,
         creator:users!skills_creator_id_fkey(id, name, avatar_url)
       `, { count: 'exact' })
-      .eq('status', 'published');
+      .in('status', ['published', 'pending_payment_setup']);
 
     // Apply filters
     if (params.category) {

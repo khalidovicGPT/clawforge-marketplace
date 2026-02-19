@@ -3,17 +3,18 @@ import { createServiceClient } from '@/lib/supabase/service';
 import { ensureUserProfile } from '@/lib/ensure-profile';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { Download, Star, Package, User, CreditCard, Plus, Clock, CheckCircle, XCircle, Upload, ShoppingCart, FileDown } from 'lucide-react';
+import { Download, Star, Package, User, CreditCard, Plus, Clock, CheckCircle, XCircle, Upload, ShoppingCart, FileDown, AlertTriangle, Eye, Heart } from 'lucide-react';
 import { StarRating } from '@/components/skills/star-rating';
 import { SkillActions } from '@/components/dashboard/skill-actions';
 import { SKILL_CATEGORIES, CERTIFICATION_BADGES } from '@/types/database';
 
 const STATUS_CONFIG = {
   pending: { label: 'En attente', icon: Clock, color: 'text-amber-600 bg-amber-100' },
-  approved: { label: 'Approuvé', icon: CheckCircle, color: 'text-green-600 bg-green-100' },
-  published: { label: 'Publié', icon: CheckCircle, color: 'text-green-600 bg-green-100' },
-  certified: { label: 'Certifié', icon: CheckCircle, color: 'text-blue-600 bg-blue-100' },
-  rejected: { label: 'Refusé', icon: XCircle, color: 'text-red-600 bg-red-100' },
+  approved: { label: 'Approuve', icon: CheckCircle, color: 'text-green-600 bg-green-100' },
+  published: { label: 'Publie', icon: CheckCircle, color: 'text-green-600 bg-green-100' },
+  pending_payment_setup: { label: 'Paiement non configure', icon: AlertTriangle, color: 'text-amber-700 bg-amber-100' },
+  certified: { label: 'Certifie', icon: CheckCircle, color: 'text-blue-600 bg-blue-100' },
+  rejected: { label: 'Refuse', icon: XCircle, color: 'text-red-600 bg-red-100' },
   draft: { label: 'Brouillon', icon: Clock, color: 'text-gray-600 bg-gray-100' },
 };
 
@@ -213,6 +214,51 @@ export default async function DashboardPage() {
                 </Link>
               </div>
             </div>
+
+            {/* Payment Setup Alert for pending_payment_setup skills */}
+            {mySkills && mySkills.some(s => s.status === 'pending_payment_setup') && (
+              <div className="border-b bg-amber-50 p-6">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
+                    <AlertTriangle className="h-5 w-5 text-amber-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-amber-900">PAIEMENT NON CONFIGURE</h3>
+                    <p className="mt-1 text-sm text-amber-700">
+                      Configurez Stripe pour activer les ventes de vos skills payants.
+                    </p>
+                    <div className="mt-3 space-y-2">
+                      {mySkills.filter(s => s.status === 'pending_payment_setup').map(skill => (
+                        <div key={skill.id} className="flex items-center gap-3 rounded-lg bg-white/70 p-3">
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900">
+                              Skill &quot;{skill.title}&quot; publie
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              <Eye className="mr-1 inline h-3 w-3" />
+                              {skill.download_count || 0} vues
+                              <Heart className="ml-2 mr-1 inline h-3 w-3" />
+                              {skillPurchaseStats[skill.id]?.count || 0} favoris
+                            </p>
+                          </div>
+                          <span className="rounded-full bg-amber-200 px-2 py-0.5 text-xs font-medium text-amber-800">
+                            Ventes desactivees
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <Link
+                      href="/dashboard/seller"
+                      className="mt-4 inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
+                    >
+                      <CreditCard className="h-4 w-4" />
+                      Configurer maintenant
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Revenue Breakdown */}
             {totalRevenue > 0 && (

@@ -40,12 +40,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     .from('skills')
     .select('title, description_short, price')
     .eq('slug', slug)
-    .eq('status', 'published')
+    .in('status', ['published', 'pending_payment_setup'])
     .single();
 
   if (!skill) {
     return {
-      title: 'Skill non trouvé | ClawForge',
+      title: 'Skill non trouve | ClawForge',
     };
   }
 
@@ -75,12 +75,14 @@ export default async function SkillDetailPage({ params }: PageProps) {
     .from('skills')
     .select('*, purchases(count)')
     .eq('slug', slug)
-    .eq('status', 'published')
+    .in('status', ['published', 'pending_payment_setup'])
     .single();
 
   if (error || !skill) {
     notFound();
   }
+
+  const isPendingPaymentSetup = skill.status === 'pending_payment_setup';
 
   // Fetch reviews for this skill
   const { data: reviews } = await supabase
@@ -121,6 +123,11 @@ export default async function SkillDetailPage({ params }: PageProps) {
                 <span className="text-2xl" title={certification.label}>
                   {certification.emoji}
                 </span>
+                {isPendingPaymentSetup && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">
+                    Paiement non configure
+                  </span>
+                )}
               </div>
               <p className="mt-1 text-gray-600">{skill.category}</p>
               <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-gray-500">
@@ -250,6 +257,7 @@ export default async function SkillDetailPage({ params }: PageProps) {
               skillSlug={skill.slug}
               price={skill.price}
               currency={'EUR'}
+              pendingPaymentSetup={isPendingPaymentSetup}
             />
 
             <div className="mt-6 space-y-3 text-sm text-gray-600">

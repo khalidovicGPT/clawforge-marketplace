@@ -39,15 +39,23 @@ export async function POST(request: NextRequest) {
     const serviceClient = createServiceClient();
     const { data: skill, error: skillError } = await serviceClient
       .from('skills')
-      .select('id, title, description_short, price, creator_id')
+      .select('id, title, description_short, price, creator_id, status')
       .eq('id', skillId)
-      .eq('status', 'published')
+      .in('status', ['published', 'pending_payment_setup'])
       .single();
 
     if (skillError || !skill) {
       return NextResponse.json(
         { error: 'Skill non trouvé' },
         { status: 404 }
+      );
+    }
+
+    // Block purchase if creator hasn't configured Stripe yet
+    if (skill.status === 'pending_payment_setup') {
+      return NextResponse.json(
+        { error: 'Ce skill n\'est pas encore disponible à la vente. Le créateur n\'a pas configuré ses paiements.' },
+        { status: 403 }
       );
     }
 
