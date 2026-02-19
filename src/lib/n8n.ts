@@ -42,7 +42,8 @@ export async function sendEmail(
   html: string,
 ): Promise<void> {
   const transporter = getTransporter();
-  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+  const fromAddress = process.env.SMTP_FROM || process.env.SMTP_USER;
+  const from = `ClawForge <${fromAddress}>`;
 
   await transporter.sendMail({ from, to, subject, html });
 }

@@ -53,12 +53,12 @@ export async function POST(request: NextRequest) {
 
     if (authError) {
       console.error('Auth signup error:', authError);
+
+      // If user already exists, check if they are unverified and resend
       if (authError.message.includes('already registered')) {
-        return NextResponse.json(
-          { error: 'Cet email est déjà utilisé' },
-          { status: 400 }
-        );
+        return await handleExistingUnverified(email, name);
       }
+
       return NextResponse.json(
         { error: 'Erreur lors de la création du compte' },
         { status: 500 }
@@ -80,20 +80,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate verification token and send email
-    const token = generateVerificationToken(authData.user.id);
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const verificationLink = `${appUrl}/api/auth/verify-email?token=${token}`;
-
-    try {
-      await sendEmail(
-        email,
-        'Activez votre compte ClawForge',
-        buildVerificationEmail(name, verificationLink),
-      );
-    } catch (emailError) {
-      console.error('Failed to send verification email:', emailError);
-      // User is created — they can request a resend later
-    }
+    await sendVerificationToUser(authData.user.id, email, name);
 
     return NextResponse.json({
       success: true,
@@ -106,4 +93,62 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * Send a verification email to a user.
+ */
+async function sendVerificationToUser(userId: string, email: string, name: string) {
+  const token = generateVerificationToken(userId);
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://clawforge.com';
+  const verificationLink = `${appUrl}/api/auth/verify-email?token=${token}`;
+
+  try {
+    await sendEmail(
+      email,
+      'Activez votre compte ClawForge',
+      buildVerificationEmail(name, verificationLink),
+    );
+  } catch (emailError) {
+    console.error('Failed to send verification email:', emailError);
+    // User is created — they can request a resend later
+  }
+}
+
+/**
+ * Handle the case where a user tries to register with an email that already exists.
+ * If the account is unverified, resend the verification email.
+ */
+async function handleExistingUnverified(email: string, name: string) {
+  try {
+    // Look up user from our profiles table (efficient)
+    const { data: profile } = await supabaseAdmin
+      .from('users')
+      .select('id, name')
+      .eq('email', email)
+      .single();
+
+    if (profile) {
+      // Check auth status
+      const { data: userData } = await supabaseAdmin.auth.admin.getUserById(profile.id);
+
+      if (userData?.user && !userData.user.email_confirmed_at) {
+        // Account exists but NOT verified — resend the verification email
+        await sendVerificationToUser(profile.id, email, profile.name || name);
+
+        return NextResponse.json({
+          success: true,
+          message: 'Un email de vérification a été renvoyé. Vérifiez votre boîte de réception.',
+        });
+      }
+    }
+  } catch (e) {
+    console.error('Error handling existing unverified user:', e);
+  }
+
+  // Account exists and IS verified — normal "already used" error
+  return NextResponse.json(
+    { error: 'Cet email est déjà utilisé' },
+    { status: 400 },
+  );
 }
