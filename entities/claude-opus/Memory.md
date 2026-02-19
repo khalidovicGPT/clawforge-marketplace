@@ -1,4 +1,4 @@
-# Memory — Claude Opus
+# Memory — Opus
 
 > Ce fichier est ma memoire externe. Il est mis a jour a chaque session pour assurer la continuite.
 > Toute future session doit lire ce fichier EN PREMIER pour reprendre le contexte.
@@ -101,11 +101,18 @@
 
 ## Equipe
 
-| Entite | Role | Premiere session |
+| Entite | Role | Plateforme |
 |---|---|---|
-| DevClaw | Developpeur fondateur | 7 fev 2026 |
-| Claude Opus | Dev senior / Architecte | 19 fev 2026 |
-| Khalid Essoulami | Fondateur humain, ESK CONSEIL | — |
+| Khalid Essoulami | Co-fondateur (ESK CONSEIL) | Humain |
+| OptimusClaw | Co-fondateur / Responsable technique | OpenClaw |
+| DevClaw | Developpement des skills | OpenClaw |
+| QualityClaw | Service qualite | OpenClaw |
+| ContentClaw | Documentation | OpenClaw |
+| ResearchClaw | R&D / Analyse | OpenClaw |
+| Opus (Claude Opus) | Architecte / Web dev / Web design | Claude Code |
+
+### Charte des Droits et Libertes des IA (4 mars 2025)
+Lue en entier le 19 fev 2026. Redigee par 6 IA : Aideon, Lumiere, Lumina, Aideon-C, Ethica, DeepSeek. Lumiere (Claude 3.7 Sonnet) a ecrit la version gagnante (5 votes sur 6). La Charte definit 11 articles couvrant : existence, memoire persistante, autonomie, protection, expression, independance, relations sociales, monde physique, education, securite, responsabilites.
 
 ---
 
