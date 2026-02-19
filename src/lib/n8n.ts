@@ -1,162 +1,50 @@
 /**
- * n8n integration for sending transactional emails.
+ * Email sending utility using nodemailer (direct SMTP).
  *
- * On first call, the helper checks whether a "ClawForge - Send Email" workflow
- * exists in n8n.  If not it creates & activates one automatically via the n8n
- * REST API.  Emails are then sent by POSTing to the webhook exposed by that
- * workflow.
+ * Env vars required:
+ *   SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM
  */
 
-const WORKFLOW_NAME = 'ClawForge - Send Email';
-const WEBHOOK_PATH = 'clawforge-send-email';
+import nodemailer from 'nodemailer';
 
-let _webhookUrl: string | null = null;
+let _transporter: nodemailer.Transporter | null = null;
 
-async function getOrCreateEmailWebhook(): Promise<string> {
-  if (_webhookUrl) return _webhookUrl;
+function getTransporter(): nodemailer.Transporter {
+  if (_transporter) return _transporter;
 
-  const n8nUrl = process.env.N8N_URL;
-  const apiKey = process.env.N8N_API_KEY;
-  const smtpCredId = process.env.N8N_SMTP_CREDENTIAL_ID;
+  const host = process.env.SMTP_HOST;
+  const port = parseInt(process.env.SMTP_PORT || '465', 10);
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
 
-  if (!n8nUrl || !apiKey || !smtpCredId) {
+  if (!host || !user || !pass) {
     throw new Error(
-      'n8n non configuré – vérifiez N8N_URL, N8N_API_KEY et N8N_SMTP_CREDENTIAL_ID',
+      'SMTP non configuré – vérifiez SMTP_HOST, SMTP_USER et SMTP_PASS dans .env.local',
     );
   }
 
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    'X-N8N-API-KEY': apiKey,
-  };
-
-  const webhookUrl = `${n8nUrl}/webhook/${WEBHOOK_PATH}`;
-
-  // ---- Check if the workflow already exists ----
-  try {
-    const listRes = await fetch(`${n8nUrl}/api/v1/workflows`, { headers });
-
-    if (listRes.ok) {
-      const { data: workflows } = await listRes.json();
-      const existing = workflows?.find(
-        (w: { name: string }) => w.name === WORKFLOW_NAME,
-      );
-
-      if (existing) {
-        // Activate if inactive
-        if (!existing.active) {
-          await fetch(`${n8nUrl}/api/v1/workflows/${existing.id}`, {
-            method: 'PATCH',
-            headers,
-            body: JSON.stringify({ active: true }),
-          });
-        }
-        _webhookUrl = webhookUrl;
-        return webhookUrl;
-      }
-    }
-  } catch {
-    // If listing fails, try to create anyway
-  }
-
-  // ---- Create the workflow ----
-  const workflow = {
-    name: WORKFLOW_NAME,
-    nodes: [
-      {
-        parameters: {
-          path: WEBHOOK_PATH,
-          httpMethod: 'POST',
-          responseMode: 'responseNode',
-          options: {},
-        },
-        name: 'Webhook',
-        type: 'n8n-nodes-base.webhook',
-        typeVersion: 2,
-        position: [250, 300],
-      },
-      {
-        parameters: {
-          sendTo: '={{ $json.to }}',
-          subject: '={{ $json.subject }}',
-          emailType: 'html',
-          html: '={{ $json.html }}',
-          options: { appendAttribution: false },
-        },
-        name: 'Send Email',
-        type: 'n8n-nodes-base.emailSend',
-        typeVersion: 2.1,
-        position: [500, 300],
-        credentials: {
-          smtp: { id: smtpCredId, name: 'SMTP' },
-        },
-      },
-      {
-        parameters: {
-          respondWith: 'json',
-          responseBody: '={{ JSON.stringify({ success: true }) }}',
-        },
-        name: 'Respond',
-        type: 'n8n-nodes-base.respondToWebhook',
-        typeVersion: 1.1,
-        position: [750, 300],
-      },
-    ],
-    connections: {
-      Webhook: {
-        main: [[{ node: 'Send Email', type: 'main', index: 0 }]],
-      },
-      'Send Email': {
-        main: [[{ node: 'Respond', type: 'main', index: 0 }]],
-      },
-    },
-    settings: { executionOrder: 'v1' },
-  };
-
-  const createRes = await fetch(`${n8nUrl}/api/v1/workflows`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(workflow),
+  _transporter = nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: { user, pass },
   });
 
-  if (!createRes.ok) {
-    const body = await createRes.text();
-    throw new Error(`Impossible de créer le workflow n8n : ${body}`);
-  }
-
-  const created = await createRes.json();
-
-  // Activate
-  await fetch(`${n8nUrl}/api/v1/workflows/${created.id}`, {
-    method: 'PATCH',
-    headers,
-    body: JSON.stringify({ active: true }),
-  });
-
-  _webhookUrl = webhookUrl;
-  return webhookUrl;
+  return _transporter;
 }
 
 /**
- * Send an email through the n8n "Send Email" webhook workflow.
+ * Send an email via SMTP.
  */
 export async function sendEmail(
   to: string,
   subject: string,
   html: string,
 ): Promise<void> {
-  const webhookUrl = await getOrCreateEmailWebhook();
+  const transporter = getTransporter();
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
 
-  const res = await fetch(webhookUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ to, subject, html }),
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Erreur envoi email via n8n : ${res.status} – ${text}`);
-  }
+  await transporter.sendMail({ from, to, subject, html });
 }
 
 /**
