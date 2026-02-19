@@ -8,7 +8,6 @@ export default function RegisterPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -50,11 +49,8 @@ export default function RegisterPage() {
         throw new Error(data.error || 'Erreur lors de l\'inscription');
       }
 
-      setSuccess(true);
-      // Redirect to login after 2 seconds
-      setTimeout(() => {
-        router.push('/login');
-      }, 2000);
+      // Redirect to the "check your email" page
+      router.push(`/auth/verify-email?email=${encodeURIComponent(formData.email)}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue');
     } finally {
@@ -62,23 +58,11 @@ export default function RegisterPage() {
     }
   };
 
-  if (success) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-        <div className="max-w-md w-full text-center">
-          <div className="text-5xl mb-4">✅</div>
-          <h1 className="text-2xl font-bold text-gray-900">Compte créé !</h1>
-          <p className="mt-2 text-gray-600">Redirection vers la connexion...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <span className="text-4xl">🦾</span>
+          <span className="text-4xl">&#129470;</span>
           <h1 className="mt-4 text-2xl font-bold text-gray-900">Créer un compte</h1>
           <p className="mt-1 text-gray-600">Rejoignez ClawForge</p>
         </div>
