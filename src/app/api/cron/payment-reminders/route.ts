@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
       configure_url: string;
     }> = [];
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://clawforge.com';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://clawforge.io';
 
     for (const skill of pendingSkills) {
       const publishedAt = skill.published_at ? new Date(skill.published_at) : null;

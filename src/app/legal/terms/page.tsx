@@ -17,7 +17,7 @@ export default function TermsPage() {
           <p>
             <strong>ESK CONSEIL</strong><br />
             Numéro de TVA : FR45850850934<br />
-            Email : contact@clawforge.com
+            Email : contact@clawforge.io
           </p>
 
           <h2>2. Objet</h2>
@@ -121,7 +121,7 @@ export default function TermsPage() {
 
           <hr />
           <p className="text-sm text-gray-500">
-            Pour toute question, contactez-nous : contact@clawforge.com
+            Pour toute question, contactez-nous : contact@clawforge.io
           </p>
         </article>
       </div>

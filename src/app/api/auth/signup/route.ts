@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
  */
 async function sendVerificationToUser(userId: string, email: string, name: string) {
   const token = generateVerificationToken(userId);
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://clawforge.com';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://clawforge.io';
   const verificationLink = `${appUrl}/api/auth/verify-email?token=${token}`;
 
   try {

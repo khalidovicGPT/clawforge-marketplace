@@ -374,7 +374,7 @@ export default function NewSkillPage() {
                 placeholder="email-assistant"
               />
               <p className="mt-1 text-xs text-gray-500">
-                URL: clawforge.com/skills/{formData.slug || 'mon-skill'}
+                URL: clawforge.io/skills/{formData.slug || 'mon-skill'}
               </p>
             </div>
 

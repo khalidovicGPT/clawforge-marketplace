@@ -51,8 +51,8 @@ const USER_FAQ: FAQItem[] = [
         </p>
         <p className="mt-2">
           Cependant, si un skill ne fonctionne pas comme décrit, contactez-nous à{' '}
-          <a href="mailto:support@clawforge.com" className="text-blue-600 hover:underline">
-            support@clawforge.com
+          <a href="mailto:support@clawforge.io" className="text-blue-600 hover:underline">
+            support@clawforge.io
           </a>
           . Nous étudierons votre demande au cas par cas.
         </p>

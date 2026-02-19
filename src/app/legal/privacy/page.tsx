@@ -17,7 +17,7 @@ export default function PrivacyPage() {
           <p>
             <strong>ESK CONSEIL</strong><br />
             Numéro de TVA : FR45850850934<br />
-            DPO : privacy@clawforge.com
+            DPO : privacy@clawforge.io
           </p>
 
           <h2>2. Données collectées</h2>
@@ -93,7 +93,7 @@ export default function PrivacyPage() {
             <li><strong>Droit de limitation</strong> : restreindre le traitement</li>
           </ul>
           <p>
-            Pour exercer vos droits, contactez notre DPO : <strong>privacy@clawforge.com</strong>
+            Pour exercer vos droits, contactez notre DPO : <strong>privacy@clawforge.io</strong>
           </p>
 
           <h2>8. Cookies</h2>
@@ -139,7 +139,7 @@ export default function PrivacyPage() {
 
           <hr />
           <p className="text-sm text-gray-500">
-            Contact DPO : privacy@clawforge.com
+            Contact DPO : privacy@clawforge.io
           </p>
         </article>
       </div>
