@@ -48,10 +48,10 @@ export default function ContactPage() {
                 <div>
                   <h3 className="font-semibold text-gray-900">Email</h3>
                   <a 
-                    href="mailto:contact@clawforge.com"
+                    href="mailto:contact@clawforge.io"
                     className="text-blue-600 hover:underline"
                   >
-                    contact@clawforge.com
+                    contact@clawforge.io
                   </a>
                 </div>
               </div>

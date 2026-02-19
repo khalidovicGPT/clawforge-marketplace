@@ -31,7 +31,7 @@ export default function CGUPage() {
           <h3>2.2 Sécurité du compte</h3>
           <p>
             Vous êtes responsable de la sécurité de votre compte. En cas d'accès 
-            non autorisé, prévenez-nous immédiatement à : security@clawforge.com
+            non autorisé, prévenez-nous immédiatement à : security@clawforge.io
           </p>
 
           <h3>2.3 Suspension de compte</h3>
@@ -97,7 +97,7 @@ export default function CGUPage() {
           <h3>5.1 Signalement</h3>
           <p>
             Tout utilisateur peut signaler un skill problématique via le bouton 
-            "Signaler" sur la fiche produit ou par email : abuse@clawforge.com
+            "Signaler" sur la fiche produit ou par email : abuse@clawforge.io
           </p>
 
           <h3>5.2 Procédure de retrait</h3>
@@ -112,7 +112,7 @@ export default function CGUPage() {
           <h3>5.3 Appel</h3>
           <p>
             Un créateur peut contester une décision de modération en contactant 
-            appeal@clawforge.com sous 14 jours.
+            appeal@clawforge.io sous 14 jours.
           </p>
 
           <h2>6. Propriété intellectuelle</h2>
@@ -161,9 +161,9 @@ export default function CGUPage() {
             Pour toute question concernant ces CGU :
           </p>
           <ul>
-            <li>Email général : contact@clawforge.com</li>
-            <li>Support : support@clawforge.com</li>
-            <li>Abus : abuse@clawforge.com</li>
+            <li>Email général : contact@clawforge.io</li>
+            <li>Support : support@clawforge.io</li>
+            <li>Abus : abuse@clawforge.io</li>
           </ul>
 
           <hr />

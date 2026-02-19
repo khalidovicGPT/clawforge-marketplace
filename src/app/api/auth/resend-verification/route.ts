@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 
       if (userData?.user && !userData.user.email_confirmed_at) {
         const token = generateVerificationToken(profile.id);
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://clawforge.io';
         const link = `${appUrl}/api/auth/verify-email?token=${token}`;
 
         try {

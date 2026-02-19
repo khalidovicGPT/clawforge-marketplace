@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   authors: [{ name: 'ClawForge' }, { name: 'ESK CONSEIL' }],
   creator: 'ClawForge',
   publisher: 'ESK CONSEIL',
-  metadataBase: new URL('https://clawforge.com'),
+  metadataBase: new URL('https://clawforge.io'),
   openGraph: {
     title: 'ClawForge - Marketplace Skills OpenClaw',
     description: 'La première marketplace de skills certifiés pour OpenClaw. Découvrez des skills premium pour étendre votre agent IA.',
