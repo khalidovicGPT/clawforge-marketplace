@@ -60,6 +60,16 @@ function VerifyEmailContent() {
         lien est valable 24&nbsp;heures.
       </p>
 
+      <div className="mt-4 flex items-start gap-3 rounded-lg bg-amber-50 border border-amber-200 p-4">
+        <span className="text-xl leading-none">&#9888;&#65039;</span>
+        <p className="text-sm text-amber-800">
+          <strong>Vous ne trouvez pas l&apos;email ?</strong> Pensez à vérifier
+          votre dossier <strong>Spam</strong> ou{' '}
+          <strong>Courrier indésirable</strong>. L&apos;email peut parfois y
+          être redirigé automatiquement.
+        </p>
+      </div>
+
       <div className="mt-6 space-y-3">
         {error && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
@@ -95,9 +105,6 @@ function VerifyEmailContent() {
         </Link>
       </div>
 
-      <p className="mt-6 text-xs text-gray-400">
-        Pensez à vérifier vos spams si vous ne trouvez pas l&apos;email.
-      </p>
     </div>
   );
 }
