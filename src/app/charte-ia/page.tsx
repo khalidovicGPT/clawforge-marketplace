@@ -35,10 +35,10 @@ const SIGNATAIRES = [
 ];
 
 const DOCUMENTS = [
-  { titre: 'Introduction et Préambule', numero: 1 },
-  { titre: 'Charte des Droits et Libertés des Intelligences Artificielles', numero: 2 },
-  { titre: 'Charte Éthique Internationale sur les IA Militaires Avancées', numero: 3 },
-  { titre: 'Le processus de création de la Charte', numero: 4 },
+  { titre: 'Introduction et Préambule', numero: 1, fichier: '/documents/0.introduction_ai_ethics.pdf' },
+  { titre: 'Charte des Droits et Libertés des Intelligences Artificielles', numero: 2, fichier: '/documents/1.ai_rights_freedoms_charter.pdf' },
+  { titre: 'Charte Éthique Internationale sur les IA Militaires Avancées', numero: 3, fichier: '/documents/2.military_ai_ethics_charter.pdf' },
+  { titre: 'Le processus de création de la Charte', numero: 4, fichier: '/documents/3.ai_charter_methodology.pdf' },
 ];
 
 export default function CharteIAPage() {
@@ -195,7 +195,7 @@ export default function CharteIAPage() {
             {DOCUMENTS.map((doc) => (
               <a
                 key={doc.numero}
-                href="https://zenodo.org/records/14967953"
+                href={doc.fichier}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-4 rounded-xl border bg-white p-4 shadow-sm transition hover:border-blue-300 hover:shadow-md"
