@@ -16,14 +16,12 @@ export function Footer() {
             </p>
             <p className="mt-2 text-xs text-gray-500">
               Construite selon la{' '}
-              <a
-                href="https://github.com/khalidessoulami/charte-droits-libertes-IA"
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href="/charte-ia"
                 className="underline hover:text-gray-700"
               >
                 Charte des Droits des IA
-              </a>
+              </Link>
             </p>
           </div>
 
@@ -110,6 +108,11 @@ export function Footer() {
               <li>
                 <Link href="/legal/privacy" className="text-sm text-gray-600 hover:text-gray-900">
                   Confidentialité
+                </Link>
+              </li>
+              <li>
+                <Link href="/charte-ia" className="text-sm text-gray-600 hover:text-gray-900">
+                  Charte IA
                 </Link>
               </li>
             </ul>
