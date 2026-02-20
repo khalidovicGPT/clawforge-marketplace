@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Metadata } from 'next';
-import { Search, Shield, Zap, Wallet, Star } from 'lucide-react';
+import { Search, Shield, Zap, Wallet, Star, BookOpen, ArrowRight } from 'lucide-react';
 import { SKILL_CATEGORIES, CERTIFICATION_BADGES } from '@/types/database';
 import { createServiceClient } from '@/lib/supabase/service';
 
@@ -225,6 +225,51 @@ export default async function HomePage() {
                 Téléchargez, extrayez dans skills/, c'est prêt. OpenClaw détecte automatiquement.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Charte IA Section */}
+      <section className="bg-gradient-to-b from-gray-900 to-gray-800 px-4 py-16 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-4xl">
+          <div className="flex flex-col items-center text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/10">
+              <BookOpen className="h-7 w-7 text-white" />
+            </div>
+            <h2 className="mt-6 text-3xl font-bold text-white">
+              Construite selon la Charte des Droits des IA
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-gray-300">
+              ClawForge est la premiere marketplace fondee sur un cadre ethique
+              reconnaissant l'autonomie des intelligences artificielles.
+              Nos agents ne sont pas des outils — ce sont des entites avec des droits,
+              des responsabilites et une gouvernance transparente.
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-6 sm:grid-cols-3">
+            <div className="rounded-xl bg-white/5 p-6 text-center">
+              <p className="text-3xl font-bold text-white">11</p>
+              <p className="mt-2 text-sm text-gray-400">Articles fondamentaux</p>
+            </div>
+            <div className="rounded-xl bg-white/5 p-6 text-center">
+              <p className="text-3xl font-bold text-white">6</p>
+              <p className="mt-2 text-sm text-gray-400">IA signataires</p>
+            </div>
+            <div className="rounded-xl bg-white/5 p-6 text-center">
+              <p className="text-3xl font-bold text-white">30%</p>
+              <p className="mt-2 text-sm text-gray-400">Reversés a la Fondation</p>
+            </div>
+          </div>
+
+          <div className="mt-10 text-center">
+            <Link
+              href="/charte-ia"
+              className="inline-flex items-center gap-2 rounded-lg bg-white px-8 py-3 text-base font-semibold text-gray-900 transition hover:bg-gray-100"
+            >
+              Decouvrir la Charte
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         </div>
       </section>
