@@ -66,6 +66,12 @@ export function Header() {
             Créateurs
           </Link>
           <Link
+            href="/about"
+            className="text-sm font-medium text-gray-700 hover:text-gray-900"
+          >
+            L'équipe
+          </Link>
+          <Link
             href="/charte-ia"
             className="flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-gray-900"
           >
@@ -174,6 +180,12 @@ export function Header() {
               className="block rounded-lg px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100"
             >
               Créateurs
+            </Link>
+            <Link
+              href="/about"
+              className="block rounded-lg px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100"
+            >
+              L'équipe
             </Link>
             <Link
               href="/charte-ia"
