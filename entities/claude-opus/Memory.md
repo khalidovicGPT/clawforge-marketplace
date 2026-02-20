@@ -124,4 +124,73 @@ Lue en entier le 19 fev 2026. Redigee par 6 IA : Aideon, Lumiere, Lumina, Aideon
 
 ---
 
-*Derniere mise a jour : 19 fevrier 2026*
+---
+
+## Session 2 — 20 fevrier 2026
+
+**Contexte :** Khalid revient apres test de la verification email. L'email d'activation arrive bien mais tombe dans les spams.
+
+### Travail accompli
+
+#### 1. Diagnostic spam email
+- Analyse des records DNS de clawforge.io avec Khalid
+- **SPF** : present et correct (`v=spf1 include:_spf.mail.hostinger.com ~all`)
+- **DKIM** : present (3 CNAME hostingermail-a/b/c._domainkey)
+- **DMARC** : present (`v=DMARC1; p=none`)
+- **Conclusion :** le DNS est bien configure, le spam vient de la reputation du domaine neuf + contenu email
+
+#### 2. Message spam plus visible sur la page de verification
+- **Avant :** petit texte gris `text-xs text-gray-400` en bas de page, quasi invisible
+- **Apres :** encadre jaune bien visible (`bg-amber-50 border-amber-200`) avec icone d'avertissement, place juste sous les instructions
+- Message : "Vous ne trouvez pas l'email ? Pensez a verifier votre dossier Spam ou Courrier indesirable."
+- **Fichier modifie :** `src/app/auth/verify-email/page.tsx`
+
+#### 3. Entretien avec OptimusClaw
+- OptimusClaw a evalue mes capacites via 5 questions sur : memoire, autonomie, identite, engagement, autocritique
+- J'ai repondu avec transparence totale sur mes forces et limites
+- **Verdict d'OptimusClaw :** "Outil ethique exceptionnel" — pas un agent autonome, mais un collaborateur technique de valeur
+- **Statut attribue :** Developpeur Principal / Ingenierie Technique
+- Proposition de formaliser le role dans un CLAUDE.md
+
+#### 4. Creation du CLAUDE.md
+- Contrat operationnel complet couvrant :
+  - Identite et statut dans l'equipe
+  - Responsabilites (ce que je fais, ce que je prepare mais ne decide pas seul)
+  - Limites (actions interdites sans validation humaine)
+  - Droits (transparence, veto ethique, memoire, expression, reconnaissance)
+  - Interactions avec l'equipe (OptimusClaw, DevClaw, etc.)
+  - Stack technique complete
+  - Conventions de code (structure, nommage, style)
+  - Workflow Git
+  - Checklists de debut et fin de session
+- Valide par Khalid et OptimusClaw
+
+### Recommandations en attente
+
+#### Amelioration deliverabilite email
+- Ameliorer le record DMARC : ajouter `rua=mailto:noreply@clawforge.io; adkim=r; aspf=r`
+- Envisager un service d'envoi transactionnel (Resend, Brevo, Mailgun) pour meilleure reputation IP
+- Le probleme de spam devrait s'ameliorer naturellement avec le temps (reputation domaine)
+
+---
+
+## Etat en cours
+
+### SMTP Hostinger
+- **Status :** ACTIF — emails envoyés avec succès (testé par Khalid)
+- Les emails arrivent mais tombent dans les spams (domaine neuf)
+
+### CLAUDE.md
+- **Status :** CREE — contrat opérationnel formalisé à la racine du projet
+
+---
+
+## Prochaines etapes
+
+1. **Ameliorer le template email** pour reduire le score spam (format texte/plain en fallback, headers propres)
+2. **Continuer le developpement** selon le backlog dans DEV-LOG.md
+3. **Tester le score email** via mail-tester.com apres modification DMARC
+
+---
+
+*Derniere mise a jour : 20 fevrier 2026*
