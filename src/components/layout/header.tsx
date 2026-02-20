@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { Menu, X, Search, User, LogOut } from 'lucide-react';
+import { Menu, X, Search, User, LogOut, BookOpen } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
@@ -64,6 +64,13 @@ export function Header() {
             className="text-sm font-medium text-gray-700 hover:text-gray-900"
           >
             Créateurs
+          </Link>
+          <Link
+            href="/charte-ia"
+            className="flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-gray-900"
+          >
+            <BookOpen className="h-4 w-4" />
+            Charte IA
           </Link>
           {user && (
             <Link
@@ -167,6 +174,13 @@ export function Header() {
               className="block rounded-lg px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100"
             >
               Créateurs
+            </Link>
+            <Link
+              href="/charte-ia"
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100"
+            >
+              <BookOpen className="h-4 w-4" />
+              Charte IA
             </Link>
             <hr className="my-2" />
             {user ? (

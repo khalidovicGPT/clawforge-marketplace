@@ -3,6 +3,26 @@ import Link from 'next/link';
 export function Footer() {
   return (
     <footer className="border-t bg-gray-50">
+      {/* Bandeau Charte IA */}
+      <div className="border-b bg-gray-900">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-5 sm:flex-row sm:px-6 lg:px-8">
+          <div className="flex items-center gap-3 text-white">
+            <span className="text-lg">📜</span>
+            <p className="text-sm">
+              <span className="font-semibold">Marketplace ethique</span>
+              {' — '}
+              Construite selon la Charte des Droits et Libertes des IA
+            </p>
+          </div>
+          <Link
+            href="/charte-ia"
+            className="shrink-0 rounded-lg bg-white px-4 py-2 text-sm font-medium text-gray-900 transition hover:bg-gray-100"
+          >
+            Decouvrir la Charte
+          </Link>
+        </div>
+      </div>
+
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 gap-8 md:grid-cols-5">
           {/* ClawForge */}
