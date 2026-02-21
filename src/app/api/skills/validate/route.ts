@@ -25,8 +25,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const mode = (formData.get('mode') as 'web' | 'agent') || 'web';
     const zipBuffer = await file.arrayBuffer();
-    const result = await validateSkillZip(zipBuffer);
+    const result = await validateSkillZip(zipBuffer, { mode });
 
     return NextResponse.json({
       valid: result.valid,

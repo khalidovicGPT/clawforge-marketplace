@@ -12,36 +12,40 @@ import { validateSkillZip, type ValidationResult } from '@/lib/skill-validator';
 
 // Structure d'un skill valide pour l'affichage
 const SKILL_STRUCTURE = [
-  { name: 'SKILL.md', required: true, desc: 'Metadonnees du skill (frontmatter YAML)' },
-  { name: 'README.md', required: true, desc: 'Documentation utilisateur' },
+  { name: 'SKILL.md', required: 'agent', desc: 'Metadonnees du skill (obligatoire via API agent, optionnel via interface)' },
+  { name: 'README.md', required: false, desc: 'Documentation utilisateur (recommande)' },
   { name: 'scripts/', required: false, desc: 'Scripts executables (.py, .sh, .js)' },
   { name: 'references/', required: false, desc: 'References externes (.md)' },
   { name: 'assets/', required: false, desc: 'Ressources (images, fonts, etc.)' },
   { name: 'config/', required: false, desc: 'Fichiers de configuration (.yaml, .json)' },
 ];
 
-// Champs SKILL.md
+// Champs SKILL.md ('agent' = requis via API agent, false = optionnel)
 const SKILL_MD_FIELDS = [
-  { name: 'name', required: true, desc: 'Identifiant unique du skill (kebab-case)', example: 'email-assistant' },
-  { name: 'version', required: true, desc: 'Version semver', example: '1.0.0' },
-  { name: 'description', required: true, desc: 'Description courte (max 200 car.)', example: 'Automatise l\'envoi d\'emails' },
-  { name: 'author', required: false, desc: 'Nom de l\'auteur', example: 'Votre Nom' },
-  { name: 'license', required: false, desc: 'Licence du skill', example: 'MIT' },
-  { name: 'homepage', required: false, desc: 'URL du repository', example: 'https://github.com/...' },
-  { name: 'tested_on', required: false, desc: 'Plateformes testees', example: '(voir template)' },
-  { name: 'metadata.openclaw', required: false, desc: 'Config specifique OpenClaw', example: '(voir template)' },
+  { name: 'name', required: 'agent' as const, desc: 'Identifiant unique du skill (kebab-case)', example: 'email-assistant' },
+  { name: 'version', required: 'agent' as const, desc: 'Version semver', example: '1.0.0' },
+  { name: 'description', required: 'agent' as const, desc: 'Description courte (max 200 car.)', example: 'Automatise l\'envoi d\'emails' },
+  { name: 'author', required: false as const, desc: 'Nom de l\'auteur', example: 'Votre Nom' },
+  { name: 'license', required: false as const, desc: 'Licence du skill', example: 'MIT' },
+  { name: 'homepage', required: false as const, desc: 'URL du repository', example: 'https://github.com/...' },
+  { name: 'tested_on', required: false as const, desc: 'Plateformes testees', example: '(voir template)' },
+  { name: 'metadata.openclaw', required: false as const, desc: 'Config specifique OpenClaw', example: '(voir template)' },
 ];
 
-// Checks de validation
-const VALIDATION_CHECKS = [
-  { check: 'Structure', desc: 'SKILL.md present a la racine du ZIP', icon: FolderTree },
-  { check: 'YAML valide', desc: 'Frontmatter SKILL.md parseable', icon: Code },
-  { check: 'Champs obligatoires', desc: 'name, version, description presents', icon: FileText },
-  { check: 'Version semver', desc: 'Format 1.0.0 respecte', icon: Package },
-  { check: 'Taille max', desc: 'ZIP < 50 Mo, decomprese < 200 Mo', icon: Package },
+// Checks de validation — toujours appliques (les deux modes)
+const VALIDATION_CHECKS_ALWAYS = [
+  { check: 'Taille max', desc: 'ZIP < 50 Mo, decompresse < 200 Mo', icon: Package },
   { check: 'Pas de binaires suspects', desc: 'Pas de .exe, .dll, .bat, etc.', icon: Shield },
   { check: 'Pas de secrets', desc: 'Pas de tokens/API keys dans le code', icon: Shield },
   { check: 'Pas de fichiers interdits', desc: 'Pas de .git/, .env, node_modules/', icon: Shield },
+];
+
+// Checks supplementaires en mode agent
+const VALIDATION_CHECKS_AGENT = [
+  { check: 'SKILL.md present', desc: 'Fichier SKILL.md a la racine du ZIP', icon: FolderTree },
+  { check: 'YAML valide', desc: 'Frontmatter SKILL.md parseable', icon: Code },
+  { check: 'Champs obligatoires', desc: 'name, version, description presents', icon: FileText },
+  { check: 'Version semver', desc: 'Format 1.0.0 respecte', icon: Package },
 ];
 
 // FAQ
@@ -92,6 +96,7 @@ function ZipValidator() {
   const [result, setResult] = useState<ValidationResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [mode, setMode] = useState<'web' | 'agent'>('web');
 
   const handleValidate = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -103,7 +108,7 @@ function ZipValidator() {
 
     try {
       const buffer = await file.arrayBuffer();
-      const validationResult = await validateSkillZip(buffer);
+      const validationResult = await validateSkillZip(buffer, { mode });
       setResult(validationResult);
     } catch {
       setResult({
@@ -125,6 +130,34 @@ function ZipValidator() {
         <h3 className="mt-3 text-lg font-semibold text-gray-900">Verificateur de skill</h3>
         <p className="mt-1 text-sm text-gray-600">
           Testez votre ZIP avant de le soumettre. La validation se fait entierement dans votre navigateur.
+        </p>
+        {/* Selecteur de mode */}
+        <div className="mt-4 inline-flex rounded-lg border border-gray-300 bg-white p-1">
+          <button
+            onClick={() => setMode('web')}
+            className={`rounded-md px-4 py-1.5 text-sm font-medium transition ${
+              mode === 'web'
+                ? 'bg-gray-900 text-white'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Interface web
+          </button>
+          <button
+            onClick={() => setMode('agent')}
+            className={`rounded-md px-4 py-1.5 text-sm font-medium transition ${
+              mode === 'agent'
+                ? 'bg-gray-900 text-white'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            API Agent
+          </button>
+        </div>
+        <p className="mt-2 text-xs text-gray-500">
+          {mode === 'web'
+            ? 'Mode interface : SKILL.md optionnel, seuls les checks de securite sont bloquants.'
+            : 'Mode agent : SKILL.md obligatoire avec frontmatter YAML valide.'}
         </p>
         <label
           htmlFor="zip-validator"
@@ -284,6 +317,36 @@ export default function CreatorsDocPage() {
       </section>
 
       <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
+        {/* Deux modes de publication */}
+        <div className="mb-12 grid gap-4 sm:grid-cols-2">
+          <div className="rounded-xl border-2 border-blue-200 bg-blue-50/50 p-6">
+            <div className="flex items-center gap-2">
+              <Upload className="h-5 w-5 text-blue-600" />
+              <h3 className="font-semibold text-gray-900">Via l'interface web</h3>
+            </div>
+            <p className="mt-2 text-sm text-gray-600">
+              Remplissez le formulaire, uploadez votre ZIP. Les metadonnees (nom, description, prix) sont saisies directement.
+              <strong className="text-blue-700"> SKILL.md optionnel.</strong>
+            </p>
+            <Link href="/dashboard/new-skill" className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:underline">
+              Soumettre un skill <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+          <div className="rounded-xl border-2 border-yellow-200 bg-yellow-50/50 p-6">
+            <div className="flex items-center gap-2">
+              <Code className="h-5 w-5 text-yellow-600" />
+              <h3 className="font-semibold text-gray-900">Via un agent OpenClaw</h3>
+            </div>
+            <p className="mt-2 text-sm text-gray-600">
+              L'agent publie via l'API. Pas de formulaire : les metadonnees viennent du
+              <strong className="text-yellow-700"> SKILL.md (obligatoire)</strong> dans le ZIP.
+            </p>
+            <span className="mt-3 inline-flex items-center gap-1 text-sm text-gray-400">
+              API disponible prochainement
+            </span>
+          </div>
+        </div>
+
         {/* Navigation rapide */}
         <nav className="mb-12 rounded-xl border bg-gray-50 p-6">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">Sommaire</h2>
@@ -316,12 +379,12 @@ export default function CreatorsDocPage() {
                 <span className="text-gray-500">
                   {i === SKILL_STRUCTURE.length - 1 ? '└──' : '├──'}
                 </span>
-                <span className={item.required ? 'text-green-400' : 'text-gray-400'}>
+                <span className={item.required === 'agent' ? 'text-yellow-400' : 'text-gray-400'}>
                   {item.name}
                 </span>
                 <span className="text-gray-600"># {item.desc}</span>
-                {item.required && (
-                  <span className="rounded bg-green-900/50 px-1.5 text-xs text-green-300">obligatoire</span>
+                {item.required === 'agent' && (
+                  <span className="rounded bg-yellow-900/50 px-1.5 text-xs text-yellow-300">requis via agent</span>
                 )}
               </div>
             ))}
@@ -388,8 +451,8 @@ export default function CreatorsDocPage() {
                       <code className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs text-gray-800">{field.name}</code>
                     </td>
                     <td className="py-3 pr-4">
-                      {field.required ? (
-                        <span className="rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">Oui</span>
+                      {field.required === 'agent' ? (
+                        <span className="rounded bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700">Agent</span>
                       ) : (
                         <span className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-500">Non</span>
                       )}
@@ -422,13 +485,37 @@ export default function CreatorsDocPage() {
           </h2>
           <p className="mt-4 text-gray-600">
             Lors de l'upload, votre ZIP passe par une serie de verifications automatiques.
-            Voici les criteres :
+            Les regles different selon le mode de publication.
           </p>
 
-          <div className="mt-6 grid gap-3">
-            {VALIDATION_CHECKS.map((check, i) => (
+          {/* Checks toujours appliques */}
+          <h3 className="mt-8 text-lg font-semibold text-gray-900">
+            Toujours verifies (interface web + API agent)
+          </h3>
+          <div className="mt-3 grid gap-3">
+            {VALIDATION_CHECKS_ALWAYS.map((check, i) => (
               <div key={i} className="flex items-start gap-4 rounded-lg border border-gray-200 p-4">
                 <check.icon className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
+                <div>
+                  <p className="font-medium text-gray-900">{check.check}</p>
+                  <p className="text-sm text-gray-600">{check.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Checks supplementaires en mode agent */}
+          <h3 className="mt-8 text-lg font-semibold text-gray-900">
+            Supplementaires via API agent
+          </h3>
+          <p className="mt-1 text-sm text-gray-500">
+            Ces checks ne s'appliquent que lors de la publication via un agent OpenClaw.
+            Via l'interface web, les metadonnees sont saisies dans le formulaire.
+          </p>
+          <div className="mt-3 grid gap-3">
+            {VALIDATION_CHECKS_AGENT.map((check, i) => (
+              <div key={i} className="flex items-start gap-4 rounded-lg border border-yellow-200 bg-yellow-50/50 p-4">
+                <check.icon className="mt-0.5 h-5 w-5 flex-shrink-0 text-yellow-600" />
                 <div>
                   <p className="font-medium text-gray-900">{check.check}</p>
                   <p className="text-sm text-gray-600">{check.desc}</p>
