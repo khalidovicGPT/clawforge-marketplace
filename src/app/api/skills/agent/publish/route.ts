@@ -3,6 +3,7 @@ import { authenticateAgentKey } from '@/lib/agent-api-keys';
 import { validateSkillZip } from '@/lib/skill-validator';
 import { agentApiLimiter, checkRateLimit } from '@/lib/rate-limit';
 import { createServiceClient } from '@/lib/supabase/service';
+import { runSkillCertification } from '@/lib/skill-certification';
 
 function slugify(text: string): string {
   return text
@@ -196,13 +197,25 @@ export async function POST(request: NextRequest) {
 
     console.log(`Agent publish - skill created: ${skill.id} by ${auth.creatorId} via key ${auth.keyId}`);
 
-    // 11. Reponse succes
+    // 11. Lancer la certification automatique (Bronze + check Silver)
+    let certResult;
+    try {
+      certResult = await runSkillCertification(skill.id);
+    } catch (e) {
+      console.error('Agent publish - certification error:', e);
+    }
+
+    // 12. Reponse succes
     return NextResponse.json({
       success: true,
       skill_id: skill.id,
-      status: 'pending',
+      status: certResult?.bronze.passed ? 'published' : 'pending',
+      certification: certResult?.certification || 'pending',
+      silver_score: certResult?.silver?.score ?? null,
       url: `https://clawforge-marketplace.vercel.app/skills/${skill.slug}`,
-      message: 'Skill soumis pour validation. Vous serez notifie par email.',
+      message: certResult?.bronze.passed
+        ? 'Skill certifie Bronze et publie automatiquement !'
+        : 'Skill soumis pour validation.',
       metadata: {
         name: meta.name,
         version: meta.version,
