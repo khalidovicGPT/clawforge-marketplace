@@ -212,6 +212,13 @@ export default async function DashboardPage() {
                   <Upload className="h-4 w-4" />
                   Soumettre un skill
                 </Link>
+                <Link
+                  href="/dashboard/agent"
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  <Package className="h-4 w-4" />
+                  API Agent
+                </Link>
               </div>
             </div>
 

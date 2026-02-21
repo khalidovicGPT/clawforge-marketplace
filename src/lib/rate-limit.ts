@@ -37,6 +37,15 @@ export const checkoutLimiter = redis
     })
   : null;
 
+// Agent API: 10 requests per 60 seconds per API key
+export const agentApiLimiter = redis
+  ? new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(10, '60 s'),
+      prefix: 'ratelimit:agent-api',
+    })
+  : null;
+
 /**
  * Check rate limit for a given identifier.
  * Returns a NextResponse with 429 status if rate limited, or null if allowed.

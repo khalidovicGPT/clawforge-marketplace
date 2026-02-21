@@ -89,6 +89,17 @@ export interface SkillTest {
   tested_at: string;
 }
 
+export interface AgentApiKey {
+  id: string;
+  creator_id: string;
+  api_key_hash: string;
+  name: string;
+  permissions: string[];
+  last_used_at: string | null;
+  created_at: string;
+  revoked_at: string | null;
+}
+
 // Skill Categories
 export type SkillCategory =
   | 'productivity'
