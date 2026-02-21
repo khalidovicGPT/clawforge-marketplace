@@ -25,13 +25,13 @@ export async function verifyApiKey(plainKey: string, hash: string): Promise<bool
 }
 
 /**
- * Verifie une cle API et retourne le creator_id associe.
+ * Verifie une cle API et retourne le creator_id associe + son role.
  * Met a jour last_used_at en cas de succes.
  * Retourne null si la cle est invalide ou revoquee.
  */
 export async function authenticateAgentKey(
   apiKey: string,
-): Promise<{ creatorId: string; keyId: string; permissions: string[] } | null> {
+): Promise<{ creatorId: string; keyId: string; permissions: string[]; creatorRole: string | null } | null> {
   if (!apiKey.startsWith(KEY_PREFIX)) {
     return null;
   }
@@ -58,10 +58,18 @@ export async function authenticateAgentKey(
         .update({ last_used_at: new Date().toISOString() })
         .eq('id', key.id);
 
+      // Recuperer le role du createur (meme client service)
+      const { data: user } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', key.creator_id)
+        .single();
+
       return {
         creatorId: key.creator_id,
         keyId: key.id,
         permissions: key.permissions || ['publish'],
+        creatorRole: user?.role || null,
       };
     }
   }

@@ -60,20 +60,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 5. Verifier que le creator est bien createur
-    const supabase = createServiceClient();
-    const { data: creator } = await supabase
-      .from('users')
-      .select('id, role, display_name')
-      .eq('id', auth.creatorId)
-      .single();
-
-    if (!creator || (creator.role !== 'creator' && creator.role !== 'admin')) {
+    // 5. Verifier que le creator est bien createur (role deja recupere par authenticateAgentKey)
+    if (auth.creatorRole !== 'creator' && auth.creatorRole !== 'admin') {
+      console.error(`Agent publish - NOT_A_CREATOR: creatorId=${auth.creatorId}, role=${auth.creatorRole}`);
       return NextResponse.json(
         { success: false, error: 'NOT_A_CREATOR', message: 'Le compte associe n\'est pas un createur' },
         { status: 403 },
       );
     }
+
+    const supabase = createServiceClient();
 
     // 6. Lire le fichier ZIP
     let formData: FormData;
