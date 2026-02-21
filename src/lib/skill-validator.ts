@@ -437,16 +437,14 @@ export async function validateSkillZip(
     }
   }
 
-  // 13. Verifier presence README.md (recommande en mode agent)
-  if (isAgentMode) {
-    const readmePath = rootPath + 'README.md';
-    if (!zip.file(readmePath)) {
-      warnings.push({
-        type: 'warning',
-        code: 'MISSING_README',
-        message: 'README.md recommande mais absent',
-      });
-    }
+  // 13. Verifier presence README.md (recommande dans les deux modes)
+  const readmePath = rootPath + 'README.md';
+  if (!zip.file(readmePath)) {
+    warnings.push({
+      type: 'warning',
+      code: 'MISSING_README',
+      message: 'README.md recommande mais absent',
+    });
   }
 
   return {
