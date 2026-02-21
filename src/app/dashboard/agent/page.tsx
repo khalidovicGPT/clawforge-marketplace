@@ -33,13 +33,28 @@ function formatDate(dateStr: string | null): string {
   });
 }
 
+const STORAGE_KEY = 'clf_agent_api_key';
+
+function saveKeyToStorage(key: string) {
+  try { localStorage.setItem(STORAGE_KEY, key); } catch { /* SSR / perm */ }
+}
+
+function loadKeyFromStorage(): string | null {
+  try { return localStorage.getItem(STORAGE_KEY); } catch { return null; }
+}
+
+function clearKeyFromStorage() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch { /* SSR / perm */ }
+}
+
 export default function AgentDashboardPage() {
   const [isCreator, setIsCreator] = useState<boolean | null>(null);
   const [keys, setKeys] = useState<ApiKeyInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [revoking, setRevoking] = useState<string | null>(null);
-  const [newKey, setNewKey] = useState<string | null>(null);
+  const [plainKey, setPlainKey] = useState<string | null>(null);
+  const [justGenerated, setJustGenerated] = useState(false);
   const [showKey, setShowKey] = useState(false);
   const [copied, setCopied] = useState<'key' | 'prompt' | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -74,8 +89,13 @@ export default function AgentDashboardPage() {
 
       const creator = profile?.role === 'creator' || profile?.role === 'admin';
       setIsCreator(creator);
-      if (creator) fetchKeys();
-      else setLoading(false);
+      if (creator) {
+        const stored = loadKeyFromStorage();
+        if (stored) setPlainKey(stored);
+        fetchKeys();
+      } else {
+        setLoading(false);
+      }
     };
     checkStatus();
   }, [fetchKeys]);
@@ -83,13 +103,15 @@ export default function AgentDashboardPage() {
   const handleGenerate = async () => {
     setGenerating(true);
     setError(null);
-    setNewKey(null);
+    setPlainKey(null);
     try {
       const res = await fetch('/api/agent/keys', { method: 'POST' });
       const data = await res.json();
       if (res.ok) {
-        setNewKey(data.api_key);
+        setPlainKey(data.api_key);
+        setJustGenerated(true);
         setShowKey(true);
+        saveKeyToStorage(data.api_key);
         await fetchKeys();
       } else {
         setError(data.error || 'Erreur lors de la generation');
@@ -111,7 +133,9 @@ export default function AgentDashboardPage() {
       });
       if (res.ok) {
         await fetchKeys();
-        if (newKey) setNewKey(null);
+        setPlainKey(null);
+        setJustGenerated(false);
+        clearKeyFromStorage();
       }
     } catch {
       // Silencieux
@@ -131,9 +155,10 @@ export default function AgentDashboardPage() {
   };
 
   const activeKey = keys.find(k => !k.revoked_at);
-  const displayKey = newKey || (activeKey ? `clf_sk_live_${'•'.repeat(20)}` : null);
+  const hasPlainKey = !!plainKey;
+  const displayKey = plainKey || (activeKey ? `clf_sk_live_${'•'.repeat(20)}` : null);
 
-  const apiKeyDisplay = newKey || (activeKey ? `clf_sk_live_${'x'.repeat(24)}` : '[Cle API a generer]');
+  const apiKeyDisplay = plainKey || '[Collez votre cle API ici]';
 
   const promptTemplate = `J'ai un skill a publier sur ClawForge.
 Voici ma cle API : ${apiKeyDisplay}
@@ -216,9 +241,9 @@ Instructions :
                 {/* Affichage de la cle */}
                 <div className="flex items-center gap-2 rounded-lg border bg-gray-50 p-3">
                   <code className="flex-1 font-mono text-sm text-gray-800">
-                    {showKey && newKey ? newKey : maskKey(displayKey)}
+                    {showKey && hasPlainKey ? plainKey : maskKey(displayKey)}
                   </code>
-                  {newKey && (
+                  {hasPlainKey && (
                     <button
                       onClick={() => setShowKey(!showKey)}
                       className="rounded p-1.5 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
@@ -227,9 +252,9 @@ Instructions :
                       {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   )}
-                  {newKey && (
+                  {hasPlainKey && (
                     <button
-                      onClick={() => copyToClipboard(newKey, 'key')}
+                      onClick={() => copyToClipboard(plainKey!, 'key')}
                       className="rounded p-1.5 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
                       title="Copier"
                     >
@@ -242,12 +267,21 @@ Instructions :
                   )}
                 </div>
 
-                {newKey && (
+                {justGenerated && (
                   <div className="flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
                     <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
                     <span>
-                      <strong>Conservez cette cle !</strong> Elle ne sera plus affichee apres cette session.
-                      Si vous la perdez, generez-en une nouvelle.
+                      <strong>Cle generee avec succes !</strong> Elle est sauvegardee localement dans ce navigateur.
+                      Si vous changez de navigateur, regenerez-en une.
+                    </span>
+                  </div>
+                )}
+
+                {!hasPlainKey && activeKey && (
+                  <div className="flex items-start gap-2 rounded-lg bg-blue-50 p-3 text-sm text-blue-800">
+                    <Key className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                    <span>
+                      Cle non disponible dans ce navigateur. Regenerez-en une pour la voir.
                     </span>
                   </div>
                 )}
@@ -326,9 +360,9 @@ Instructions :
                 </button>
               </div>
 
-              {!newKey && activeKey && (
+              {!hasPlainKey && activeKey && (
                 <p className="mt-2 text-xs text-gray-500">
-                  Remplacez la cle masquee par votre cle reelle. Si vous l'avez perdue, regenerez-en une.
+                  Le prompt contient un placeholder. Regenerez votre cle pour obtenir un prompt complet.
                 </p>
               )}
             </div>
