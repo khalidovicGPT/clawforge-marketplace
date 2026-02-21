@@ -153,7 +153,7 @@ export default function NewSkillPage() {
     setValidatingZip(true);
     try {
       const buffer = await selectedFile.arrayBuffer();
-      const result = await validateSkillZip(buffer);
+      const result = await validateSkillZip(buffer, { mode: 'web' });
       setZipValidation(result);
     } catch {
       // Erreur silencieuse, la validation backend prendra le relais

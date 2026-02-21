@@ -84,6 +84,14 @@ export interface ValidationResult {
   };
 }
 
+export interface ValidateOptions {
+  /**
+   * 'web' = upload via interface (SKILL.md optionnel, metadonnees du formulaire)
+   * 'agent' = upload via API agent (SKILL.md obligatoire)
+   */
+  mode: 'web' | 'agent';
+}
+
 /**
  * Extrait le frontmatter YAML d'un fichier SKILL.md
  * Format attendu : --- yaml --- contenu markdown
@@ -122,9 +130,16 @@ function resolveRootPath(zip: JSZip): string {
 
 /**
  * Valide un buffer ZIP contenant un skill ClawForge.
- * Verifie la structure, le contenu SKILL.md, la securite.
+ *
+ * Mode 'web' (defaut) : SKILL.md optionnel, seuls les checks de securite sont bloquants.
+ *   Les metadonnees viennent du formulaire web.
+ * Mode 'agent' : SKILL.md obligatoire avec frontmatter YAML valide.
+ *   Les metadonnees viennent du SKILL.md.
  */
-export async function validateSkillZip(zipBuffer: ArrayBuffer | Buffer): Promise<ValidationResult> {
+export async function validateSkillZip(
+  zipBuffer: ArrayBuffer | Buffer,
+  options: ValidateOptions = { mode: 'web' },
+): Promise<ValidationResult> {
   const errors: ValidationError[] = [];
   const warnings: ValidationWarning[] = [];
   let metadata: SkillMetadata | null = null;
@@ -205,97 +220,146 @@ export async function validateSkillZip(zipBuffer: ArrayBuffer | Buffer): Promise
   // 5. Verifier la presence de SKILL.md
   const skillMdPath = rootPath + 'SKILL.md';
   const skillMdFile = zip.file(skillMdPath);
+  const isAgentMode = options.mode === 'agent';
 
   if (!skillMdFile) {
-    errors.push({
-      type: 'error',
-      code: 'MISSING_SKILL_MD',
-      message: `Fichier SKILL.md obligatoire non trouve a la racine du ZIP${rootPath ? ` (cherche dans ${rootPath})` : ''}`,
-    });
-    return { valid: false, errors, warnings, metadata, stats };
-  }
-
-  // 6. Parser SKILL.md
-  let skillMdContent: string;
-  try {
-    skillMdContent = await skillMdFile.async('string');
-  } catch {
-    errors.push({
-      type: 'error',
-      code: 'SKILL_MD_UNREADABLE',
-      message: 'Impossible de lire SKILL.md',
-    });
-    return { valid: false, errors, warnings, metadata, stats };
-  }
-
-  const frontmatter = extractFrontmatter(skillMdContent);
-  if (!frontmatter) {
-    errors.push({
-      type: 'error',
-      code: 'INVALID_FRONTMATTER',
-      message: 'SKILL.md doit commencer par un bloc YAML (--- ... ---)',
-    });
-    return { valid: false, errors, warnings, metadata, stats };
-  }
-
-  // 7. Parser le YAML
-  let parsedYaml: Record<string, unknown>;
-  try {
-    parsedYaml = parseYaml(frontmatter.yaml) as Record<string, unknown>;
-  } catch (err) {
-    const yamlError = err instanceof Error ? err.message : 'Erreur inconnue';
-    errors.push({
-      type: 'error',
-      code: 'INVALID_YAML',
-      message: `YAML invalide dans SKILL.md : ${yamlError}`,
-      file: 'SKILL.md',
-    });
-    return { valid: false, errors, warnings, metadata, stats };
-  }
-
-  if (!parsedYaml || typeof parsedYaml !== 'object') {
-    errors.push({
-      type: 'error',
-      code: 'INVALID_YAML',
-      message: 'Le YAML de SKILL.md doit etre un objet',
-      file: 'SKILL.md',
-    });
-    return { valid: false, errors, warnings, metadata, stats };
-  }
-
-  // 8. Verifier les champs obligatoires
-  const missingFields = REQUIRED_FIELDS.filter(f => !parsedYaml[f]);
-  if (missingFields.length > 0) {
-    errors.push({
-      type: 'error',
-      code: 'MISSING_REQUIRED_FIELDS',
-      message: `Champs obligatoires manquants dans SKILL.md : ${missingFields.join(', ')}`,
-      file: 'SKILL.md',
+    if (isAgentMode) {
+      // Mode agent : SKILL.md obligatoire (seule source de metadonnees)
+      errors.push({
+        type: 'error',
+        code: 'MISSING_SKILL_MD',
+        message: `Fichier SKILL.md obligatoire non trouve a la racine du ZIP${rootPath ? ` (cherche dans ${rootPath})` : ''}`,
+      });
+      return { valid: false, errors, warnings, metadata, stats };
+    }
+    // Mode web : SKILL.md optionnel, les metadonnees viennent du formulaire
+    warnings.push({
+      type: 'warning',
+      code: 'NO_SKILL_MD',
+      message: 'SKILL.md absent — les metadonnees seront prises depuis le formulaire',
     });
   }
 
-  // 9. Valider le format de version
-  if (parsedYaml.version && !isValidSemver(String(parsedYaml.version))) {
-    errors.push({
-      type: 'error',
-      code: 'INVALID_VERSION',
-      message: `Format de version invalide "${parsedYaml.version}". Utilisez le format semver (ex: 1.0.0)`,
-      file: 'SKILL.md',
-    });
-  }
+  // 6-10. Parser SKILL.md si present
+  if (skillMdFile) {
+    let skillMdContent: string;
+    try {
+      skillMdContent = await skillMdFile.async('string');
+    } catch {
+      if (isAgentMode) {
+        errors.push({
+          type: 'error',
+          code: 'SKILL_MD_UNREADABLE',
+          message: 'Impossible de lire SKILL.md',
+        });
+        return { valid: false, errors, warnings, metadata, stats };
+      }
+      warnings.push({
+        type: 'warning',
+        code: 'SKILL_MD_UNREADABLE',
+        message: 'SKILL.md present mais illisible',
+      });
+      skillMdContent = '';
+    }
 
-  // 10. Construire les metadonnees
-  if (errors.length === 0 || !missingFields.length) {
-    metadata = {
-      name: String(parsedYaml.name || ''),
-      version: String(parsedYaml.version || ''),
-      description: String(parsedYaml.description || ''),
-      author: parsedYaml.author ? String(parsedYaml.author) : undefined,
-      license: parsedYaml.license ? String(parsedYaml.license) : undefined,
-      homepage: parsedYaml.homepage ? String(parsedYaml.homepage) : undefined,
-      tested_on: parsedYaml.tested_on as SkillMetadata['tested_on'],
-      metadata: parsedYaml.metadata as SkillMetadata['metadata'],
-    };
+    if (skillMdContent) {
+      const frontmatter = extractFrontmatter(skillMdContent);
+      if (!frontmatter) {
+        if (isAgentMode) {
+          errors.push({
+            type: 'error',
+            code: 'INVALID_FRONTMATTER',
+            message: 'SKILL.md doit commencer par un bloc YAML (--- ... ---)',
+          });
+        } else {
+          warnings.push({
+            type: 'warning',
+            code: 'INVALID_FRONTMATTER',
+            message: 'SKILL.md sans bloc YAML frontmatter — ignore',
+          });
+        }
+      } else {
+        // Parser le YAML
+        let parsedYaml: Record<string, unknown> | null = null;
+        try {
+          parsedYaml = parseYaml(frontmatter.yaml) as Record<string, unknown>;
+        } catch (err) {
+          const yamlError = err instanceof Error ? err.message : 'Erreur inconnue';
+          if (isAgentMode) {
+            errors.push({
+              type: 'error',
+              code: 'INVALID_YAML',
+              message: `YAML invalide dans SKILL.md : ${yamlError}`,
+              file: 'SKILL.md',
+            });
+          } else {
+            warnings.push({
+              type: 'warning',
+              code: 'INVALID_YAML',
+              message: `YAML invalide dans SKILL.md : ${yamlError}`,
+            });
+          }
+        }
+
+        if (parsedYaml && typeof parsedYaml === 'object') {
+          // Verifier les champs obligatoires (erreur en mode agent, warning en mode web)
+          const missingFields = REQUIRED_FIELDS.filter(f => !parsedYaml![f]);
+          if (missingFields.length > 0) {
+            if (isAgentMode) {
+              errors.push({
+                type: 'error',
+                code: 'MISSING_REQUIRED_FIELDS',
+                message: `Champs obligatoires manquants dans SKILL.md : ${missingFields.join(', ')}`,
+                file: 'SKILL.md',
+              });
+            } else {
+              warnings.push({
+                type: 'warning',
+                code: 'MISSING_REQUIRED_FIELDS',
+                message: `Champs recommandes manquants dans SKILL.md : ${missingFields.join(', ')}`,
+              });
+            }
+          }
+
+          // Valider le format de version
+          if (parsedYaml.version && !isValidSemver(String(parsedYaml.version))) {
+            if (isAgentMode) {
+              errors.push({
+                type: 'error',
+                code: 'INVALID_VERSION',
+                message: `Format de version invalide "${parsedYaml.version}". Utilisez le format semver (ex: 1.0.0)`,
+                file: 'SKILL.md',
+              });
+            } else {
+              warnings.push({
+                type: 'warning',
+                code: 'INVALID_VERSION',
+                message: `Format de version "${parsedYaml.version}" non semver dans SKILL.md`,
+              });
+            }
+          }
+
+          // Construire les metadonnees
+          metadata = {
+            name: String(parsedYaml.name || ''),
+            version: String(parsedYaml.version || ''),
+            description: String(parsedYaml.description || ''),
+            author: parsedYaml.author ? String(parsedYaml.author) : undefined,
+            license: parsedYaml.license ? String(parsedYaml.license) : undefined,
+            homepage: parsedYaml.homepage ? String(parsedYaml.homepage) : undefined,
+            tested_on: parsedYaml.tested_on as SkillMetadata['tested_on'],
+            metadata: parsedYaml.metadata as SkillMetadata['metadata'],
+          };
+        } else if (isAgentMode) {
+          errors.push({
+            type: 'error',
+            code: 'INVALID_YAML',
+            message: 'Le YAML de SKILL.md doit etre un objet',
+            file: 'SKILL.md',
+          });
+        }
+      }
+    }
   }
 
   // 11. Scanner les fichiers pour securite
@@ -361,7 +425,7 @@ export async function validateSkillZip(zipBuffer: ArrayBuffer | Buffer): Promise
     }
   }
 
-  // 12. Coherence nom dossier / name dans SKILL.md
+  // 12. Coherence nom dossier / name dans SKILL.md (si metadata disponible)
   if (metadata?.name && rootPath) {
     const folderName = rootPath.replace(/\/$/, '');
     if (folderName !== metadata.name) {
@@ -373,14 +437,16 @@ export async function validateSkillZip(zipBuffer: ArrayBuffer | Buffer): Promise
     }
   }
 
-  // 13. Verifier presence README.md (recommande)
-  const readmePath = rootPath + 'README.md';
-  if (!zip.file(readmePath)) {
-    warnings.push({
-      type: 'warning',
-      code: 'MISSING_README',
-      message: 'README.md recommande mais absent',
-    });
+  // 13. Verifier presence README.md (recommande en mode agent)
+  if (isAgentMode) {
+    const readmePath = rootPath + 'README.md';
+    if (!zip.file(readmePath)) {
+      warnings.push({
+        type: 'warning',
+        code: 'MISSING_README',
+        message: 'README.md recommande mais absent',
+      });
+    }
   }
 
   return {

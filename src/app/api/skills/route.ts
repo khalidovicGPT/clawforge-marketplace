@@ -233,7 +233,7 @@ export async function POST(request: NextRequest) {
     console.log('Validating skill ZIP structure...');
     try {
       const zipBuffer = await file.arrayBuffer();
-      const validation = await validateSkillZip(zipBuffer);
+      const validation = await validateSkillZip(zipBuffer, { mode: 'web' });
 
       if (!validation.valid) {
         console.log('ZIP validation failed:', validation.errors);
