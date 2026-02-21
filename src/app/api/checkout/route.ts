@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import { ensureUserProfile } from '@/lib/ensure-profile';
+import { generateDownloadToken } from '@/lib/download-tokens';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -91,6 +92,13 @@ export async function POST(request: NextRequest) {
           { error: `Erreur : ${insertError.message}` },
           { status: 500 }
         );
+      }
+
+      // Generer un token de telechargement pour l'agent
+      try {
+        await generateDownloadToken(user.id, skill.id);
+      } catch (e) {
+        console.error('Download token generation error:', e);
       }
 
       return NextResponse.json({ free: true, skillId: skill.id });

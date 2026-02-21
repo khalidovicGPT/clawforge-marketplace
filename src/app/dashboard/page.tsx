@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Download, Star, Package, User, CreditCard, Plus, Clock, CheckCircle, XCircle, Upload, ShoppingCart, FileDown, AlertTriangle, Eye, Heart } from 'lucide-react';
 import { StarRating } from '@/components/skills/star-rating';
 import { SkillActions } from '@/components/dashboard/skill-actions';
+import { AgentInstallLink } from '@/components/dashboard/agent-install-link';
 import { SKILL_CATEGORIES, CERTIFICATION_BADGES } from '@/types/database';
 
 const STATUS_CONFIG = {
@@ -430,23 +431,26 @@ export default async function DashboardPage() {
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-3">
-                      {skill.file_url && (
-                        <a
-                          href={skill.file_url}
-                          download
-                          className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    <div className="flex flex-col items-end gap-2">
+                      <div className="flex items-center gap-3">
+                        {skill.file_url && (
+                          <a
+                            href={skill.file_url}
+                            download
+                            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                          >
+                            <Download className="h-4 w-4" />
+                            Telecharger
+                          </a>
+                        )}
+                        <AgentInstallLink skillId={skill.id} />
+                        <Link
+                          href={`/skills/${skill.slug || skill.id}`}
+                          className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
                         >
-                          <Download className="h-4 w-4" />
-                          Télécharger
-                        </a>
-                      )}
-                      <Link
-                        href={`/skills/${skill.slug || skill.id}`}
-                        className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-                      >
-                        Voir →
-                      </Link>
+                          Voir →
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 );
