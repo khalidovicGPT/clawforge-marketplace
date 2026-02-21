@@ -78,8 +78,6 @@ export async function POST(request: NextRequest) {
         skill_id: skill.id,
         type: 'purchase',
         price_paid: 0,
-        platform_fee: 0,
-        creator_amount: 0,
         currency: 'EUR',
       });
 

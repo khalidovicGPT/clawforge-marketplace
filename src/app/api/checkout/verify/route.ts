@@ -77,8 +77,6 @@ export async function GET(request: NextRequest) {
     // Create purchase if not exists
     if (!existingPurchase) {
       const pricePaid = session.amount_total || 0;
-      const platformFee = Math.round(pricePaid * 0.20);
-      const creatorAmount = pricePaid - platformFee;
 
       const { error: purchaseError } = await serviceClient
         .from('purchases')
@@ -87,8 +85,6 @@ export async function GET(request: NextRequest) {
           skill_id: skillId,
           type: 'purchase',
           price_paid: pricePaid,
-          platform_fee: platformFee,
-          creator_amount: creatorAmount,
           currency: session.currency?.toUpperCase() || 'EUR',
           stripe_checkout_session_id: sessionId,
           stripe_payment_intent_id: session.payment_intent as string,
