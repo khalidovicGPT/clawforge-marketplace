@@ -162,25 +162,26 @@ export async function POST(request: NextRequest) {
       .getPublicUrl(fileName);
 
     // 10. Creer le skill en base
+    const validLicenses = ['MIT', 'Apache-2.0', 'Proprietary'];
+    const license = meta.license && validLicenses.includes(meta.license) ? meta.license : 'MIT';
+
     const { data: skill, error: insertError } = await supabase
       .from('skills')
       .insert({
+        creator_id: auth.creatorId,
+        name: meta.name,
         title: meta.name,
         slug,
         description_short: meta.description.slice(0, 200),
-        description_long: null,
         category: 'other',
         price: null,
-        price_type: 'free',
-        creator_id: auth.creatorId,
-        status: 'pending',
-        certification: 'none',
-        license: (meta.license as 'MIT' | 'Apache-2.0' | 'Proprietary') || 'MIT',
-        support_url: meta.homepage || null,
         file_url: publicUrl,
         file_size: file.size,
+        status: 'pending',
+        certification: 'none',
+        license,
         version: meta.version,
-        tags: null,
+        support_url: meta.homepage || null,
       })
       .select('id, slug')
       .single();
