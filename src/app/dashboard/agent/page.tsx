@@ -133,10 +133,16 @@ export default function AgentDashboardPage() {
   const activeKey = keys.find(k => !k.revoked_at);
   const displayKey = newKey || (activeKey ? `clf_sk_live_${'•'.repeat(20)}` : null);
 
+  const apiKeyDisplay = newKey || (activeKey ? `clf_sk_live_${'x'.repeat(24)}` : '[Cle API a generer]');
+
   const promptTemplate = `J'ai un skill a publier sur ClawForge.
-Voici ma cle API : ${newKey || 'clf_sk_live_xxxxxxxxxxxx'}
-Le skill est dans le dossier : [chemin a completer]
-Peux-tu le publier pour moi ?`;
+Voici ma cle API : ${apiKeyDisplay}
+Le skill est dans le dossier : [chemin vers le dossier du skill]
+Instructions :
+1. Cree un ZIP de ce dossier (avec le dossier racine inclus)
+2. Envoie-le a https://clawforge-marketplace.vercel.app/api/skills/agent/publish
+3. Utilise la cle API dans le header Authorization: Bearer ${apiKeyDisplay}
+4. Retourne-moi l'URL du skill publie`;
 
   if (isCreator === null || loading) {
     return (
@@ -320,7 +326,7 @@ Peux-tu le publier pour moi ?`;
                 </button>
               </div>
 
-              {!newKey && (
+              {!newKey && activeKey && (
                 <p className="mt-2 text-xs text-gray-500">
                   Remplacez la cle masquee par votre cle reelle. Si vous l'avez perdue, regenerez-en une.
                 </p>
