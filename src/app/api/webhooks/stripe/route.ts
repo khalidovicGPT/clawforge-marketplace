@@ -1,5 +1,6 @@
 import { stripe } from '@/lib/stripe';
 import { createClient } from '@supabase/supabase-js';
+import { generateDownloadToken } from '@/lib/download-tokens';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
@@ -70,6 +71,14 @@ export async function POST(request: Request) {
               }, { onConflict: 'user_id,skill_id' });
 
             await supabaseAdmin.rpc('increment_downloads', { skill_uuid: skillId });
+
+            // Generer un token de telechargement pour l'agent
+            try {
+              await generateDownloadToken(user.id, skillId);
+            } catch (e) {
+              console.error('Download token generation error:', e);
+            }
+
             console.log(`Purchase recorded: user=${user.id}, skill=${skillId}`);
           }
         }
