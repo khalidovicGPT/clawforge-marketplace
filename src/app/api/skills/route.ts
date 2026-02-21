@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { SKILL_CATEGORIES, type SkillCategory } from '@/types/database';
 import { skillCreateLimiter, checkRateLimit } from '@/lib/rate-limit';
 import { ensureUserProfile } from '@/lib/ensure-profile';
+import { validateSkillZip } from '@/lib/skill-validator';
 
 const VALID_CATEGORIES = Object.keys(SKILL_CATEGORIES) as SkillCategory[];
 
@@ -225,6 +226,44 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: `Catégorie invalide. Valeurs acceptées : ${VALID_CATEGORIES.join(', ')}` },
         { status: 400 }
+      );
+    }
+
+    // Step 0: Validate ZIP structure (SKILL.md, YAML, securite)
+    console.log('Validating skill ZIP structure...');
+    try {
+      const zipBuffer = await file.arrayBuffer();
+      const validation = await validateSkillZip(zipBuffer);
+
+      if (!validation.valid) {
+        console.log('ZIP validation failed:', validation.errors);
+        return NextResponse.json(
+          {
+            error: 'INVALID_SKILL_STRUCTURE',
+            message: 'Le ZIP ne respecte pas la structure requise',
+            details: {
+              errors: validation.errors,
+              warnings: validation.warnings,
+            },
+          },
+          { status: 400 }
+        );
+      }
+
+      // Signaler les warnings sans bloquer
+      if (validation.warnings.length > 0) {
+        console.log('ZIP validation warnings:', validation.warnings);
+      }
+
+      console.log('ZIP validation passed:', {
+        metadata: validation.metadata?.name,
+        files: validation.stats.fileCount,
+      });
+    } catch (validationError) {
+      console.error('ZIP validation error:', validationError);
+      return NextResponse.json(
+        { error: 'Erreur lors de la validation du ZIP' },
+        { status: 500 }
       );
     }
 

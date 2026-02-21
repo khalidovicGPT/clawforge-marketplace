@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Upload, ArrowLeft, Loader2, CheckCircle, AlertCircle, X } from 'lucide-react';
+import { Upload, ArrowLeft, Loader2, CheckCircle, AlertCircle, X, BookOpen, Download } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { SKILL_CATEGORIES, type SkillCategory } from '@/types/database';
+import { validateSkillZip, type ValidationResult } from '@/lib/skill-validator';
 
 const LICENSES = [
   { value: 'MIT', label: 'MIT' },
@@ -61,6 +62,8 @@ export default function NewSkillPage() {
     tags: [] as string[],
   });
   const [file, setFile] = useState<File | null>(null);
+  const [zipValidation, setZipValidation] = useState<ValidationResult | null>(null);
+  const [validatingZip, setValidatingZip] = useState(false);
 
   // Check if user is creator
   useEffect(() => {
@@ -137,6 +140,26 @@ export default function NewSkillPage() {
       if (prev.tags.length >= MAX_TAGS) return prev;
       return { ...prev, tags: [...prev.tags, tag] };
     });
+  };
+
+  const handleFileChange = async (selectedFile: File | null) => {
+    setFile(selectedFile);
+    setZipValidation(null);
+
+    if (!selectedFile) return;
+    if (!selectedFile.name.endsWith('.zip')) return;
+    if (selectedFile.size > 50 * 1024 * 1024) return;
+
+    setValidatingZip(true);
+    try {
+      const buffer = await selectedFile.arrayBuffer();
+      const result = await validateSkillZip(buffer);
+      setZipValidation(result);
+    } catch {
+      // Erreur silencieuse, la validation backend prendra le relais
+    } finally {
+      setValidatingZip(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -518,6 +541,31 @@ export default function NewSkillPage() {
               </p>
             </div>
 
+            {/* Documentation link */}
+            <div className="flex items-center gap-4 rounded-lg border border-blue-200 bg-blue-50 p-4">
+              <BookOpen className="h-5 w-5 flex-shrink-0 text-blue-600" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-blue-800">
+                  Nouveau sur ClawForge ?
+                </p>
+                <p className="text-sm text-blue-600">
+                  Consultez notre{' '}
+                  <Link href="/docs/creators" className="font-medium underline hover:text-blue-800">
+                    guide de packaging
+                  </Link>
+                  {' '}pour preparer votre skill correctement.
+                </p>
+              </div>
+              <a
+                href="/templates/SKILL.md"
+                download="SKILL.md"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-blue-300 bg-white px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-50"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Template
+              </a>
+            </div>
+
             {/* File upload */}
             <div>
               <label className="block text-sm font-medium text-gray-700">
@@ -526,14 +574,29 @@ export default function NewSkillPage() {
               <div className="mt-1">
                 <label
                   htmlFor="file"
-                  className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-8 transition hover:border-blue-400 hover:bg-blue-50"
+                  className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 transition ${
+                    zipValidation
+                      ? zipValidation.valid
+                        ? 'border-green-300 bg-green-50 hover:border-green-400'
+                        : 'border-red-300 bg-red-50 hover:border-red-400'
+                      : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50'
+                  }`}
                 >
                   {file ? (
                     <div className="text-center">
-                      <CheckCircle className="mx-auto h-10 w-10 text-green-500" />
+                      {validatingZip ? (
+                        <Loader2 className="mx-auto h-10 w-10 animate-spin text-blue-500" />
+                      ) : zipValidation?.valid ? (
+                        <CheckCircle className="mx-auto h-10 w-10 text-green-500" />
+                      ) : zipValidation ? (
+                        <AlertCircle className="mx-auto h-10 w-10 text-red-500" />
+                      ) : (
+                        <CheckCircle className="mx-auto h-10 w-10 text-green-500" />
+                      )}
                       <p className="mt-2 font-medium text-gray-900">{file.name}</p>
                       <p className="text-sm text-gray-500">
                         {(file.size / 1024 / 1024).toFixed(2)} MB
+                        {validatingZip && ' — Validation en cours...'}
                       </p>
                     </div>
                   ) : (
@@ -541,7 +604,7 @@ export default function NewSkillPage() {
                       <Upload className="mx-auto h-10 w-10 text-gray-400" />
                       <p className="mt-2 text-sm text-gray-600">
                         <span className="font-medium text-blue-600">Cliquez pour upload</span>
-                        {' '}ou glissez-déposez
+                        {' '}ou glissez-deposez
                       </p>
                       <p className="text-xs text-gray-500">ZIP uniquement, max 50 MB</p>
                     </div>
@@ -550,11 +613,49 @@ export default function NewSkillPage() {
                     type="file"
                     id="file"
                     accept=".zip"
-                    onChange={(e) => setFile(e.target.files?.[0] || null)}
+                    onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
                     className="sr-only"
                   />
                 </label>
               </div>
+
+              {/* Resultats de validation ZIP */}
+              {zipValidation && !zipValidation.valid && (
+                <div className="mt-3 space-y-2">
+                  {zipValidation.errors.map((err, i) => (
+                    <div key={i} className="flex items-start gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+                      <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                      <span>
+                        <span className="font-mono text-xs text-red-500">[{err.code}]</span>{' '}
+                        {err.message}
+                      </span>
+                    </div>
+                  ))}
+                  <p className="text-xs text-gray-500">
+                    Consultez le{' '}
+                    <Link href="/docs/creators" className="text-blue-600 underline">guide de packaging</Link>
+                    {' '}pour corriger ces erreurs.
+                  </p>
+                </div>
+              )}
+              {zipValidation && zipValidation.valid && zipValidation.warnings.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {zipValidation.warnings.map((warn, i) => (
+                    <div key={i} className="flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-700">
+                      <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                      <span>{warn.message}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {zipValidation?.valid && zipValidation.metadata && (
+                <div className="mt-3 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+                  <p className="font-medium">Structure valide</p>
+                  <p className="text-green-600">
+                    {zipValidation.metadata.name} v{zipValidation.metadata.version} — {zipValidation.stats.fileCount} fichier{zipValidation.stats.fileCount > 1 ? 's' : ''}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Upload progress */}
@@ -575,7 +676,7 @@ export default function NewSkillPage() {
               </Link>
               <button
                 type="submit"
-                disabled={loading || !!nameError}
+                disabled={loading || !!nameError || validatingZip || (zipValidation !== null && !zipValidation.valid)}
                 className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-6 py-2 font-medium text-white hover:bg-gray-800 disabled:opacity-50"
               >
                 {loading ? (
