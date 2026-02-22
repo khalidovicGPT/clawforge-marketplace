@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/server';
 /**
  * GET /api/skills/pending-review
  *
- * Liste les skills en attente de validation Silver/Gold.
+ * Liste les skills en attente de certification (Bronze, Silver, Gold).
  * Accessible par les admins (session) ou les agents (cle API).
  */
 export async function GET(request: NextRequest) {
@@ -47,6 +47,13 @@ export async function GET(request: NextRequest) {
 
     const supabase = createServiceClient();
 
+    // Skills en attente de certification Bronze (status = pending)
+    const { data: pendingBronze } = await supabase
+      .from('skills')
+      .select('id, title, slug, version, creator_id, category, file_url, file_size, certification, created_at, submitted_at')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true });
+
     // Skills en attente Silver
     const { data: silverQueue } = await supabase
       .from('skill_validation_queue')
@@ -83,6 +90,18 @@ export async function GET(request: NextRequest) {
       .limit(10);
 
     return NextResponse.json({
+      bronze_queue: (pendingBronze || []).map(s => ({
+        skill_id: s.id,
+        name: s.title,
+        slug: s.slug,
+        version: s.version,
+        creator_id: s.creator_id,
+        category: s.category,
+        file_url: s.file_url,
+        file_size: s.file_size,
+        certification: s.certification,
+        submitted_at: s.submitted_at || s.created_at,
+      })),
       silver_queue: (silverQueue || []).map(q => {
         const skill = q.skills as unknown as Record<string, unknown> | null;
         return {
