@@ -207,6 +207,43 @@ export async function certifySkill(
 }
 
 /**
+ * Demande des modifications sur un skill (action admin/QualityClaw).
+ * Le skill reste publie mais repasse en attente de corrections.
+ */
+export async function requestSkillChanges(
+  skillId: string,
+  feedback: string,
+  requestedBy: string | null,
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = createServiceClient();
+
+  const { data: skill } = await supabase
+    .from('skills')
+    .select('id, status')
+    .eq('id', skillId)
+    .single();
+
+  if (!skill) return { success: false, error: 'Skill introuvable' };
+
+  await supabase.from('skills').update({
+    status: 'changes_requested',
+    updated_at: new Date().toISOString(),
+  }).eq('id', skillId);
+
+  await supabase
+    .from('skill_validation_queue')
+    .upsert({
+      skill_id: skillId,
+      status: 'changes_requested',
+      rejection_reason: feedback,
+      processed_by: requestedBy,
+      processed_at: new Date().toISOString(),
+    }, { onConflict: 'skill_id' });
+
+  return { success: true };
+}
+
+/**
  * Rejette un skill (action admin/QualityClaw).
  */
 export async function rejectSkill(
