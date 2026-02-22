@@ -351,9 +351,9 @@ export default function AdminSkillsPage() {
                         <p className="truncate text-sm text-gray-500">
                           {category?.label || skill.category} &middot; v{skill.version}
                         </p>
-                        {skill.status === 'rejected' && skill.rejection_reason && (
-                          <p className="mt-1 truncate text-xs text-red-600" title={skill.rejection_reason}>
-                            Motif : {skill.rejection_reason}
+                        {skill.status === 'rejected' && (
+                          <p className="mt-1 text-xs text-red-600" title={skill.rejection_reason || undefined}>
+                            Motif : {skill.rejection_reason || 'Non specifie'}
                           </p>
                         )}
                       </div>
