@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/server';
 /**
  * GET /api/skills/pending-review
  *
- * Liste les skills en attente de validation Silver/Gold.
+ * Liste les skills en attente de certification (Bronze, Silver, Gold).
  * Accessible par les admins (session) ou les agents (cle API).
  */
 export async function GET(request: NextRequest) {
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     // Skills en attente de validation initiale (status 'pending' — pas encore traites)
     const { data: pendingSkills } = await supabase
       .from('skills')
-      .select('id, title, slug, version, creator_id, file_url, submitted_at, created_at')
+      .select('id, title, slug, version, creator_id, category, file_url, file_size, certification, submitted_at, created_at')
       .eq('status', 'pending')
       .order('submitted_at', { ascending: true });
 
@@ -107,7 +107,10 @@ export async function GET(request: NextRequest) {
         slug: s.slug,
         version: s.version,
         creator_id: s.creator_id,
+        category: s.category,
         file_url: s.file_url,
+        file_size: s.file_size,
+        certification: s.certification,
         submitted_at: s.submitted_at || s.created_at,
       })),
       changes_requested: (changesRequested || []).map(s => ({
