@@ -3,6 +3,7 @@ import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { ensureUserProfile } from '@/lib/ensure-profile';
+import { createServiceClient } from '@/lib/supabase/service';
 
 const certifySchema = z.object({
   certification: z.enum(['bronze', 'silver', 'gold', 'rejected']),
@@ -103,6 +104,29 @@ export async function POST(
         { error: 'Erreur lors de la mise a jour', details: updateError.message },
         { status: 500 }
       );
+    }
+
+    // Sauvegarder la raison du refus ou la certification dans skill_validation_queue
+    const serviceClient = createServiceClient();
+    if (isRejected) {
+      await serviceClient
+        .from('skill_validation_queue')
+        .upsert({
+          skill_id: skillId,
+          status: 'rejected',
+          rejection_reason: comment || 'Rejete par un administrateur',
+          processed_by: user.id,
+          processed_at: new Date().toISOString(),
+        }, { onConflict: 'skill_id' });
+    } else {
+      await serviceClient
+        .from('skill_validation_queue')
+        .upsert({
+          skill_id: skillId,
+          status: certification === 'silver' ? 'silver_approved' : certification === 'gold' ? 'gold_eligible' : 'bronze_approved',
+          processed_by: user.id,
+          processed_at: new Date().toISOString(),
+        }, { onConflict: 'skill_id' });
     }
 
     // Log the action
