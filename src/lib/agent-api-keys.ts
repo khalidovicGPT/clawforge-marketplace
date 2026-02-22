@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { createServiceClient } from '@/lib/supabase/service';
 
 const KEY_PREFIX = 'clf_sk_live_';
+const KEY_PREFIX_COMMON = 'clf_';
 const KEY_RANDOM_LENGTH = 24;
 const BCRYPT_ROUNDS = 10;
 
@@ -32,7 +33,7 @@ export async function verifyApiKey(plainKey: string, hash: string): Promise<bool
 export async function authenticateAgentKey(
   apiKey: string,
 ): Promise<{ creatorId: string; keyId: string; permissions: string[]; creatorRole: string | null } | null> {
-  if (!apiKey.startsWith(KEY_PREFIX)) {
+  if (!apiKey.startsWith(KEY_PREFIX_COMMON)) {
     return null;
   }
 
