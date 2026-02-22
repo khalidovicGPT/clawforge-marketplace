@@ -47,6 +47,20 @@ export async function GET(request: NextRequest) {
 
     const supabase = createServiceClient();
 
+    // Skills en attente de validation initiale (status 'pending' — pas encore traites)
+    const { data: pendingSkills } = await supabase
+      .from('skills')
+      .select('id, title, slug, version, creator_id, file_url, submitted_at, created_at')
+      .eq('status', 'pending')
+      .order('submitted_at', { ascending: true });
+
+    // Skills avec modifications demandees
+    const { data: changesRequested } = await supabase
+      .from('skills')
+      .select('id, title, slug, version, creator_id, file_url, updated_at')
+      .eq('status', 'changes_requested')
+      .order('updated_at', { ascending: true });
+
     // Skills en attente Silver
     const { data: silverQueue } = await supabase
       .from('skill_validation_queue')
@@ -61,13 +75,17 @@ export async function GET(request: NextRequest) {
       .eq('status', 'pending_silver_review')
       .order('created_at', { ascending: true });
 
-    // Skills eligibles Gold (Silver + 50 ventes + note > 4.5)
+    // Skills eligibles Gold (Silver + 50 ventes + note > 4.5 + mis a jour dans les 6 derniers mois)
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
     const { data: goldCandidates } = await supabase
       .from('skills')
-      .select('id, title, slug, version, downloads_count, rating_avg, rating_count, certification')
+      .select('id, title, slug, version, downloads_count, rating_avg, rating_count, certification, updated_at')
       .eq('certification', 'silver')
       .gte('downloads_count', 50)
-      .gte('rating_avg', 4.5);
+      .gte('rating_avg', 4.5)
+      .gte('updated_at', sixMonthsAgo.toISOString());
 
     // Skills rejetes recemment
     const { data: rejected } = await supabase
@@ -83,6 +101,23 @@ export async function GET(request: NextRequest) {
       .limit(10);
 
     return NextResponse.json({
+      pending_validation: (pendingSkills || []).map(s => ({
+        skill_id: s.id,
+        name: s.title,
+        slug: s.slug,
+        version: s.version,
+        creator_id: s.creator_id,
+        file_url: s.file_url,
+        submitted_at: s.submitted_at || s.created_at,
+      })),
+      changes_requested: (changesRequested || []).map(s => ({
+        skill_id: s.id,
+        name: s.title,
+        slug: s.slug,
+        version: s.version,
+        creator_id: s.creator_id,
+        updated_at: s.updated_at,
+      })),
       silver_queue: (silverQueue || []).map(q => {
         const skill = q.skills as unknown as Record<string, unknown> | null;
         return {
@@ -101,6 +136,7 @@ export async function GET(request: NextRequest) {
         sales: s.downloads_count,
         rating: s.rating_avg,
         rating_count: s.rating_count,
+        last_updated: s.updated_at,
       })),
       rejected: (rejected || []).map(r => {
         const skill = r.skills as unknown as Record<string, unknown> | null;
