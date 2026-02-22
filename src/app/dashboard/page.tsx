@@ -359,14 +359,14 @@ export default async function DashboardPage() {
                             {' • '}
                             Créé le {new Date(skill.created_at).toLocaleDateString('fr-FR')}
                           </p>
-                          {(skill.status === 'rejected' || skill.status === 'changes_requested') && rejectionReasons[skill.id] && (
+                          {(skill.status === 'rejected' || skill.status === 'changes_requested') && (
                             <div className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
                               <p className="text-xs font-medium text-red-800">
                                 <XCircle className="mr-1 inline h-3 w-3" />
                                 {skill.status === 'rejected' ? 'Raison du refus :' : 'Modifications demandees :'}
                               </p>
                               <p className="mt-0.5 text-xs text-red-700">
-                                {rejectionReasons[skill.id]}
+                                {rejectionReasons[skill.id] || 'Ce skill ne respecte pas les criteres de validation. Veuillez corriger et re-soumettre.'}
                               </p>
                             </div>
                           )}
