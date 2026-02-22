@@ -31,7 +31,7 @@ export async function POST(
     if (authHeader?.startsWith('Bearer ')) {
       const apiKey = authHeader.replace('Bearer ', '').trim();
       const auth = await authenticateAgentKey(apiKey);
-      if (auth && (auth.creatorRole === 'admin' || auth.permissions.includes('skills:certify'))) {
+      if (auth && (auth.creatorRole === 'admin' || auth.permissions.includes('certify') || auth.permissions.includes('review'))) {
         userId = auth.creatorId;
       }
     }
