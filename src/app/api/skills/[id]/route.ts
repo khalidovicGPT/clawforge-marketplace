@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
+import { validateSkillZip } from '@/lib/skill-validator';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -156,6 +157,70 @@ export async function PATCH(
     // --- UPDATE (new version, goes through validation) ---
     if (action === 'update') {
       const { description_short, description_long, category, price, license, support_url, tags, file_url, file_size } = body;
+
+      // Si un nouveau fichier est fourni, valider le ZIP avant d'accepter
+      if (file_url) {
+        let zipBuffer: ArrayBuffer;
+        try {
+          const fileResponse = await fetch(file_url);
+          if (!fileResponse.ok) {
+            return NextResponse.json(
+              { error: `Impossible de telecharger le fichier: HTTP ${fileResponse.status}` },
+              { status: 400 },
+            );
+          }
+          zipBuffer = await fileResponse.arrayBuffer();
+        } catch (e) {
+          return NextResponse.json(
+            { error: `Erreur lors du telechargement du fichier: ${e instanceof Error ? e.message : 'Erreur inconnue'}` },
+            { status: 400 },
+          );
+        }
+
+        const validation = await validateSkillZip(zipBuffer, { mode: 'web' });
+        if (!validation.valid) {
+          return NextResponse.json(
+            {
+              error: 'INVALID_SKILL_STRUCTURE',
+              message: 'Le ZIP ne respecte pas la structure requise',
+              details: {
+                errors: validation.errors,
+                warnings: validation.warnings,
+              },
+            },
+            { status: 400 },
+          );
+        }
+      } else {
+        // Pas de nouveau fichier : valider le ZIP existant du skill
+        const existingFileUrl = skill.file_url;
+        if (existingFileUrl) {
+          let zipBuffer: ArrayBuffer;
+          try {
+            const fileResponse = await fetch(existingFileUrl);
+            if (fileResponse.ok) {
+              zipBuffer = await fileResponse.arrayBuffer();
+              const validation = await validateSkillZip(zipBuffer, { mode: 'web' });
+              if (!validation.valid) {
+                return NextResponse.json(
+                  {
+                    error: 'INVALID_SKILL_STRUCTURE',
+                    message: 'Le fichier ZIP actuel ne respecte pas la structure requise. Veuillez soumettre un nouveau fichier.',
+                    details: {
+                      errors: validation.errors,
+                      warnings: validation.warnings,
+                    },
+                  },
+                  { status: 400 },
+                );
+              }
+            }
+          } catch {
+            // Si le fichier existant est inaccessible, on laisse passer
+            // la certification automatique detectera le probleme
+          }
+        }
+      }
 
       // Increment version: 1.0.0 → 2.0.0, 2.0.0 → 3.0.0, etc.
       const currentMajor = parseInt(skill.version?.split('.')[0] || '1');
