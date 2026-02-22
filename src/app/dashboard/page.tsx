@@ -3,7 +3,7 @@ import { createServiceClient } from '@/lib/supabase/service';
 import { ensureUserProfile } from '@/lib/ensure-profile';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { Download, Star, Package, User, CreditCard, Plus, Clock, CheckCircle, XCircle, Upload, ShoppingCart, FileDown, AlertTriangle, Eye, Heart } from 'lucide-react';
+import { Download, Star, Package, User, CreditCard, Plus, Clock, CheckCircle, XCircle, Upload, ShoppingCart, FileDown, AlertTriangle, Eye, Heart, MessageSquare } from 'lucide-react';
 import { StarRating } from '@/components/skills/star-rating';
 import { SkillActions } from '@/components/dashboard/skill-actions';
 import { AgentInstallLink } from '@/components/dashboard/agent-install-link';
@@ -16,6 +16,7 @@ const STATUS_CONFIG = {
   pending_payment_setup: { label: 'Paiement non configure', icon: AlertTriangle, color: 'text-amber-700 bg-amber-100' },
   certified: { label: 'Certifie', icon: CheckCircle, color: 'text-blue-600 bg-blue-100' },
   rejected: { label: 'Refuse', icon: XCircle, color: 'text-red-600 bg-red-100' },
+  changes_requested: { label: 'Modifications demandees', icon: MessageSquare, color: 'text-orange-600 bg-orange-100' },
   draft: { label: 'Brouillon', icon: Clock, color: 'text-gray-600 bg-gray-100' },
 };
 
@@ -72,6 +73,23 @@ export default async function DashboardPage() {
     .select('*')
     .eq('creator_id', user.id)
     .order('created_at', { ascending: false }) : { data: null };
+
+  // Recuperer les raisons de refus pour les skills rejetes ou avec modifications demandees
+  const rejectedSkillIds = (mySkills || [])
+    .filter(s => s.status === 'rejected' || s.status === 'changes_requested')
+    .map(s => s.id);
+  const rejectionReasons: Record<string, string> = {};
+  if (rejectedSkillIds.length > 0) {
+    const { data: queueEntries } = await serviceClient
+      .from('skill_validation_queue')
+      .select('skill_id, rejection_reason')
+      .in('skill_id', rejectedSkillIds);
+    (queueEntries || []).forEach((q: { skill_id: string; rejection_reason: string | null }) => {
+      if (q.rejection_reason) {
+        rejectionReasons[q.skill_id] = q.rejection_reason;
+      }
+    });
+  }
 
   // Calculate total downloads for creator's skills
   const totalCreatorDownloads = mySkills?.reduce((sum, skill) => sum + (skill.download_count || 0), 0) || 0;
@@ -341,9 +359,20 @@ export default async function DashboardPage() {
                             {' • '}
                             Créé le {new Date(skill.created_at).toLocaleDateString('fr-FR')}
                           </p>
+                          {(skill.status === 'rejected' || skill.status === 'changes_requested') && rejectionReasons[skill.id] && (
+                            <div className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
+                              <p className="text-xs font-medium text-red-800">
+                                <XCircle className="mr-1 inline h-3 w-3" />
+                                {skill.status === 'rejected' ? 'Raison du refus :' : 'Modifications demandees :'}
+                              </p>
+                              <p className="mt-0.5 text-xs text-red-700">
+                                {rejectionReasons[skill.id]}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center gap-3">
                         <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium ${status.color}`}>
                           <StatusIcon className="h-3 w-3" />
