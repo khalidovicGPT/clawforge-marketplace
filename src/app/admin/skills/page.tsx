@@ -40,6 +40,7 @@ interface SkillWithCreatorAndTest {
   created_at: string;
   submitted_at: string | null;
   certified_at: string | null;
+  rejection_reason: string | null;
   creator: {
     id: string;
     name: string | null;
@@ -350,6 +351,11 @@ export default function AdminSkillsPage() {
                         <p className="truncate text-sm text-gray-500">
                           {category?.label || skill.category} &middot; v{skill.version}
                         </p>
+                        {skill.status === 'rejected' && skill.rejection_reason && (
+                          <p className="mt-1 truncate text-xs text-red-600" title={skill.rejection_reason}>
+                            Motif : {skill.rejection_reason}
+                          </p>
+                        )}
                       </div>
                     </div>
 

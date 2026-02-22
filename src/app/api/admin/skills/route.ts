@@ -111,9 +111,27 @@ export async function GET(request: NextRequest) {
     const testsMap: Record<string, any> = {};
     (tests || []).forEach((t: any) => { testsMap[t.skill_id] = t; });
 
+    // Fetch rejection reasons from validation queue
+    const { data: queueEntries } = skillIds.length > 0
+      ? await db
+          .from('skill_validation_queue')
+          .select('skill_id, rejection_reason, status, processed_at')
+          .in('skill_id', skillIds)
+      : { data: [] };
+
+    const queueMap: Record<string, { rejection_reason: string | null; queue_status: string; processed_at: string | null }> = {};
+    (queueEntries || []).forEach((q: any) => {
+      queueMap[q.skill_id] = {
+        rejection_reason: q.rejection_reason,
+        queue_status: q.status,
+        processed_at: q.processed_at,
+      };
+    });
+
     const enriched = (skills || []).map((skill: any) => ({
       ...skill,
       test: testsMap[skill.id] || null,
+      rejection_reason: queueMap[skill.id]?.rejection_reason || null,
     }));
 
     return NextResponse.json({ skills: enriched });
