@@ -1,19 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createServiceClient } from '@/lib/supabase/service';
 import { authLimiter, checkRateLimit } from '@/lib/rate-limit';
 import { generateVerificationToken } from '@/lib/verification-token';
 import { sendEmail, buildVerificationEmail } from '@/lib/n8n';
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  },
-);
 
 /**
  * POST /api/auth/resend-verification
@@ -24,6 +13,7 @@ const supabaseAdmin = createClient(
  */
 export async function POST(request: NextRequest) {
   try {
+    const supabaseAdmin = createServiceClient();
     // Rate limiting (stricter: 3 per 60s)
     const ip = request.headers.get('x-forwarded-for') ?? 'anonymous';
     const rateLimitResponse = await checkRateLimit(authLimiter, `resend:${ip}`);

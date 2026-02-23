@@ -1,23 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createServiceClient } from '@/lib/supabase/service';
 import { authLimiter, checkRateLimit } from '@/lib/rate-limit';
 import { generateVerificationToken } from '@/lib/verification-token';
 import { sendEmail, buildVerificationEmail } from '@/lib/n8n';
 
-// Admin client for auth operations
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  }
-);
-
 export async function POST(request: NextRequest) {
   try {
+    const supabaseAdmin = createServiceClient();
     // Rate limiting
     const ip = request.headers.get('x-forwarded-for') ?? 'anonymous';
     const rateLimitResponse = await checkRateLimit(authLimiter, `signup:${ip}`);
@@ -56,7 +45,7 @@ export async function POST(request: NextRequest) {
 
       // If user already exists, check if they are unverified and resend
       if (authError.message.includes('already registered')) {
-        return await handleExistingUnverified(email, name);
+        return await handleExistingUnverified(supabaseAdmin, email, name);
       }
 
       return NextResponse.json(
@@ -119,7 +108,7 @@ async function sendVerificationToUser(userId: string, email: string, name: strin
  * Handle the case where a user tries to register with an email that already exists.
  * If the account is unverified, resend the verification email.
  */
-async function handleExistingUnverified(email: string, name: string) {
+async function handleExistingUnverified(supabaseAdmin: ReturnType<typeof createServiceClient>, email: string, name: string) {
   try {
     // Look up user from our profiles table (efficient)
     const { data: profile } = await supabaseAdmin

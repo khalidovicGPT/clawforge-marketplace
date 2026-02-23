@@ -1,17 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createServiceClient } from '@/lib/supabase/service';
 import { verifyVerificationToken } from '@/lib/verification-token';
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  },
-);
 
 /**
  * GET /api/auth/verify-email?token=...
@@ -20,6 +9,7 @@ const supabaseAdmin = createClient(
  * and redirects to the login page.
  */
 export async function GET(request: NextRequest) {
+  const supabaseAdmin = createServiceClient();
   const token = request.nextUrl.searchParams.get('token');
   const origin = request.nextUrl.origin;
 
