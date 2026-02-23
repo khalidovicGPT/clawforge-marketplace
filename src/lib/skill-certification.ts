@@ -29,15 +29,24 @@ interface CertificationResult {
 export async function runSkillCertification(skillId: string): Promise<CertificationResult> {
   const supabase = createServiceClient();
 
-  // 1. Creer l'entree dans la queue
-  await supabase
+  // 1. Creer ou mettre a jour l'entree dans la queue
+  const { data: existingEntry } = await supabase
     .from('skill_validation_queue')
-    .upsert({
-      skill_id: skillId,
-      status: 'processing',
-    }, { onConflict: 'skill_id' })
-    .select()
+    .select('id')
+    .eq('skill_id', skillId)
+    .limit(1)
     .single();
+
+  if (existingEntry) {
+    await supabase
+      .from('skill_validation_queue')
+      .update({ status: 'processing', rejection_reason: null })
+      .eq('skill_id', skillId);
+  } else {
+    await supabase
+      .from('skill_validation_queue')
+      .insert({ skill_id: skillId, status: 'processing' });
+  }
 
   // 2. Recuperer le skill et son fichier
   const { data: skill } = await supabase
@@ -142,17 +151,33 @@ async function updateQueue(
   silverCriteria?: Record<string, number> | null,
 ) {
   const supabase = createServiceClient();
-  await supabase
+  const data = {
+    status,
+    bronze_score: bronzeScore,
+    silver_score: silverScore,
+    silver_criteria: silverCriteria ?? null,
+    rejection_reason: rejectionReason,
+    processed_at: new Date().toISOString(),
+  };
+
+  // skill_id n'a pas de contrainte UNIQUE, upsert ne fonctionne pas
+  const { data: existing } = await supabase
     .from('skill_validation_queue')
-    .upsert({
-      skill_id: skillId,
-      status,
-      bronze_score: bronzeScore,
-      silver_score: silverScore,
-      silver_criteria: silverCriteria ?? null,
-      rejection_reason: rejectionReason,
-      processed_at: new Date().toISOString(),
-    }, { onConflict: 'skill_id' });
+    .select('id')
+    .eq('skill_id', skillId)
+    .limit(1)
+    .single();
+
+  if (existing) {
+    await supabase
+      .from('skill_validation_queue')
+      .update(data)
+      .eq('skill_id', skillId);
+  } else {
+    await supabase
+      .from('skill_validation_queue')
+      .insert({ skill_id: skillId, ...data });
+  }
 }
 
 /**
@@ -230,15 +255,30 @@ export async function requestSkillChanges(
     updated_at: new Date().toISOString(),
   }).eq('id', skillId);
 
-  await supabase
+  const queueData = {
+    status: 'changes_requested',
+    rejection_reason: feedback,
+    processed_by: requestedBy,
+    processed_at: new Date().toISOString(),
+  };
+
+  const { data: existingQ } = await supabase
     .from('skill_validation_queue')
-    .upsert({
-      skill_id: skillId,
-      status: 'changes_requested',
-      rejection_reason: feedback,
-      processed_by: requestedBy,
-      processed_at: new Date().toISOString(),
-    }, { onConflict: 'skill_id' });
+    .select('id')
+    .eq('skill_id', skillId)
+    .limit(1)
+    .single();
+
+  if (existingQ) {
+    await supabase
+      .from('skill_validation_queue')
+      .update(queueData)
+      .eq('skill_id', skillId);
+  } else {
+    await supabase
+      .from('skill_validation_queue')
+      .insert({ skill_id: skillId, ...queueData });
+  }
 
   return { success: true };
 }

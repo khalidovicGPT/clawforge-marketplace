@@ -107,26 +107,37 @@ export async function POST(
     }
 
     // Sauvegarder la raison du refus ou la certification dans skill_validation_queue
+    // Note: skill_id n'a pas de contrainte UNIQUE, on fait select+update/insert
     const serviceClient = createServiceClient();
-    if (isRejected) {
-      await serviceClient
-        .from('skill_validation_queue')
-        .upsert({
-          skill_id: skillId,
+    const { data: existingQueue } = await serviceClient
+      .from('skill_validation_queue')
+      .select('id')
+      .eq('skill_id', skillId)
+      .limit(1)
+      .single();
+
+    const queueData = isRejected
+      ? {
           status: 'rejected',
           rejection_reason: comment || 'Rejete par un administrateur',
           processed_by: user.id,
           processed_at: new Date().toISOString(),
-        }, { onConflict: 'skill_id' });
-    } else {
-      await serviceClient
-        .from('skill_validation_queue')
-        .upsert({
-          skill_id: skillId,
+        }
+      : {
           status: certification === 'silver' ? 'silver_approved' : certification === 'gold' ? 'gold_eligible' : 'bronze_approved',
           processed_by: user.id,
           processed_at: new Date().toISOString(),
-        }, { onConflict: 'skill_id' });
+        };
+
+    if (existingQueue) {
+      await serviceClient
+        .from('skill_validation_queue')
+        .update(queueData)
+        .eq('skill_id', skillId);
+    } else {
+      await serviceClient
+        .from('skill_validation_queue')
+        .insert({ skill_id: skillId, ...queueData });
     }
 
     // Log the action
