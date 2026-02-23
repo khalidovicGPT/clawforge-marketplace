@@ -32,10 +32,10 @@ export async function GET(request: NextRequest) {
     // Build query
     let query = serviceClient
       .from('users')
-      .select('id, email, display_name, avatar_url, role, stripe_account_id, stripe_onboarding_complete, created_at, updated_at', { count: 'exact' });
+      .select('id, email, name, avatar_url, role, stripe_account_id, stripe_onboarding_complete, created_at, updated_at', { count: 'exact' });
 
     if (search) {
-      query = query.or(`email.ilike.%${search}%,display_name.ilike.%${search}%`);
+      query = query.or(`email.ilike.%${search}%,name.ilike.%${search}%`);
     }
 
     if (role && ['user', 'creator', 'admin'].includes(role)) {
