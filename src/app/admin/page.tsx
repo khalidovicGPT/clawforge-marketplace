@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Key,
   ListChecks,
+  Users,
   XCircle,
   Loader2,
 } from 'lucide-react';
@@ -27,6 +28,13 @@ const ADMIN_PAGES = [
     description: 'Suivre la file Silver/Gold et les skills en attente de review',
     icon: ListChecks,
     color: 'bg-amber-100 text-amber-600',
+  },
+  {
+    href: '/admin/users',
+    title: 'Gestion des utilisateurs',
+    description: 'Lister, modifier les roles, bloquer ou supprimer des comptes',
+    icon: Users,
+    color: 'bg-green-100 text-green-600',
   },
   {
     href: '/admin/agent-keys',
