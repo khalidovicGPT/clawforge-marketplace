@@ -24,7 +24,7 @@ import {
 interface AdminUser {
   id: string;
   email: string;
-  display_name: string | null;
+  name: string | null;
   avatar_url: string | null;
   role: 'user' | 'creator' | 'admin';
   stripe_account_id: string | null;
@@ -52,6 +52,7 @@ export default function AdminUsersPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // Modal
   const [modalType, setModalType] = useState<ModalType>(null);
@@ -83,6 +84,7 @@ export default function AdminUsersPage() {
   // Charger les utilisateurs
   const fetchUsers = useCallback(async () => {
     setLoading(true);
+    setFetchError(null);
     try {
       const params = new URLSearchParams({
         page: page.toString(),
@@ -92,7 +94,10 @@ export default function AdminUsersPage() {
       if (roleFilter) params.set('role', roleFilter);
 
       const res = await fetch(`/api/admin/users?${params}`);
-      if (!res.ok) throw new Error('Erreur de chargement');
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Erreur ${res.status}`);
+      }
 
       const data = await res.json();
       setUsers(data.users);
@@ -100,6 +105,7 @@ export default function AdminUsersPage() {
       setTotal(data.total);
     } catch (e) {
       console.error('Fetch users error:', e);
+      setFetchError(e instanceof Error ? e.message : 'Erreur inconnue');
     } finally {
       setLoading(false);
     }
@@ -243,6 +249,13 @@ export default function AdminUsersPage() {
           </select>
         </div>
 
+        {/* Erreur */}
+        {fetchError && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            <strong>Erreur :</strong> {fetchError}
+          </div>
+        )}
+
         {/* Tableau */}
         <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
           {loading ? (
@@ -278,13 +291,13 @@ export default function AdminUsersPage() {
                                 <img src={u.avatar_url} alt="" className="h-9 w-9 rounded-full" />
                               ) : (
                                 <span className="text-sm font-medium">
-                                  {(u.display_name || u.email)[0].toUpperCase()}
+                                  {(u.name || u.email)[0].toUpperCase()}
                                 </span>
                               )}
                             </div>
                             <div>
                               <p className="text-sm font-medium text-gray-900">
-                                {u.display_name || 'Sans nom'}
+                                {u.name || 'Sans nom'}
                               </p>
                               <p className="text-xs text-gray-500">{u.email}</p>
                             </div>
@@ -400,7 +413,7 @@ export default function AdminUsersPage() {
             </div>
 
             <p className="mb-4 text-sm text-gray-600">
-              <strong>{selectedUser.display_name || selectedUser.email}</strong>
+              <strong>{selectedUser.name || selectedUser.email}</strong>
               <br />
               <span className="text-gray-400">{selectedUser.email}</span>
             </p>

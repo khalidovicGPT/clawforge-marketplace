@@ -52,7 +52,7 @@ export async function PATCH(
     // Verifier que l'utilisateur cible existe
     const { data: targetUser, error: fetchError } = await serviceClient
       .from('users')
-      .select('id, email, role, display_name')
+      .select('id, email, role, name')
       .eq('id', targetUserId)
       .single();
 
@@ -83,7 +83,7 @@ export async function PATCH(
 
         return NextResponse.json({
           success: true,
-          message: `Role de ${targetUser.display_name || targetUser.email} mis a jour vers "${role}"`,
+          message: `Role de ${targetUser.name || targetUser.email} mis a jour vers "${role}"`,
         });
       }
 
@@ -115,7 +115,7 @@ export async function PATCH(
 
         return NextResponse.json({
           success: true,
-          message: `${targetUser.display_name || targetUser.email} a ete bloque`,
+          message: `${targetUser.name || targetUser.email} a ete bloque`,
         });
       }
 
@@ -146,7 +146,7 @@ export async function PATCH(
 
         return NextResponse.json({
           success: true,
-          message: `${targetUser.display_name || targetUser.email} a ete debloque`,
+          message: `${targetUser.name || targetUser.email} a ete debloque`,
         });
       }
     }
@@ -184,7 +184,7 @@ export async function DELETE(
     // Verifier que l'utilisateur cible existe
     const { data: targetUser, error: fetchError } = await serviceClient
       .from('users')
-      .select('id, email, display_name, role')
+      .select('id, email, name, role')
       .eq('id', targetUserId)
       .single();
 
@@ -225,7 +225,7 @@ export async function DELETE(
 
     return NextResponse.json({
       success: true,
-      message: `${targetUser.display_name || targetUser.email} a ete supprime`,
+      message: `${targetUser.name || targetUser.email} a ete supprime`,
     });
   } catch (error) {
     console.error('Admin user DELETE error:', error);
