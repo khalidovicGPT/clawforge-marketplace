@@ -2,27 +2,50 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { Menu, X, Search, User, LogOut, BookOpen } from 'lucide-react';
+import { Menu, X, Search, User, LogOut, BookOpen, Shield } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const supabase = createClient();
-    
+
     // Get initial session
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
       setLoading(false);
+      if (user) {
+        supabase
+          .from('users')
+          .select('role')
+          .eq('id', user.id)
+          .single()
+          .then(({ data }) => {
+            setIsAdmin(data?.role === 'admin');
+          });
+      }
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      if (session?.user) {
+        supabase
+          .from('users')
+          .select('role')
+          .eq('id', session.user.id)
+          .single()
+          .then(({ data }) => {
+            setIsAdmin(data?.role === 'admin');
+          });
+      } else {
+        setIsAdmin(false);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -84,6 +107,15 @@ export function Header() {
               className="text-sm font-medium text-gray-700 hover:text-gray-900"
             >
               Tableau de bord
+            </Link>
+          )}
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-800"
+            >
+              <Shield className="h-4 w-4" />
+              Admin
             </Link>
           )}
         </div>
@@ -203,6 +235,15 @@ export function Header() {
                 >
                   Tableau de bord
                 </Link>
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-base font-medium text-blue-600 hover:bg-blue-50"
+                  >
+                    <Shield className="h-4 w-4" />
+                    Administration
+                  </Link>
+                )}
                 <button
                   onClick={handleSignOut}
                   className="block w-full rounded-lg px-3 py-2 text-left text-base font-medium text-red-600 hover:bg-red-50"
