@@ -1,4 +1,5 @@
 import { createServiceClient } from '@/lib/supabase/service';
+import { calculateSilverScore } from '@/lib/certification-scorer';
 import type {
   Certification,
   CertificationLevel,
@@ -100,8 +101,18 @@ export async function getSkillCertificationStatus(
     .limit(1)
     .single();
 
-  const silverScore = queueEntry?.silver_score ?? null;
-  const silverCriteria = (queueEntry?.silver_criteria ?? null) as Record<string, number> | null;
+  let silverScore = queueEntry?.silver_score ?? null;
+  let silverCriteria = (queueEntry?.silver_criteria ?? null) as Record<string, number> | null;
+
+  // Si silver_criteria est absent (skill certifie avant le nouveau systeme),
+  // analyser le ZIP a la volee et stocker les resultats pour les prochains appels
+  if (!silverCriteria) {
+    const analyzed = await analyzeSilverFromZip(skillId);
+    if (analyzed) {
+      silverScore = analyzed.score;
+      silverCriteria = analyzed.criteria;
+    }
+  }
 
   // Calculer le statut de chaque critere
   interface CriteriaRow { id: string; name: string; description: string | null; auto_checkable: boolean; weight: number }
@@ -244,6 +255,63 @@ function runAutoCheck(
 
     default:
       return { passed: false, value: 'N/A' };
+  }
+}
+
+/**
+ * Analyse le ZIP d'un skill pour obtenir les silver_criteria manquants.
+ * Telecharge le fichier, lance calculateSilverScore, et stocke les resultats
+ * dans skill_validation_queue pour les prochains appels.
+ */
+async function analyzeSilverFromZip(
+  skillId: string,
+): Promise<{ score: number; criteria: Record<string, number> } | null> {
+  const supabase = createServiceClient();
+
+  const { data: skill } = await supabase
+    .from('skills')
+    .select('file_url')
+    .eq('id', skillId)
+    .single();
+
+  if (!skill?.file_url) return null;
+
+  try {
+    const response = await fetch(skill.file_url);
+    if (!response.ok) return null;
+    const zipBuffer = await response.arrayBuffer();
+
+    const result = await calculateSilverScore(zipBuffer);
+    const criteria = result.criteria as unknown as Record<string, number>;
+
+    // Stocker dans la queue pour les prochains appels
+    const { data: existing } = await supabase
+      .from('skill_validation_queue')
+      .select('id')
+      .eq('skill_id', skillId)
+      .limit(1)
+      .single();
+
+    const queueData = {
+      silver_score: result.score,
+      silver_criteria: criteria,
+    };
+
+    if (existing) {
+      await supabase
+        .from('skill_validation_queue')
+        .update(queueData)
+        .eq('skill_id', skillId);
+    } else {
+      await supabase
+        .from('skill_validation_queue')
+        .insert({ skill_id: skillId, status: 'bronze_auto', ...queueData });
+    }
+
+    return { score: result.score, criteria };
+  } catch (e) {
+    console.error('analyzeSilverFromZip error:', e);
+    return null;
   }
 }
 
