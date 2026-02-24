@@ -12,6 +12,7 @@ import {
   Users,
   XCircle,
   Loader2,
+  Award,
 } from 'lucide-react';
 
 const ADMIN_PAGES = [
@@ -35,6 +36,13 @@ const ADMIN_PAGES = [
     description: 'Lister, modifier les roles, bloquer ou supprimer des comptes',
     icon: Users,
     color: 'bg-green-100 text-green-600',
+  },
+  {
+    href: '/admin/certification-requests',
+    title: 'Demandes de Certification',
+    description: 'Gerer les demandes Silver et Gold des createurs',
+    icon: Award,
+    color: 'bg-yellow-100 text-yellow-600',
   },
   {
     href: '/admin/agent-keys',
