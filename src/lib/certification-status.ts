@@ -22,7 +22,10 @@ export async function getSkillCertificationStatus(
 ): Promise<SkillCertificationStatus> {
   const supabase = createServiceClient();
 
-  // Recuperer le skill
+  // Recalculer le quality_score avant de lire le skill
+  await calculateAndUpdateQualityScore(skillId);
+
+  // Recuperer le skill (avec quality_score mis a jour)
   const { data: skill } = await supabase
     .from('skills')
     .select('id, certification, quality_score, sales_count, average_rating, rating_avg, rating_count')
@@ -89,6 +92,17 @@ export async function getSkillCertificationStatus(
     .select('id', { count: 'exact', head: true })
     .eq('skill_id', skillId);
 
+  // Recuperer les resultats d'analyse du ZIP (silver_score + silver_criteria)
+  const { data: queueEntry } = await supabase
+    .from('skill_validation_queue')
+    .select('silver_score, silver_criteria')
+    .eq('skill_id', skillId)
+    .limit(1)
+    .single();
+
+  const silverScore = queueEntry?.silver_score ?? null;
+  const silverCriteria = (queueEntry?.silver_criteria ?? null) as Record<string, number> | null;
+
   // Calculer le statut de chaque critere
   interface CriteriaRow { id: string; name: string; description: string | null; auto_checkable: boolean; weight: number }
   const criteriaStatus: CriteriaStatus[] = criteria.map((c: CriteriaRow) => {
@@ -108,7 +122,7 @@ export async function getSkillCertificationStatus(
 
     // Auto-check si possible
     if (c.auto_checkable) {
-      const autoResult = runAutoCheck(c.name, skill, salesCount || 0);
+      const autoResult = runAutoCheck(c.name, skill, salesCount || 0, silverScore, silverCriteria);
       return {
         criteria_id: c.id,
         name: c.name,
@@ -179,32 +193,45 @@ function runAutoCheck(
   criteriaName: string,
   skill: Record<string, unknown>,
   salesCount: number,
+  silverScore: number | null,
+  silverCriteria: Record<string, number> | null,
 ): AutoCheckResult {
   const qualityScore = (skill.quality_score as number) || 0;
   const avgRating = (skill.rating_avg as number) || (skill.average_rating as number) || 0;
   const certification = skill.certification as string;
 
+  // Utiliser le silver_score (analyse ZIP reelle) s'il existe, sinon le quality_score DB
+  const effectiveScore = silverScore ?? qualityScore;
+
+  // Scores individuels de l'analyse ZIP (structure, documentation, tests, codeQuality, security — chacun sur 20)
+  const docScore = silverCriteria?.documentation ?? 0;
+  const testScore = silverCriteria?.tests ?? 0;
+  const codeQualityScore = silverCriteria?.codeQuality ?? 0;
+
   switch (criteriaName) {
     case 'quality_score':
-      return { passed: qualityScore >= 80, value: `${qualityScore}%` };
+      return { passed: effectiveScore >= 80, value: `${effectiveScore}%` };
 
     case 'documentation_complete':
-      // Basé sur le score qualité (partie documentation)
-      return { passed: qualityScore >= 60, value: qualityScore >= 60 ? 'OK' : 'Incomplet' };
+      // Base sur l'analyse reelle du README dans le ZIP (score documentation sur 20)
+      // >= 12/20 = documentation acceptable (titre + au moins 2 sections)
+      return { passed: docScore >= 12, value: docScore >= 12 ? `OK (${docScore}/20)` : `Incomplet (${docScore}/20)` };
 
     case 'test_coverage':
-      // Estimé via le score qualité
-      return { passed: qualityScore >= 70, value: qualityScore >= 70 ? '>= 70%' : '< 70%' };
+      // Base sur l'analyse reelle des fichiers de test dans le ZIP (score tests sur 20)
+      // >= 10/20 = au moins des fichiers de test presents
+      return { passed: testScore >= 10, value: testScore >= 10 ? `OK (${testScore}/20)` : `Insuffisant (${testScore}/20)` };
 
     case 'sales_minimum':
       return { passed: salesCount >= 5, value: `${salesCount}` };
 
     case 'no_critical_bugs':
-      // Par defaut, on considere OK si le skill est publié
       return { passed: true, value: 'OK' };
 
     case 'code_quality':
-      return { passed: qualityScore >= 60, value: qualityScore >= 60 ? 'OK' : 'Erreurs detectees' };
+      // Base sur l'analyse reelle du code dans le ZIP (score codeQuality sur 20)
+      // >= 14/20 = peu de patterns problematiques
+      return { passed: codeQualityScore >= 14, value: codeQualityScore >= 14 ? `OK (${codeQualityScore}/20)` : `Erreurs detectees (${codeQualityScore}/20)` };
 
     case 'silver_validated':
       return { passed: certification === 'silver' || certification === 'gold', value: certification };
