@@ -3,7 +3,7 @@ import { createServiceClient } from '@/lib/supabase/service';
 import { ensureUserProfile } from '@/lib/ensure-profile';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { Download, Star, Package, User, CreditCard, Plus, Clock, CheckCircle, XCircle, Upload, ShoppingCart, FileDown, AlertTriangle, Eye, Heart, MessageSquare } from 'lucide-react';
+import { Download, Star, Package, User, CreditCard, Plus, Clock, CheckCircle, XCircle, Upload, ShoppingCart, FileDown, AlertTriangle, Eye, Heart, MessageSquare, Award } from 'lucide-react';
 import { StarRating } from '@/components/skills/star-rating';
 import { SkillActions } from '@/components/dashboard/skill-actions';
 import { AgentInstallLink } from '@/components/dashboard/agent-install-link';
@@ -230,6 +230,13 @@ export default async function DashboardPage() {
                 >
                   <Upload className="h-4 w-4" />
                   Soumettre un skill
+                </Link>
+                <Link
+                  href="/dashboard/certification"
+                  className="inline-flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-700 hover:bg-amber-100"
+                >
+                  <Award className="h-4 w-4" />
+                  Certification
                 </Link>
                 <Link
                   href="/dashboard/agent"
