@@ -4,11 +4,10 @@
 -- Gestion admin des skills : retrait, rejet, blocage, reactivation
 -- + soft delete createur + historique des actions
 
--- 1. Ajouter les nouveaux statuts a l'enum
-ALTER TYPE skill_status ADD VALUE IF NOT EXISTS 'withdrawn';
-ALTER TYPE skill_status ADD VALUE IF NOT EXISTS 'blocked';
+-- NOTE: La colonne status est en text (pas d'enum skill_status)
+-- Les valeurs 'withdrawn' et 'blocked' sont acceptees nativement
 
--- 2. Colonnes de retrait (createur ou admin)
+-- 1. Colonnes de retrait (createur ou admin)
 ALTER TABLE skills ADD COLUMN IF NOT EXISTS withdrawn_by VARCHAR(20);
 ALTER TABLE skills ADD COLUMN IF NOT EXISTS withdrawn_at TIMESTAMPTZ;
 ALTER TABLE skills ADD COLUMN IF NOT EXISTS withdrawn_reason TEXT;
