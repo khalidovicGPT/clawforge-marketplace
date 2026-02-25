@@ -50,13 +50,6 @@ export interface Skill {
   published_at: string | null;
   updated_at: string;
   created_at: string;
-  quality_score: number;
-  sales_count: number;
-  average_rating: number;
-  certification_requested_at: string | null;
-  certification_reviewed_at: string | null;
-  certification_reviewer_id: string | null;
-  certification_feedback: string | null;
 }
 
 export interface Purchase {
@@ -161,68 +154,6 @@ export interface PaginatedResponse<T> {
 // Skill with creator info for display
 export interface SkillWithCreator extends Skill {
   creator: Pick<User, 'id' | 'name' | 'avatar_url'>;
-}
-
-// Certification system types
-export type CertificationLevel = 'bronze' | 'silver' | 'gold';
-export type CertificationRequestStatus = 'pending' | 'approved' | 'rejected';
-export type CriteriaCheckStatus = 'pending' | 'passed' | 'failed';
-
-export interface CertificationCriteria {
-  id: string;
-  level: CertificationLevel;
-  name: string;
-  description: string | null;
-  auto_checkable: boolean;
-  weight: number;
-  check_query: string | null;
-  created_at: string;
-}
-
-export interface SkillCertificationCheck {
-  id: string;
-  skill_id: string;
-  criteria_id: string;
-  status: CriteriaCheckStatus;
-  value: string | null;
-  checked_at: string | null;
-  checked_by: string | null;
-  notes: string | null;
-}
-
-export interface CertificationRequest {
-  id: string;
-  skill_id: string;
-  requested_level: CertificationLevel;
-  requested_by: string;
-  requested_at: string;
-  status: CertificationRequestStatus;
-  reviewed_by: string | null;
-  reviewed_at: string | null;
-  feedback: string | null;
-  quality_score_at_request: number | null;
-}
-
-// API types for certification dashboard
-export interface CriteriaStatus {
-  criteria_id: string;
-  name: string;
-  description: string | null;
-  status: CriteriaCheckStatus;
-  value: string | null;
-  auto_checkable: boolean;
-  weight: number;
-}
-
-export interface SkillCertificationStatus {
-  skill_id: string;
-  current_level: Certification;
-  next_level: CertificationLevel | null;
-  progress_percentage: number;
-  criteria_status: CriteriaStatus[];
-  can_request_upgrade: boolean;
-  missing_criteria: string[];
-  pending_request: CertificationRequest | null;
 }
 
 // Skill submission form data
