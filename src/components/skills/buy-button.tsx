@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 export function BuyButton({ skillId, skillSlug, price, currency, pendingPaymentSetup }: {
   skillId: string;
@@ -9,6 +10,7 @@ export function BuyButton({ skillId, skillSlug, price, currency, pendingPaymentS
   currency: string;
   pendingPaymentSetup?: boolean;
 }) {
+  const t = useTranslations('BuyButton');
   const [loading, setLoading] = useState(false);
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -35,18 +37,18 @@ export function BuyButton({ skillId, skillSlug, price, currency, pendingPaymentS
         alert(data.error);
       }
     } catch (e) {
-      alert('Erreur de connexion. Vérifiez votre connexion internet.');
+      alert(t('connectionError'));
     }
     setLoading(false);
   };
 
   const priceText = price === 0
-    ? 'Gratuit'
+    ? t('free')
     : new Intl.NumberFormat('fr-FR', {
         style: 'currency',
         currency: currency || 'EUR',
         minimumFractionDigits: 0,
-      }).format(price / 100) + ' TTC';
+      }).format(price / 100) + ' ' + t('ttc');
 
   if (pendingPaymentSetup) {
     return (
@@ -56,11 +58,11 @@ export function BuyButton({ skillId, skillSlug, price, currency, pendingPaymentS
           disabled
           className="w-full cursor-not-allowed rounded-lg bg-gray-300 px-4 py-3 font-semibold text-gray-500"
         >
-          Indisponible a la vente
+          {t('unavailable')}
         </button>
         <div className="mt-3 rounded-lg bg-amber-50 border border-amber-200 p-3">
           <p className="text-center text-sm text-amber-700">
-            Paiement non active par le createur
+            {t('paymentNotActivated')}
           </p>
         </div>
       </div>
@@ -74,11 +76,11 @@ export function BuyButton({ skillId, skillSlug, price, currency, pendingPaymentS
         disabled={loading}
         className="w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
       >
-        {loading ? 'Redirection...' : price === 0 ? 'Telecharger gratuitement' : `Acheter pour ${priceText}`}
+        {loading ? t('redirecting') : price === 0 ? t('downloadFree') : t('buyFor', { price: priceText })}
       </button>
       {price > 0 && (
         <p className="mt-2 text-center text-xs text-gray-500">
-          Le prix inclut toutes les taxes applicables
+          {t('priceIncludesTax')}
         </p>
       )}
     </form>

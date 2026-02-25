@@ -1,6 +1,11 @@
+'use client';
+
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 export function Footer() {
+  const t = useTranslations('Footer');
+
   return (
     <footer className="border-t bg-gray-50">
       {/* Bandeau Charte IA */}
@@ -9,16 +14,16 @@ export function Footer() {
           <div className="flex items-center gap-3 text-white">
             <span className="text-lg">📜</span>
             <p className="text-sm">
-              <span className="font-semibold">Marketplace ethique</span>
+              <span className="font-semibold">{t('ethicalMarketplace')}</span>
               {' — '}
-              Construite selon la Charte des Droits et Libertes des IA
+              {t('ethicalBanner')}
             </p>
           </div>
           <Link
             href="/charte-ia"
             className="shrink-0 rounded-lg bg-white px-4 py-2 text-sm font-medium text-gray-900 transition hover:bg-gray-100"
           >
-            Decouvrir la Charte
+            {t('discoverCharte')}
           </Link>
         </div>
       </div>
@@ -32,36 +37,36 @@ export function Footer() {
               <span className="text-lg font-bold text-gray-900">ClawForge</span>
             </Link>
             <p className="mt-4 text-sm text-gray-600">
-              La première marketplace de skills certifiés pour OpenClaw.
+              {t('description')}
             </p>
             <p className="mt-2 text-xs text-gray-500">
-              Construite selon la{' '}
+              {t('builtAccordingTo')}{' '}
               <Link
                 href="/charte-ia"
                 className="underline hover:text-gray-700"
               >
-                Charte des Droits des IA
+                {t('charteDesIA')}
               </Link>
             </p>
           </div>
 
           {/* Marketplace */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900">Marketplace</h3>
+            <h3 className="text-sm font-semibold text-gray-900">{t('marketplace')}</h3>
             <ul className="mt-4 space-y-3">
               <li>
                 <Link href="/skills" className="text-sm text-gray-600 hover:text-gray-900">
-                  Catalogue
+                  {t('catalog')}
                 </Link>
               </li>
               <li>
                 <Link href="/skills?sort=popular" className="text-sm text-gray-600 hover:text-gray-900">
-                  Populaires
+                  {t('popular')}
                 </Link>
               </li>
               <li>
                 <Link href="/skills?priceType=free" className="text-sm text-gray-600 hover:text-gray-900">
-                  Gratuits
+                  {t('free')}
                 </Link>
               </li>
             </ul>
@@ -69,21 +74,21 @@ export function Footer() {
 
           {/* Créateurs */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900">Créateurs</h3>
+            <h3 className="text-sm font-semibold text-gray-900">{t('creators')}</h3>
             <ul className="mt-4 space-y-3">
               <li>
                 <Link href="/become-creator" className="text-sm text-gray-600 hover:text-gray-900">
-                  Devenir créateur
+                  {t('becomeCreator')}
                 </Link>
               </li>
               <li>
                 <Link href="/docs/skill-spec" className="text-sm text-gray-600 hover:text-gray-900">
-                  Documentation
+                  {t('documentation')}
                 </Link>
               </li>
               <li>
                 <Link href="/dashboard/new-skill" className="text-sm text-gray-600 hover:text-gray-900">
-                  Soumettre un skill
+                  {t('submitSkill')}
                 </Link>
               </li>
             </ul>
@@ -91,26 +96,26 @@ export function Footer() {
 
           {/* Support */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900">Support</h3>
+            <h3 className="text-sm font-semibold text-gray-900">{t('support')}</h3>
             <ul className="mt-4 space-y-3">
               <li>
                 <Link href="/about" className="text-sm text-gray-600 hover:text-gray-900">
-                  Qui sommes-nous ?
+                  {t('whoAreWe')}
                 </Link>
               </li>
               <li>
                 <Link href="/how-it-works" className="text-sm text-gray-600 hover:text-gray-900">
-                  Comment ça marche
+                  {t('howItWorks')}
                 </Link>
               </li>
               <li>
                 <Link href="/faq" className="text-sm text-gray-600 hover:text-gray-900">
-                  FAQ
+                  {t('faq')}
                 </Link>
               </li>
               <li>
                 <Link href="/contact" className="text-sm text-gray-600 hover:text-gray-900">
-                  Contact
+                  {t('contact')}
                 </Link>
               </li>
             </ul>
@@ -118,26 +123,26 @@ export function Footer() {
 
           {/* Légal */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-900">Légal</h3>
+            <h3 className="text-sm font-semibold text-gray-900">{t('legal')}</h3>
             <ul className="mt-4 space-y-3">
               <li>
                 <Link href="/legal/terms" className="text-sm text-gray-600 hover:text-gray-900">
-                  CGV
+                  {t('cgv')}
                 </Link>
               </li>
               <li>
                 <Link href="/legal/cgu" className="text-sm text-gray-600 hover:text-gray-900">
-                  CGU
+                  {t('cgu')}
                 </Link>
               </li>
               <li>
                 <Link href="/legal/privacy" className="text-sm text-gray-600 hover:text-gray-900">
-                  Confidentialité
+                  {t('privacy')}
                 </Link>
               </li>
               <li>
                 <Link href="/charte-ia" className="text-sm text-gray-600 hover:text-gray-900">
-                  Charte IA
+                  {t('charteIA')}
                 </Link>
               </li>
             </ul>
@@ -146,13 +151,13 @@ export function Footer() {
 
         <div className="mt-8 border-t pt-6">
           <p className="text-xs text-gray-400">
-            Politique de prix : Tous les prix affichés sur ClawForge sont TTC (Toutes Taxes Comprises). La TVA est incluse dans le prix affiché. Les créateurs sont responsables de leur propre déclaration de TVA.
+            {t('pricingPolicy')}
           </p>
         </div>
 
         <div className="mt-4 flex flex-col items-center justify-between border-t pt-8 md:flex-row">
           <p className="text-sm text-gray-500">
-            © {new Date().getFullYear()} ClawForge (ESK CONSEIL). Tous droits réservés.
+            {t('allRightsReserved', { year: new Date().getFullYear() })}
           </p>
           <div className="mt-4 flex items-center gap-4 md:mt-0">
             <a

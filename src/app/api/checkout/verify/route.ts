@@ -3,9 +3,11 @@ import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-01-28.clover',
-});
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2026-01-28.clover',
+    })
+  : null;
 
 export async function GET(request: NextRequest) {
   try {
@@ -27,6 +29,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { error: 'Non authentifié' },
         { status: 401 }
+      );
+    }
+
+    if (!stripe) {
+      return NextResponse.json(
+        { error: 'Stripe non configuré' },
+        { status: 503 }
       );
     }
 

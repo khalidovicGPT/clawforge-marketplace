@@ -5,9 +5,11 @@ import { ensureUserProfile } from '@/lib/ensure-profile';
 import { generateDownloadToken } from '@/lib/download-tokens';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-01-28.clover',
-});
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2026-01-28.clover',
+    })
+  : null;
 
 export async function POST(request: NextRequest) {
   try {
@@ -107,6 +109,13 @@ export async function POST(request: NextRequest) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL;
     if (!appUrl) {
       return NextResponse.json({ error: 'Configuration serveur manquante' }, { status: 500 });
+    }
+
+    if (!stripe) {
+      return NextResponse.json(
+        { error: 'Stripe non configuré' },
+        { status: 503 }
+      );
     }
 
     // Find or create Stripe customer by email
