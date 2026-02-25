@@ -2,7 +2,7 @@
 // Auto-generated from Supabase schema
 
 export type UserRole = 'user' | 'creator' | 'admin';
-export type SkillStatus = 'draft' | 'pending' | 'approved' | 'published' | 'pending_payment_setup' | 'rejected';
+export type SkillStatus = 'draft' | 'pending' | 'approved' | 'published' | 'pending_payment_setup' | 'rejected' | 'withdrawn' | 'blocked';
 export type Certification = 'none' | 'bronze' | 'silver' | 'gold';
 export type License = 'MIT' | 'Apache-2.0' | 'Proprietary';
 export type PriceType = 'free' | 'one_time';
@@ -50,6 +50,53 @@ export interface Skill {
   published_at: string | null;
   updated_at: string;
   created_at: string;
+  // Skills management fields
+  withdrawn_by: string | null;
+  withdrawn_at: string | null;
+  withdrawn_reason: string | null;
+  rejected_at: string | null;
+  rejected_by: string | null;
+  rejection_reason: string | null;
+  rejection_feedback: string | null;
+  blocked_at: string | null;
+  blocked_by: string | null;
+  blocked_reason: string | null;
+  blocked_permanently: boolean;
+  reactivated_at: string | null;
+  reactivated_by: string | null;
+  is_visible: boolean;
+}
+
+export type ReportType = 'false_positive' | 'system_bug' | 'unclear_error' | 'other';
+export type ReportStatus = 'open' | 'under_review' | 'resolved' | 'rejected' | 'escalated';
+export type ReportPriority = 'high' | 'normal' | 'low';
+
+export interface SkillReport {
+  id: string;
+  skill_id: string;
+  reported_by: string;
+  report_type: ReportType;
+  description: string;
+  attachment_url: string | null;
+  status: ReportStatus;
+  priority: ReportPriority;
+  admin_notes: string | null;
+  resolved_by: string | null;
+  resolved_at: string | null;
+  resolution_action: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SkillAdminHistory {
+  id: string;
+  skill_id: string;
+  action: string;
+  action_by: string;
+  action_at: string;
+  reason: string | null;
+  previous_status: string;
+  new_status: string;
 }
 
 export interface Purchase {

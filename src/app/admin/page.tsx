@@ -12,6 +12,8 @@ import {
   Users,
   XCircle,
   Loader2,
+  Settings,
+  Flag,
 } from 'lucide-react';
 
 const ADMIN_PAGES = [
@@ -30,6 +32,13 @@ const ADMIN_PAGES = [
     color: 'bg-amber-100 text-amber-600',
   },
   {
+    href: '/admin/skills-management',
+    title: 'Gestion des Skills',
+    description: 'Retirer, rejeter, bloquer ou reactiver les skills du marketplace',
+    icon: Settings,
+    color: 'bg-orange-100 text-orange-600',
+  },
+  {
     href: '/admin/users',
     title: 'Gestion des utilisateurs',
     description: 'Lister, modifier les roles, bloquer ou supprimer des comptes',
@@ -42,6 +51,13 @@ const ADMIN_PAGES = [
     description: 'Gerer les cles API pour QualityClaw et les agents automatises',
     icon: Key,
     color: 'bg-purple-100 text-purple-600',
+  },
+  {
+    href: '/admin/skill-reports',
+    title: 'Signalements',
+    description: 'Gerer les signalements des createurs (faux positifs, bugs, etc.)',
+    icon: Flag,
+    color: 'bg-red-100 text-red-600',
   },
 ];
 
