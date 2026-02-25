@@ -13,6 +13,7 @@ import {
   XCircle,
   Loader2,
   Settings,
+  Flag,
 } from 'lucide-react';
 
 const ADMIN_PAGES = [
@@ -50,6 +51,13 @@ const ADMIN_PAGES = [
     description: 'Gerer les cles API pour QualityClaw et les agents automatises',
     icon: Key,
     color: 'bg-purple-100 text-purple-600',
+  },
+  {
+    href: '/admin/skill-reports',
+    title: 'Signalements',
+    description: 'Gerer les signalements des createurs (faux positifs, bugs, etc.)',
+    icon: Flag,
+    color: 'bg-red-100 text-red-600',
   },
 ];
 

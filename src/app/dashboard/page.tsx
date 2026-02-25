@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Download, Star, Package, User, CreditCard, Plus, Clock, CheckCircle, XCircle, Upload, ShoppingCart, FileDown, AlertTriangle, Eye, Heart, MessageSquare, EyeOff, Ban } from 'lucide-react';
 import { StarRating } from '@/components/skills/star-rating';
 import { SkillActions } from '@/components/dashboard/skill-actions';
+import { ReportIssueButton } from '@/components/dashboard/report-issue-button';
 import { AgentInstallLink } from '@/components/dashboard/agent-install-link';
 import { SKILL_CATEGORIES, CERTIFICATION_BADGES } from '@/types/database';
 
@@ -415,6 +416,12 @@ export default async function DashboardPage() {
                           <StatusIcon className="h-3 w-3" />
                           {status.label}
                         </span>
+                        <ReportIssueButton
+                          skillId={skill.id}
+                          skillTitle={skill.title}
+                          skillVersion={skill.version || '1.0.0'}
+                          skillStatus={skill.status}
+                        />
                         <SkillActions
                           skillId={skill.id}
                           skillSlug={skill.slug || skill.id}

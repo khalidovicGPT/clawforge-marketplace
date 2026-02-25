@@ -67,6 +67,27 @@ export interface Skill {
   is_visible: boolean;
 }
 
+export type ReportType = 'false_positive' | 'system_bug' | 'unclear_error' | 'other';
+export type ReportStatus = 'open' | 'under_review' | 'resolved' | 'rejected' | 'escalated';
+export type ReportPriority = 'high' | 'normal' | 'low';
+
+export interface SkillReport {
+  id: string;
+  skill_id: string;
+  reported_by: string;
+  report_type: ReportType;
+  description: string;
+  attachment_url: string | null;
+  status: ReportStatus;
+  priority: ReportPriority;
+  admin_notes: string | null;
+  resolved_by: string | null;
+  resolved_at: string | null;
+  resolution_action: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface SkillAdminHistory {
   id: string;
   skill_id: string;
