@@ -3,10 +3,12 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { Menu, X, Search, User, LogOut, BookOpen, Shield } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 export function Header() {
+  const t = useTranslations('Header');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -74,39 +76,39 @@ export function Header() {
             href="/"
             className="text-sm font-medium text-gray-700 hover:text-gray-900"
           >
-            Accueil
+            {t('home')}
           </Link>
           <Link
             href="/skills"
             className="text-sm font-medium text-gray-700 hover:text-gray-900"
           >
-            Catalogue
+            {t('catalog')}
           </Link>
           <Link
             href="/creators"
             className="text-sm font-medium text-gray-700 hover:text-gray-900"
           >
-            Créateurs
+            {t('creators')}
           </Link>
           <Link
             href="/about"
             className="text-sm font-medium text-gray-700 hover:text-gray-900"
           >
-            L'équipe
+            {t('team')}
           </Link>
           <Link
             href="/charte-ia"
             className="flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-gray-900"
           >
             <BookOpen className="h-4 w-4" />
-            Charte IA
+            {t('charteIA')}
           </Link>
           {user && (
             <Link
               href="/dashboard"
               className="text-sm font-medium text-gray-700 hover:text-gray-900"
             >
-              Tableau de bord
+              {t('dashboard')}
             </Link>
           )}
           {isAdmin && (
@@ -115,7 +117,7 @@ export function Header() {
               className="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-800"
             >
               <Shield className="h-4 w-4" />
-              Admin
+              {t('admin')}
             </Link>
           )}
         </div>
@@ -125,7 +127,7 @@ export function Header() {
           <button className="rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700">
             <Search className="h-5 w-5" />
           </button>
-          
+
           {loading ? (
             <div className="h-8 w-20 animate-pulse rounded-lg bg-gray-200" />
           ) : user ? (
@@ -136,9 +138,9 @@ export function Header() {
               >
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600">
                   {user.user_metadata?.avatar_url ? (
-                    <img 
-                      src={user.user_metadata.avatar_url} 
-                      alt="Avatar" 
+                    <img
+                      src={user.user_metadata.avatar_url}
+                      alt="Avatar"
                       className="h-8 w-8 rounded-full"
                     />
                   ) : (
@@ -152,7 +154,7 @@ export function Header() {
               <button
                 onClick={handleSignOut}
                 className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-                title="Déconnexion"
+                title={t('logout')}
               >
                 <LogOut className="h-4 w-4" />
               </button>
@@ -163,13 +165,13 @@ export function Header() {
                 href="/login"
                 className="text-sm font-medium text-gray-700 hover:text-gray-900"
               >
-                Connexion
+                {t('login')}
               </Link>
               <Link
                 href="/login"
                 className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
               >
-                S'inscrire
+                {t('register')}
               </Link>
             </>
           )}
@@ -199,32 +201,32 @@ export function Header() {
               href="/"
               className="block rounded-lg px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100"
             >
-              Accueil
+              {t('home')}
             </Link>
             <Link
               href="/skills"
               className="block rounded-lg px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100"
             >
-              Catalogue
+              {t('catalog')}
             </Link>
             <Link
               href="/creators"
               className="block rounded-lg px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100"
             >
-              Créateurs
+              {t('creators')}
             </Link>
             <Link
               href="/about"
               className="block rounded-lg px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100"
             >
-              L'équipe
+              {t('team')}
             </Link>
             <Link
               href="/charte-ia"
               className="flex items-center gap-2 rounded-lg px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100"
             >
               <BookOpen className="h-4 w-4" />
-              Charte IA
+              {t('charteIA')}
             </Link>
             <hr className="my-2" />
             {user ? (
@@ -233,7 +235,7 @@ export function Header() {
                   href="/dashboard"
                   className="block rounded-lg px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100"
                 >
-                  Tableau de bord
+                  {t('dashboard')}
                 </Link>
                 {isAdmin && (
                   <Link
@@ -241,14 +243,14 @@ export function Header() {
                     className="flex items-center gap-2 rounded-lg px-3 py-2 text-base font-medium text-blue-600 hover:bg-blue-50"
                   >
                     <Shield className="h-4 w-4" />
-                    Administration
+                    {t('administration')}
                   </Link>
                 )}
                 <button
                   onClick={handleSignOut}
                   className="block w-full rounded-lg px-3 py-2 text-left text-base font-medium text-red-600 hover:bg-red-50"
                 >
-                  Déconnexion
+                  {t('logout')}
                 </button>
               </>
             ) : (
@@ -257,13 +259,13 @@ export function Header() {
                   href="/login"
                   className="block rounded-lg px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100"
                 >
-                  Connexion
+                  {t('login')}
                 </Link>
                 <Link
                   href="/login"
                   className="block rounded-lg bg-gray-900 px-3 py-2 text-center text-base font-medium text-white"
                 >
-                  S'inscrire
+                  {t('register')}
                 </Link>
               </>
             )}

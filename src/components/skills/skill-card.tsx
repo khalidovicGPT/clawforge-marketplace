@@ -1,5 +1,8 @@
+'use client';
+
 import Link from 'next/link';
 import { Star, ShoppingCart, User } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 const CERTIFICATION_BADGES: Record<string, { emoji: string; label: string }> = {
   bronze: { emoji: '🥉', label: 'Bronze' },
@@ -36,20 +39,21 @@ interface SkillCardProps {
   creatorName?: string;
 }
 
-function formatPrice(price: number | null | undefined, currency = 'EUR'): string {
-  if (!price || price === 0) return 'Gratuit';
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 0,
-  }).format(price / 100) + ' TTC';
-}
-
 export function SkillCard({ skill, creatorName }: SkillCardProps) {
+  const t = useTranslations('SkillCard');
   const categoryEmoji = CATEGORY_EMOJIS[skill.category] || '📦';
   const certification = skill.certification
     ? CERTIFICATION_BADGES[skill.certification]
-    : { emoji: '📦', label: 'Standard' };
+    : { emoji: '📦', label: t('standard') };
+
+  const formatPrice = (price: number | null | undefined, currency = 'EUR'): string => {
+    if (!price || price === 0) return t('free');
+    return new Intl.NumberFormat('fr-FR', {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: 0,
+    }).format(price / 100) + ' TTC';
+  };
 
   return (
     <Link
@@ -84,7 +88,7 @@ export function SkillCard({ skill, creatorName }: SkillCardProps) {
 
       {/* Description */}
       <p className="mt-3 line-clamp-2 text-sm text-gray-600">
-        {skill.description_short || 'Aucune description disponible.'}
+        {skill.description_short || t('noDescription')}
       </p>
 
       {/* Stats */}
@@ -94,13 +98,13 @@ export function SkillCard({ skill, creatorName }: SkillCardProps) {
           <span>
             {skill.rating_avg && skill.rating_avg > 0
               ? `${skill.rating_avg.toFixed(1)} (${skill.rating_count || 0})`
-              : 'Pas de note'}
+              : t('noRating')}
           </span>
         </div>
         <span>•</span>
         <div className="flex items-center gap-1">
           <ShoppingCart className="h-3.5 w-3.5" />
-          <span>{(skill.purchases?.[0]?.count ?? 0).toLocaleString('fr-FR')} achat(s)</span>
+          <span>{t('purchases', { count: (skill.purchases?.[0]?.count ?? 0).toLocaleString('fr-FR') })}</span>
         </div>
       </div>
 
@@ -108,7 +112,7 @@ export function SkillCard({ skill, creatorName }: SkillCardProps) {
       <div className="mt-4 flex items-center justify-between border-t pt-4">
         {skill.status === 'pending_payment_setup' && (
           <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
-            Paiement non configure
+            {t('paymentNotConfigured')}
           </span>
         )}
         <span className={`ml-auto font-semibold ${!skill.price || skill.price === 0 ? 'text-green-600' : skill.status === 'pending_payment_setup' ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
