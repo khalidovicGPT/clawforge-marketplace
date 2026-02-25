@@ -3,7 +3,7 @@ import { createServiceClient } from '@/lib/supabase/service';
 import { ensureUserProfile } from '@/lib/ensure-profile';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { Download, Star, Package, User, CreditCard, Plus, Clock, CheckCircle, XCircle, Upload, ShoppingCart, FileDown, AlertTriangle, Eye, Heart, MessageSquare } from 'lucide-react';
+import { Download, Star, Package, User, CreditCard, Plus, Clock, CheckCircle, XCircle, Upload, ShoppingCart, FileDown, AlertTriangle, Eye, Heart, MessageSquare, EyeOff, Ban } from 'lucide-react';
 import { StarRating } from '@/components/skills/star-rating';
 import { SkillActions } from '@/components/dashboard/skill-actions';
 import { AgentInstallLink } from '@/components/dashboard/agent-install-link';
@@ -18,6 +18,8 @@ const STATUS_CONFIG = {
   rejected: { label: 'Refuse', icon: XCircle, color: 'text-red-600 bg-red-100' },
   changes_requested: { label: 'Modifications demandees', icon: MessageSquare, color: 'text-orange-600 bg-orange-100' },
   draft: { label: 'Brouillon', icon: Clock, color: 'text-gray-600 bg-gray-100' },
+  withdrawn: { label: 'Retire', icon: EyeOff, color: 'text-gray-600 bg-gray-100' },
+  blocked: { label: 'Bloque', icon: Ban, color: 'text-red-700 bg-red-100' },
 };
 
 export default async function DashboardPage() {
@@ -366,8 +368,43 @@ export default async function DashboardPage() {
                                 {skill.status === 'rejected' ? 'Raison du refus :' : 'Modifications demandees :'}
                               </p>
                               <p className="mt-0.5 text-xs text-red-700">
-                                {rejectionReasons[skill.id] || 'Ce skill ne respecte pas les criteres de validation. Veuillez corriger et re-soumettre.'}
+                                {skill.rejection_reason || rejectionReasons[skill.id] || 'Ce skill ne respecte pas les criteres de validation. Veuillez corriger et re-soumettre.'}
                               </p>
+                              {skill.rejection_feedback && (
+                                <p className="mt-1 text-xs text-blue-700">
+                                  Conseils : {skill.rejection_feedback}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                          {skill.status === 'withdrawn' && skill.withdrawn_by === 'admin' && (
+                            <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
+                              <p className="text-xs font-medium text-amber-800">
+                                <EyeOff className="mr-1 inline h-3 w-3" />
+                                Retire par l'administration
+                              </p>
+                              {skill.withdrawn_reason && (
+                                <p className="mt-0.5 text-xs text-amber-700">{skill.withdrawn_reason}</p>
+                              )}
+                            </div>
+                          )}
+                          {skill.status === 'withdrawn' && skill.withdrawn_by === 'creator' && (
+                            <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                              <p className="text-xs font-medium text-gray-600">
+                                <EyeOff className="mr-1 inline h-3 w-3" />
+                                Retire par vous
+                              </p>
+                            </div>
+                          )}
+                          {skill.status === 'blocked' && (
+                            <div className="mt-2 rounded-lg border border-red-300 bg-red-50 px-3 py-2">
+                              <p className="text-xs font-medium text-red-800">
+                                <Ban className="mr-1 inline h-3 w-3" />
+                                Bloque par l'administration
+                              </p>
+                              {skill.blocked_reason && (
+                                <p className="mt-0.5 text-xs text-red-700">{skill.blocked_reason}</p>
+                              )}
                             </div>
                           )}
                         </div>
@@ -384,6 +421,7 @@ export default async function DashboardPage() {
                           status={skill.status}
                           publishedAt={skill.published_at}
                           certifiedAt={skill.certified_at}
+                          withdrawnBy={skill.withdrawn_by}
                         />
                       </div>
                     </div>

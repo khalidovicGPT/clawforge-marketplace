@@ -12,6 +12,7 @@ import {
   Users,
   XCircle,
   Loader2,
+  Settings,
 } from 'lucide-react';
 
 const ADMIN_PAGES = [
@@ -28,6 +29,13 @@ const ADMIN_PAGES = [
     description: 'Suivre la file Silver/Gold et les skills en attente de review',
     icon: ListChecks,
     color: 'bg-amber-100 text-amber-600',
+  },
+  {
+    href: '/admin/skills-management',
+    title: 'Gestion des Skills',
+    description: 'Retirer, rejeter, bloquer ou reactiver les skills du marketplace',
+    icon: Settings,
+    color: 'bg-orange-100 text-orange-600',
   },
   {
     href: '/admin/users',

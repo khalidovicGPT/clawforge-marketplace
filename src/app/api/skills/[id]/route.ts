@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import { validateSkillZip } from '@/lib/skill-validator';
+import { sendCreatorWithdrawConfirmationEmail } from '@/lib/skill-management-emails';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -104,52 +105,120 @@ export async function PATCH(
     const body = await request.json();
     const { action } = body;
 
-    // --- WITHDRAW ---
+    // --- WITHDRAW (creator soft delete) ---
     if (action === 'withdraw') {
       if (skill.status !== 'published') {
         return NextResponse.json(
-          { error: 'Seul un skill publié peut être retiré' },
+          { error: 'Seul un skill publie peut etre retire' },
           { status: 400 }
         );
       }
 
+      const now = new Date().toISOString();
+      const reason = body.reason || null;
+
       const { error } = await serviceClient
         .from('skills')
-        .update({ status: 'draft', updated_at: new Date().toISOString() })
+        .update({
+          status: 'withdrawn',
+          withdrawn_by: 'creator',
+          withdrawn_at: now,
+          withdrawn_reason: reason,
+          is_visible: false,
+          updated_at: now,
+        })
         .eq('id', id);
 
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
-      return NextResponse.json({ success: true, message: 'Skill retiré du catalogue' });
+      // Historique
+      await serviceClient.from('skill_admin_history').insert({
+        skill_id: id,
+        action: 'withdrawn_by_creator',
+        action_by: user.id,
+        reason,
+        previous_status: 'published',
+        new_status: 'withdrawn',
+      });
+
+      // Email de confirmation au createur
+      try {
+        const { data: creatorProfile } = await serviceClient
+          .from('users')
+          .select('name, email')
+          .eq('id', user.id)
+          .single();
+        if (creatorProfile?.email) {
+          await sendCreatorWithdrawConfirmationEmail(
+            creatorProfile.email,
+            creatorProfile.name || 'Createur',
+            skill.title,
+          );
+        }
+      } catch (emailError) {
+        console.error('Erreur envoi email retrait createur:', emailError);
+      }
+
+      return NextResponse.json({ success: true, message: 'Skill retire du catalogue' });
     }
 
-    // --- REPUBLISH (without re-validation, only if not modified) ---
+    // --- REPUBLISH (remettre en ligne un skill retire par le createur) ---
     if (action === 'republish') {
-      // Can only republish a draft that was previously published (has published_at and certified_at)
-      if (skill.status !== 'draft') {
+      // Un skill withdrawn par le createur ou en draft avec historique de publication
+      const canRepublishWithdrawn = skill.status === 'withdrawn' && skill.withdrawn_by === 'creator';
+      const canRepublishDraft = skill.status === 'draft' && !!skill.published_at && !!skill.certified_at;
+
+      if (!canRepublishWithdrawn && !canRepublishDraft) {
         return NextResponse.json(
-          { error: 'Seul un skill en brouillon peut être republié' },
+          { error: 'Ce skill ne peut pas etre republié dans son etat actuel' },
           { status: 400 }
         );
       }
 
-      if (!skill.published_at || !skill.certified_at) {
+      // Un skill bloque par l'admin ne peut pas etre republié par le createur
+      if (skill.status === 'blocked') {
         return NextResponse.json(
-          { error: 'Ce skill n\'a jamais été publié. Il doit passer par la validation.' },
-          { status: 400 }
+          { error: 'Ce skill est bloque par un administrateur' },
+          { status: 403 }
         );
       }
+
+      // Un skill retire par l'admin ne peut pas etre republié par le createur
+      if (skill.status === 'withdrawn' && skill.withdrawn_by === 'admin') {
+        return NextResponse.json(
+          { error: 'Ce skill a ete retire par un administrateur. Contactez le support.' },
+          { status: 403 }
+        );
+      }
+
+      const now = new Date().toISOString();
 
       const { error } = await serviceClient
         .from('skills')
-        .update({ status: 'published', updated_at: new Date().toISOString() })
+        .update({
+          status: 'published',
+          withdrawn_by: null,
+          withdrawn_at: null,
+          withdrawn_reason: null,
+          is_visible: true,
+          updated_at: now,
+        })
         .eq('id', id);
 
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
+
+      // Historique
+      await serviceClient.from('skill_admin_history').insert({
+        skill_id: id,
+        action: 'republished_by_creator',
+        action_by: user.id,
+        previous_status: skill.status,
+        new_status: 'published',
+      });
 
       return NextResponse.json({ success: true, message: 'Skill republié' });
     }
