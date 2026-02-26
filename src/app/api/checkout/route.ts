@@ -82,6 +82,7 @@ export async function POST(request: NextRequest) {
         type: 'purchase',
         price_paid: 0,
         currency: 'EUR',
+        payment_status: 'paid',
       });
 
       if (insertError) {
