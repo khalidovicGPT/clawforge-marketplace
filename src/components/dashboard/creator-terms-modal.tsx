@@ -5,9 +5,10 @@ import { Loader2, FileText, CheckCircle } from 'lucide-react';
 
 interface CreatorTermsModalProps {
   onAccepted: () => void;
+  onClose?: () => void;
 }
 
-export function CreatorTermsModal({ onAccepted }: CreatorTermsModalProps) {
+export function CreatorTermsModal({ onAccepted, onClose }: CreatorTermsModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -78,6 +79,14 @@ export function CreatorTermsModal({ onAccepted }: CreatorTermsModalProps) {
         )}
 
         <div className="mt-6 flex justify-end gap-3">
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="rounded-lg px-4 py-3 text-sm font-medium text-gray-600 hover:text-gray-800"
+            >
+              Plus tard
+            </button>
+          )}
           <button
             onClick={handleAccept}
             disabled={loading}
