@@ -40,6 +40,7 @@ export default async function DashboardPage() {
   let serviceClient;
   let purchases = null;
   let userReviews = null;
+  let userRefundRequests: { purchase_id: string; status: string }[] = [];
   try {
     serviceClient = createServiceClient();
     const { data: purchasesData } = await serviceClient
@@ -69,12 +70,23 @@ export default async function DashboardPage() {
       .select('skill_id, rating')
       .eq('user_id', user.id);
     userReviews = userReviewsData;
+
+    // Get user's refund requests (pour afficher le statut dans le RefundButton)
+    const { data: refundData } = await serviceClient
+      .from('refund_requests')
+      .select('purchase_id, status')
+      .eq('user_id', user.id);
+    userRefundRequests = refundData || [];
   } catch (e) {
     console.error('Failed to create Supabase service client in DashboardPage:', e);
   }
 
   const reviewMap = new Map(
     (userReviews || []).map((r: { skill_id: string; rating: number }) => [r.skill_id, r.rating])
+  );
+
+  const refundStatusMap = new Map(
+    userRefundRequests.map((r) => [r.purchase_id, r.status])
   );
 
   const isCreator = profile?.role === 'creator' || profile?.role === 'admin';
@@ -588,6 +600,7 @@ export default async function DashboardPage() {
                         purchasedAt={purchase.purchased_at || purchase.created_at}
                         pricePaid={purchase.price_paid}
                         paymentStatus={purchase.payment_status}
+                        refundStatus={refundStatusMap.get(purchase.id) as 'pending' | 'approved' | 'rejected' | undefined}
                       />
                     </div>
                   </div>

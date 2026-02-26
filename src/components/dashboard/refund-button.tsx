@@ -1,18 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { RotateCcw, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { RotateCcw, Loader2, CheckCircle, XCircle, Clock } from 'lucide-react';
 
 interface RefundButtonProps {
   purchaseId: string;
   purchasedAt: string;
   pricePaid: number;
   paymentStatus?: string;
+  refundStatus?: 'pending' | 'approved' | 'rejected' | null;
 }
 
 const REFUND_WINDOW_DAYS = 15;
 
-export function RefundButton({ purchaseId, purchasedAt, pricePaid, paymentStatus }: RefundButtonProps) {
+export function RefundButton({ purchaseId, purchasedAt, pricePaid, paymentStatus, refundStatus }: RefundButtonProps) {
   const [showModal, setShowModal] = useState(false);
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
@@ -27,6 +28,16 @@ export function RefundButton({ purchaseId, purchasedAt, pricePaid, paymentStatus
       <span className="inline-flex items-center gap-1 text-xs text-gray-400">
         <CheckCircle className="h-3 w-3" />
         Remboursé
+      </span>
+    );
+  }
+
+  // Demande de remboursement en cours
+  if (refundStatus === 'pending') {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700">
+        <Clock className="h-3 w-3" />
+        Remboursement en cours de traitement
       </span>
     );
   }
