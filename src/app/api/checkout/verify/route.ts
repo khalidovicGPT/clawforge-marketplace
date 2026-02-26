@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
+import { calculatePlatformFee } from '@/lib/stripe';
 import Stripe from 'stripe';
+
+const ELIGIBILITY_DELAY_DAYS = 15;
 
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -86,6 +89,9 @@ export async function GET(request: NextRequest) {
     // Create purchase if not exists
     if (!existingPurchase) {
       const pricePaid = session.amount_total || 0;
+      const platformFee = calculatePlatformFee(pricePaid);
+      const creatorAmount = pricePaid - platformFee;
+      const eligibleAt = new Date(Date.now() + ELIGIBILITY_DELAY_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
       const { error: purchaseError } = await serviceClient
         .from('purchases')
@@ -94,9 +100,13 @@ export async function GET(request: NextRequest) {
           skill_id: skillId,
           type: 'purchase',
           price_paid: pricePaid,
+          platform_fee: platformFee,
+          creator_amount: creatorAmount,
           currency: session.currency?.toUpperCase() || 'EUR',
           stripe_checkout_session_id: sessionId,
           stripe_payment_intent_id: session.payment_intent as string,
+          payment_status: 'pending',
+          eligible_at: eligibleAt,
         });
 
       if (purchaseError) {

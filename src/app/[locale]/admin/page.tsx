@@ -14,6 +14,8 @@ import {
   Loader2,
   Settings,
   Flag,
+  RotateCcw,
+  Banknote,
 } from 'lucide-react';
 
 const ADMIN_PAGES = [
@@ -58,6 +60,20 @@ const ADMIN_PAGES = [
     description: 'Gerer les signalements des createurs (faux positifs, bugs, etc.)',
     icon: Flag,
     color: 'bg-red-100 text-red-600',
+  },
+  {
+    href: '/admin/refunds',
+    title: 'Remboursements',
+    description: 'Valider ou refuser les demandes de remboursement des acheteurs',
+    icon: RotateCcw,
+    color: 'bg-rose-100 text-rose-600',
+  },
+  {
+    href: '/admin/payouts',
+    title: 'Paiements createurs',
+    description: 'Visualiser et declencher les versements mensuels aux createurs',
+    icon: Banknote,
+    color: 'bg-emerald-100 text-emerald-600',
   },
 ];
 

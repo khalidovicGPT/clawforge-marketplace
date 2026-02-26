@@ -7,6 +7,9 @@ export type Certification = 'none' | 'bronze' | 'silver' | 'gold';
 export type License = 'MIT' | 'Apache-2.0' | 'Proprietary';
 export type PriceType = 'free' | 'one_time';
 export type PurchaseType = 'purchase' | 'free_download';
+export type PaymentStatus = 'pending' | 'eligible' | 'paid' | 'refunded';
+export type RefundStatus = 'pending' | 'approved' | 'rejected';
+export type PayoutStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
 export interface User {
   id: string;
@@ -16,6 +19,7 @@ export interface User {
   role: UserRole;
   stripe_account_id: string | null;
   stripe_onboarding_complete: boolean;
+  creator_terms_accepted_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -108,9 +112,45 @@ export interface Purchase {
   platform_fee: number;
   creator_amount: number;
   currency: string;
+  payment_status: PaymentStatus;
+  eligible_at: string | null;
+  payout_id: string | null;
+  refunded_at: string | null;
   stripe_payment_intent_id: string | null;
   stripe_checkout_session_id: string | null;
+  purchased_at: string;
   created_at: string;
+}
+
+export interface CreatorPayout {
+  id: string;
+  creator_id: string;
+  stripe_transfer_id: string | null;
+  amount: number;
+  platform_fee: number;
+  gross_amount: number;
+  purchases_count: number;
+  period_start: string;
+  period_end: string;
+  status: PayoutStatus;
+  error_message: string | null;
+  created_at: string;
+  paid_at: string | null;
+}
+
+export interface RefundRequest {
+  id: string;
+  purchase_id: string;
+  user_id: string;
+  skill_id: string;
+  reason: string;
+  status: RefundStatus;
+  admin_id: string | null;
+  admin_notes: string | null;
+  stripe_refund_id: string | null;
+  amount: number;
+  requested_at: string;
+  resolved_at: string | null;
 }
 
 export interface Review {

@@ -3,11 +3,12 @@ import { createServiceClient } from '@/lib/supabase/service';
 import { ensureUserProfile } from '@/lib/ensure-profile';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { Download, Star, Package, User, CreditCard, Plus, Clock, CheckCircle, XCircle, Upload, ShoppingCart, FileDown, AlertTriangle, Eye, Heart, MessageSquare, EyeOff, Ban } from 'lucide-react';
+import { Download, Star, Package, User, CreditCard, Plus, Clock, CheckCircle, XCircle, Upload, ShoppingCart, FileDown, AlertTriangle, Eye, Heart, MessageSquare, EyeOff, Ban, Wallet, CalendarClock } from 'lucide-react';
 import { StarRating } from '@/components/skills/star-rating';
 import { SkillActions } from '@/components/dashboard/skill-actions';
 import { ReportIssueButton } from '@/components/dashboard/report-issue-button';
 import { AgentInstallLink } from '@/components/dashboard/agent-install-link';
+import { RefundButton } from '@/components/dashboard/refund-button';
 import { SKILL_CATEGORIES, CERTIFICATION_BADGES } from '@/types/database';
 
 const STATUS_CONFIG = {
@@ -111,10 +112,15 @@ export default async function DashboardPage() {
   const skillPurchaseStats: Record<string, { count: number; revenue: number }> = {};
   let totalRevenue = 0;
   let totalPurchases = 0;
+  let pendingRevenue = 0;
+  let eligibleRevenue = 0;
+  let paidRevenue = 0;
+  let pendingCount = 0;
+  let eligibleCount = 0;
   if (skillIds.length > 0 && serviceClient) {
     const { data: skillPurchases } = await serviceClient
       .from('purchases')
-      .select('skill_id, price_paid')
+      .select('skill_id, price_paid, payment_status, creator_amount')
       .in('skill_id', skillIds);
     (skillPurchases || []).forEach(p => {
       if (!skillPurchaseStats[p.skill_id]) {
@@ -124,8 +130,23 @@ export default async function DashboardPage() {
       skillPurchaseStats[p.skill_id].revenue += p.price_paid || 0;
       totalRevenue += p.price_paid || 0;
       totalPurchases++;
+
+      const creatorAmt = p.creator_amount || Math.round((p.price_paid || 0) * 0.8);
+      if (p.payment_status === 'pending') {
+        pendingRevenue += creatorAmt;
+        pendingCount++;
+      } else if (p.payment_status === 'eligible') {
+        eligibleRevenue += creatorAmt;
+        eligibleCount++;
+      } else if (p.payment_status === 'paid') {
+        paidRevenue += creatorAmt;
+      }
     });
   }
+
+  // Date du prochain paiement (dernier jour du mois)
+  const now = new Date();
+  const nextPayoutDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -301,27 +322,55 @@ export default async function DashboardPage() {
             {/* Revenue Breakdown */}
             {totalRevenue > 0 && (
               <div className="border-b p-6">
-                <div className="grid gap-4 sm:grid-cols-4">
+                {/* Prochain paiement */}
+                {(pendingRevenue > 0 || eligibleRevenue > 0) && (
+                  <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <CalendarClock className="h-5 w-5 text-blue-600" />
+                        <div>
+                          <p className="text-sm font-semibold text-blue-900">Prochain paiement : {nextPayoutDate.toLocaleDateString('fr-FR')}</p>
+                          <p className="text-xs text-blue-700">Montant estime : {(eligibleRevenue / 100).toFixed(2)} EUR</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-blue-600">{eligibleCount} vente(s) eligible(s)</p>
+                        <p className="text-xs text-blue-600">{pendingCount} vente(s) en attente</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   <div className="rounded-lg bg-gray-50 p-4">
-                    <p className="text-xs font-medium text-gray-500">Ventes ce mois</p>
+                    <p className="text-xs font-medium text-gray-500">Total ventes</p>
                     <p className="mt-1 text-xl font-bold text-gray-900">{totalPurchases} skill(s)</p>
                   </div>
-                  <div className="rounded-lg bg-gray-50 p-4">
-                    <p className="text-xs font-medium text-gray-500">Revenu brut TTC</p>
-                    <p className="mt-1 text-xl font-bold text-gray-900">{(totalRevenue / 100).toFixed(2)} €</p>
+                  <div className="rounded-lg bg-amber-50 p-4">
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="h-3.5 w-3.5 text-amber-600" />
+                      <p className="text-xs font-medium text-amber-700">En attente (15j)</p>
+                    </div>
+                    <p className="mt-1 text-xl font-bold text-amber-700">{(pendingRevenue / 100).toFixed(2)} EUR</p>
                   </div>
-                  <div className="rounded-lg bg-gray-50 p-4">
-                    <p className="text-xs font-medium text-gray-500">Commission ClawForge (20%)</p>
-                    <p className="mt-1 text-xl font-bold text-red-600">-{((totalRevenue * 0.2) / 100).toFixed(2)} €</p>
+                  <div className="rounded-lg bg-blue-50 p-4">
+                    <div className="flex items-center gap-1.5">
+                      <Wallet className="h-3.5 w-3.5 text-blue-600" />
+                      <p className="text-xs font-medium text-blue-700">Eligible au paiement</p>
+                    </div>
+                    <p className="mt-1 text-xl font-bold text-blue-700">{(eligibleRevenue / 100).toFixed(2)} EUR</p>
                   </div>
                   <div className="rounded-lg bg-green-50 p-4">
-                    <p className="text-xs font-medium text-green-700">Votre revenu net TTC</p>
-                    <p className="mt-1 text-xl font-bold text-green-700">{((totalRevenue * 0.8) / 100).toFixed(2)} €</p>
+                    <div className="flex items-center gap-1.5">
+                      <CheckCircle className="h-3.5 w-3.5 text-green-600" />
+                      <p className="text-xs font-medium text-green-700">Deja verse</p>
+                    </div>
+                    <p className="mt-1 text-xl font-bold text-green-700">{(paidRevenue / 100).toFixed(2)} EUR</p>
                   </div>
                 </div>
                 <div className="mt-3 flex items-center justify-between">
                   <p className="text-xs text-gray-500">
-                    Ce montant est versé TTC. En tant que créateur, vous êtes responsable de la déclaration de votre TVA.
+                    Les paiements sont verses le dernier jour du mois. Commission ClawForge : 20%.
                   </p>
                   <a
                     href="/api/export/sales"
@@ -534,6 +583,12 @@ export default async function DashboardPage() {
                           Voir →
                         </Link>
                       </div>
+                      <RefundButton
+                        purchaseId={purchase.id}
+                        purchasedAt={purchase.purchased_at || purchase.created_at}
+                        pricePaid={purchase.price_paid}
+                        paymentStatus={purchase.payment_status}
+                      />
                     </div>
                   </div>
                 );
