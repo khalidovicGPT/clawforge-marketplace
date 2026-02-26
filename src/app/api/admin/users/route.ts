@@ -35,7 +35,8 @@ export async function GET(request: NextRequest) {
       .select('id, email, name, avatar_url, role, stripe_account_id, stripe_onboarding_complete, created_at, updated_at', { count: 'exact' });
 
     if (search) {
-      query = query.or(`email.ilike.%${search}%,name.ilike.%${search}%`);
+      const sanitized = search.replace(/[,().\\]/g, '');
+      query = query.or(`email.ilike.%${sanitized}%,name.ilike.%${sanitized}%`);
     }
 
     if (role && ['user', 'creator', 'admin'].includes(role)) {

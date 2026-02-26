@@ -59,7 +59,7 @@ export default function ValidationQueuePage() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<QueueData>({ silver_queue: [], gold_eligible: [], rejected: [] });
-  const [expandedSection, setExpandedSection] = useState<'silver' | 'gold' | 'rejected'>('silver');
+  const [expandedSection, setExpandedSection] = useState<'silver' | 'gold' | 'rejected' | null>('silver');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Action states
@@ -155,7 +155,7 @@ export default function ValidationQueuePage() {
   };
 
   const toggleSection = (section: 'silver' | 'gold' | 'rejected') => {
-    setExpandedSection(prev => prev === section ? section : section);
+    setExpandedSection(prev => prev === section ? null : section);
   };
 
   // Access denied

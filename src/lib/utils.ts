@@ -93,3 +93,11 @@ export function formatRating(rating: number | null): string {
   if (rating === null) return 'N/A';
   return rating.toFixed(1);
 }
+
+/**
+ * Sanitiser une chaine pour utilisation dans les filtres PostgREST (.or, .ilike)
+ * Echappe les caracteres speciaux qui pourraient modifier la logique du filtre
+ */
+export function sanitizePostgrestSearch(input: string): string {
+  return input.replace(/[,().\\]/g, '');
+}

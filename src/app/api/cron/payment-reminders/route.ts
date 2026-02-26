@@ -165,11 +165,12 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET for health check
-export async function GET() {
-  return NextResponse.json({
-    service: 'payment-reminders',
-    status: 'ok',
-    schedule: REMINDER_SCHEDULE.map(s => ({ type: s.type, days_after: s.daysAfter })),
-  });
+// GET for health check (auth required)
+export async function GET(request: NextRequest) {
+  const cronSecret = request.headers.get('x-cron-secret') || request.headers.get('authorization')?.replace('Bearer ', '');
+  const expectedSecret = process.env.ADMIN_SECRET_KEY || process.env.CRON_SECRET;
+  if (!cronSecret || cronSecret !== expectedSecret) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  return NextResponse.json({ service: 'payment-reminders', status: 'ok' });
 }

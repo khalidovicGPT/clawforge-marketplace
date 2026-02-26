@@ -48,14 +48,22 @@ export async function POST(request: Request) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
         const skillId = session.metadata?.skill_id;
+        // Privilegier user_id des metadata (fiable), fallback sur email
+        const metadataUserId = session.metadata?.user_id;
         const customerEmail = session.customer_details?.email;
-        
-        if (skillId && customerEmail) {
-          const { data: user } = await supabaseAdmin
-            .from('users')
-            .select('id')
-            .eq('email', customerEmail)
-            .single();
+
+        if (skillId && (metadataUserId || customerEmail)) {
+          let userId = metadataUserId;
+          if (!userId && customerEmail) {
+            const { data: userByEmail } = await supabaseAdmin
+              .from('users')
+              .select('id')
+              .eq('email', customerEmail)
+              .single();
+            userId = userByEmail?.id;
+          }
+
+          const user = userId ? { id: userId } : null;
 
           if (user) {
             const pricePaid = session.amount_total || 0;

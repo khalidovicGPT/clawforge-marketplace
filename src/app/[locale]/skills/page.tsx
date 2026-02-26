@@ -70,7 +70,8 @@ async function SkillsGrid({ searchParams, params }: { searchParams: PageProps['s
   }
 
   if (resolvedParams.search) {
-    query = query.or(`title.ilike.%${resolvedParams.search}%,description_short.ilike.%${resolvedParams.search}%`);
+    const sanitized = resolvedParams.search.replace(/[,().\\]/g, '');
+    query = query.or(`title.ilike.%${sanitized}%,description_short.ilike.%${sanitized}%`);
   }
 
   // Apply sorting
