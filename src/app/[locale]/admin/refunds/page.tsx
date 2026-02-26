@@ -218,12 +218,16 @@ export default function AdminRefundsPage() {
                         </button>
                         <button
                           onClick={() => handleAction(req.id, 'reject')}
-                          disabled={actionLoading === req.id}
+                          disabled={actionLoading === req.id || (adminNotes[req.id] || '').length < 5}
+                          title={(adminNotes[req.id] || '').length < 5 ? 'Note admin requise (min. 5 caractères)' : undefined}
                           className="inline-flex items-center justify-center gap-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
                         >
                           <X className="h-4 w-4" />
                           Refuser
                         </button>
+                        {(adminNotes[req.id] || '').length > 0 && (adminNotes[req.id] || '').length < 5 && (
+                          <p className="text-xs text-red-500">Note requise (min. 5 car.)</p>
+                        )}
                       </div>
                     )}
                   </div>
