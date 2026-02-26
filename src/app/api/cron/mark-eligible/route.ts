@@ -58,10 +58,11 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
-  return NextResponse.json({
-    service: 'mark-eligible',
-    status: 'ok',
-    description: 'Marque les achats éligibles au paiement après 15 jours',
-  });
+export async function GET(request: NextRequest) {
+  const cronSecret = request.headers.get('x-cron-secret') || request.headers.get('authorization')?.replace('Bearer ', '');
+  const expectedSecret = process.env.ADMIN_SECRET_KEY || process.env.CRON_SECRET;
+  if (!cronSecret || cronSecret !== expectedSecret) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  return NextResponse.json({ service: 'mark-eligible', status: 'ok' });
 }

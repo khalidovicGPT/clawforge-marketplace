@@ -128,7 +128,8 @@ export async function GET(request: NextRequest) {
     }
     
     if (params.search) {
-      query = query.or(`title.ilike.%${params.search}%,description_short.ilike.%${params.search}%`);
+      const sanitized = params.search.replace(/[,().\\]/g, '');
+      query = query.or(`title.ilike.%${sanitized}%,description_short.ilike.%${sanitized}%`);
     }
 
     // Apply sorting

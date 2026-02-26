@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/service';
+import { authLimiter, checkRateLimit } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'anonymous';
+    const rateLimitResponse = await checkRateLimit(authLimiter, ip);
+    if (rateLimitResponse) return rateLimitResponse;
+
     const supabaseAdmin = createServiceClient();
     const body = await request.json();
     const { email } = body;
@@ -19,21 +25,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Configuration serveur manquante' }, { status: 500 });
     }
 
-    const { error } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
+    // Toujours retourner succes pour eviter l'enumeration d'emails
+    await supabaseAdmin.auth.resetPasswordForEmail(email, {
       redirectTo: `${appUrl}/auth/reset-password`,
     });
 
-    if (error) {
-      console.error('Reset password error:', error);
-      return NextResponse.json(
-        { error: 'Erreur lors de l\'envoi de l\'email' },
-        { status: 500 }
-      );
-    }
-
     return NextResponse.json({
       success: true,
-      message: 'Email de réinitialisation envoyé',
+      message: 'Si un compte existe avec cet email, un lien de reinitialisation a ete envoye.',
     });
   } catch (error) {
     console.error('Reset password error:', error);

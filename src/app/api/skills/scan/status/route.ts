@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
 
 const VIRUSTOTAL_API_URL = 'https://www.virustotal.com/api/v3';
 
 export async function GET(request: NextRequest) {
   try {
+    // Auth requise pour eviter l'abus de l'API VirusTotal
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Non authentifie' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const scanId = searchParams.get('scanId');
 

@@ -1,6 +1,12 @@
 import crypto from 'crypto';
 
-const SECRET = process.env.ADMIN_SECRET_KEY || 'clawforge-verification-secret';
+function getSecret(): string {
+  const secret = process.env.ADMIN_SECRET_KEY;
+  if (!secret) {
+    throw new Error('ADMIN_SECRET_KEY non defini — impossible de generer/verifier les tokens');
+  }
+  return secret;
+}
 
 /**
  * Generate a signed verification token containing the user ID.
@@ -11,7 +17,7 @@ export function generateVerificationToken(userId: string): string {
   const exp = Date.now() + 24 * 60 * 60 * 1000; // 24h
   const data = `${userId}.${exp}`;
   const dataB64 = Buffer.from(data).toString('base64url');
-  const sig = crypto.createHmac('sha256', SECRET).update(data).digest('hex');
+  const sig = crypto.createHmac('sha256', getSecret()).update(data).digest('hex');
   return `${dataB64}.${sig}`;
 }
 
@@ -35,7 +41,7 @@ export function verifyVerificationToken(token: string): string | null {
   }
 
   // Verify signature
-  const expectedSig = crypto.createHmac('sha256', SECRET).update(data).digest('hex');
+  const expectedSig = crypto.createHmac('sha256', getSecret()).update(data).digest('hex');
 
   if (sig.length !== expectedSig.length) return null;
 

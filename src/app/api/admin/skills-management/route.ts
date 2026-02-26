@@ -54,7 +54,8 @@ export async function GET(request: NextRequest) {
     }
 
     if (creator) {
-      query = query.or(`creator_id.eq.${creator}`);
+      const sanitized = creator.replace(/[,().\\]/g, '');
+      query = query.eq('creator_id', sanitized);
     }
 
     if (from) {

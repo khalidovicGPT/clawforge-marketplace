@@ -52,6 +52,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Verifier que la session appartient a cet utilisateur (anti-IDOR)
+    if (session.metadata?.user_id && session.metadata.user_id !== user.id) {
+      return NextResponse.json(
+        { error: 'Session non autorisee' },
+        { status: 403 }
+      );
+    }
+
     // Get skill details
     const skillId = session.metadata?.skill_id;
     const creatorId = session.metadata?.creator_id;
