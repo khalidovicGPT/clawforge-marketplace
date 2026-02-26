@@ -146,12 +146,9 @@ export default function AdminPayoutsPage() {
     if (!confirm('Declencher le paiement mensuel pour tous les createurs eligibles ?')) return;
     setTriggerLoading(true);
     try {
-      const res = await fetch('/api/cron/monthly-payout', {
+      const res = await fetch('/api/admin/trigger-payout', {
         method: 'POST',
-        headers: {
-          'x-cron-secret': 'admin-manual-trigger',
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
       });
       const data = await res.json();
       if (data.success) {

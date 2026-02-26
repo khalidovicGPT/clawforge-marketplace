@@ -428,6 +428,7 @@ export default function SellerDashboardPage() {
               setShowTermsModal(false);
               setTermsAccepted(true);
             }}
+            onClose={() => setShowTermsModal(false)}
           />
         )}
 
