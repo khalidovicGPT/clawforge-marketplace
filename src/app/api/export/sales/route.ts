@@ -43,21 +43,29 @@ export async function GET() {
 
     const { data: purchases } = await serviceClient
       .from('purchases')
-      .select('skill_id, price_paid, currency, created_at, stripe_payment_intent_id')
+      .select('skill_id, price_paid, platform_fee, creator_amount, currency, created_at, stripe_payment_intent_id, payment_status')
       .in('skill_id', skillIds)
       .order('created_at', { ascending: false });
 
+    const PAYMENT_STATUS_LABELS: Record<string, string> = {
+      pending: 'En attente (15j)',
+      eligible: 'Eligible',
+      paid: 'Verse',
+      refunded: 'Rembourse',
+    };
+
     // Build CSV
-    const header = 'Date,Skill,Prix TTC,Commission CF (20%),Revenu net TTC (80%),Statut';
+    const header = 'Date,Skill,Prix TTC,Commission CF (20%),Revenu net TTC (80%),Statut paiement,Statut versement';
     const rows = (purchases || []).map(p => {
       const priceTTC = (p.price_paid || 0) / 100;
-      const commission = priceTTC * 0.20;
-      const revenueNet = priceTTC * 0.80;
+      const commission = (p.platform_fee || Math.round(p.price_paid * 0.20)) / 100;
+      const revenueNet = (p.creator_amount || Math.round(p.price_paid * 0.80)) / 100;
       const date = new Date(p.created_at).toLocaleDateString('fr-FR');
       const skillName = (skillNames[p.skill_id] || 'Inconnu').replace(/,/g, ' ');
-      const statut = p.stripe_payment_intent_id ? 'Payé' : (priceTTC === 0 ? 'Gratuit' : 'Payé');
+      const statut = priceTTC === 0 ? 'Gratuit' : 'Paye';
+      const paymentStatus = PAYMENT_STATUS_LABELS[p.payment_status] || p.payment_status || 'N/A';
 
-      return `${date},${skillName},${priceTTC.toFixed(2)},${commission.toFixed(2)},${revenueNet.toFixed(2)},${statut}`;
+      return `${date},${skillName},${priceTTC.toFixed(2)},${commission.toFixed(2)},${revenueNet.toFixed(2)},${statut},${paymentStatus}`;
     });
 
     const csv = [header, ...rows].join('\n');

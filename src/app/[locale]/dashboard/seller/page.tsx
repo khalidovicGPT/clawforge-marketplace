@@ -16,7 +16,12 @@ import {
   ExternalLink,
   Package,
   Plus,
+  FileText,
+  CalendarClock,
+  Wallet,
+  Clock,
 } from 'lucide-react';
+import { CreatorTermsModal } from '@/components/dashboard/creator-terms-modal';
 
 type StripeStatus = 'loading' | 'complete' | 'pending' | 'no_account';
 
@@ -28,6 +33,14 @@ export default function SellerDashboardPage() {
   const [stripeError, setStripeError] = useState<string | null>(null);
   const [connectLoading, setConnectLoading] = useState(false);
   const [skillCount, setSkillCount] = useState(0);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [payoutSummary, setPayoutSummary] = useState<{
+    pending: { count: number; amount: number };
+    eligible: { count: number; amount: number };
+    next_payout_date: string;
+    next_payout_estimated: number;
+  } | null>(null);
 
   useEffect(() => {
     loadData();
@@ -50,11 +63,23 @@ export default function SellerDashboardPage() {
       .single();
 
     setProfile(profileData);
+    setTermsAccepted(!!profileData?.creator_terms_accepted_at);
 
     // Auto-upgrade to creator if not already
     if (profileData && profileData.role !== 'creator' && profileData.role !== 'admin') {
       await fetch('/api/user/become-creator', { method: 'POST' });
       setProfile({ ...profileData, role: 'creator' });
+    }
+
+    // Charger le résumé des payouts
+    try {
+      const payoutRes = await fetch('/api/creator/payouts');
+      if (payoutRes.ok) {
+        const payoutData = await payoutRes.json();
+        setPayoutSummary(payoutData.summary);
+      }
+    } catch {
+      // Pas critique
     }
 
     // Count skills
@@ -319,6 +344,92 @@ export default function SellerDashboardPage() {
             )}
           </div>
         </div>
+
+        {/* CGV Créateur */}
+        {!termsAccepted && stripeStatus === 'complete' && (
+          <div className="mt-8 rounded-xl border border-amber-200 bg-amber-50 p-6">
+            <div className="flex items-start gap-4">
+              <FileText className="h-6 w-6 flex-shrink-0 text-amber-600" />
+              <div>
+                <h3 className="font-semibold text-amber-900">Nouvelles conditions createur</h3>
+                <p className="mt-1 text-sm text-amber-700">
+                  Pour continuer a vendre, veuillez accepter les nouvelles conditions generales
+                  (paiement mensuel avec delai de protection de 15 jours).
+                </p>
+                <button
+                  onClick={() => setShowTermsModal(true)}
+                  className="mt-3 inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
+                >
+                  <FileText className="h-4 w-4" />
+                  Consulter et accepter
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Résumé des revenus */}
+        {stripeStatus === 'complete' && payoutSummary && (
+          <div className="mt-8 rounded-xl border bg-white shadow-sm">
+            <div className="border-b p-6">
+              <div className="flex items-center gap-3">
+                <Wallet className="h-5 w-5 text-gray-700" />
+                <h2 className="text-xl font-bold text-gray-900">Revenus</h2>
+              </div>
+            </div>
+            <div className="p-6">
+              {/* Prochain paiement */}
+              <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4">
+                <div className="flex items-center gap-3">
+                  <CalendarClock className="h-5 w-5 text-blue-600" />
+                  <div>
+                    <p className="text-sm font-semibold text-blue-900">
+                      Prochain paiement : {new Date(payoutSummary.next_payout_date).toLocaleDateString('fr-FR')}
+                    </p>
+                    <p className="text-xs text-blue-700">
+                      Montant estime : {(payoutSummary.next_payout_estimated / 100).toFixed(2)} EUR
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-lg bg-amber-50 p-4">
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="h-3.5 w-3.5 text-amber-600" />
+                    <p className="text-xs font-medium text-amber-700">En attente (15j)</p>
+                  </div>
+                  <p className="mt-1 text-xl font-bold text-amber-700">
+                    {(payoutSummary.pending.amount / 100).toFixed(2)} EUR
+                  </p>
+                  <p className="text-xs text-amber-600">{payoutSummary.pending.count} vente(s)</p>
+                </div>
+                <div className="rounded-lg bg-green-50 p-4">
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle className="h-3.5 w-3.5 text-green-600" />
+                    <p className="text-xs font-medium text-green-700">Eligible au paiement</p>
+                  </div>
+                  <p className="mt-1 text-xl font-bold text-green-700">
+                    {(payoutSummary.eligible.amount / 100).toFixed(2)} EUR
+                  </p>
+                  <p className="text-xs text-green-600">{payoutSummary.eligible.count} vente(s)</p>
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-gray-500">
+                Les paiements sont verses le dernier jour de chaque mois. Commission ClawForge : 20%.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {showTermsModal && (
+          <CreatorTermsModal
+            onAccepted={() => {
+              setShowTermsModal(false);
+              setTermsAccepted(true);
+            }}
+          />
+        )}
 
         {/* Resources */}
         <div className="mt-8 grid gap-4 sm:grid-cols-3">

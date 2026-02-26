@@ -139,3 +139,60 @@ export async function isAccountOnboarded(accountId: string): Promise<boolean> {
   const account = await stripe.accounts.retrieve(accountId);
   return account.details_submitted && account.charges_enabled;
 }
+
+/**
+ * Créer un transfert vers un compte Connect (payout créateur)
+ */
+export async function createTransfer({
+  amount,
+  destination,
+  description,
+  idempotencyKey,
+}: {
+  amount: number;
+  destination: string;
+  description: string;
+  idempotencyKey: string;
+}) {
+  if (!stripe) {
+    throw new Error('Stripe is not configured');
+  }
+
+  const transfer = await stripe.transfers.create(
+    {
+      amount,
+      currency: 'eur',
+      destination,
+      description,
+    },
+    { idempotencyKey }
+  );
+
+  return transfer;
+}
+
+/**
+ * Créer un remboursement Stripe
+ */
+export async function createRefund({
+  paymentIntentId,
+  amount,
+  reason,
+}: {
+  paymentIntentId: string;
+  amount?: number;
+  reason?: string;
+}) {
+  if (!stripe) {
+    throw new Error('Stripe is not configured');
+  }
+
+  const refund = await stripe.refunds.create({
+    payment_intent: paymentIntentId,
+    amount,
+    reason: 'requested_by_customer',
+    metadata: { internal_reason: reason || '' },
+  });
+
+  return refund;
+}

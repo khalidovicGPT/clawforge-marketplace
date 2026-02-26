@@ -1,9 +1,11 @@
-import { stripe } from '@/lib/stripe';
+import { stripe, calculatePlatformFee } from '@/lib/stripe';
 import { createClient } from '@supabase/supabase-js';
 import { generateDownloadToken } from '@/lib/download-tokens';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
+
+const ELIGIBILITY_DELAY_DAYS = 15;
 
 export async function POST(request: Request) {
   if (!stripe) {
@@ -57,6 +59,9 @@ export async function POST(request: Request) {
 
           if (user) {
             const pricePaid = session.amount_total || 0;
+            const platformFee = calculatePlatformFee(pricePaid);
+            const creatorAmount = pricePaid - platformFee;
+            const eligibleAt = new Date(Date.now() + ELIGIBILITY_DELAY_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
             await supabaseAdmin
               .from('purchases')
@@ -65,9 +70,13 @@ export async function POST(request: Request) {
                 skill_id: skillId,
                 type: 'purchase',
                 price_paid: pricePaid,
+                platform_fee: platformFee,
+                creator_amount: creatorAmount,
                 currency: session.currency?.toUpperCase() || 'EUR',
                 stripe_checkout_session_id: session.id,
                 stripe_payment_intent_id: session.payment_intent as string,
+                payment_status: 'pending',
+                eligible_at: eligibleAt,
               }, { onConflict: 'user_id,skill_id' });
 
             await supabaseAdmin.rpc('increment_downloads', { skill_uuid: skillId });
@@ -121,6 +130,28 @@ export async function POST(request: Request) {
         }
 
         console.log(`Account ${account.id} updated: onboarded=${isOnboarded}`);
+        break;
+      }
+
+      case 'charge.refunded': {
+        const charge = event.data.object as Stripe.Charge;
+        const paymentIntentId = charge.payment_intent as string;
+
+        if (paymentIntentId) {
+          // Marquer l'achat comme remboursé
+          const { data: updated } = await supabaseAdmin
+            .from('purchases')
+            .update({
+              payment_status: 'refunded',
+              refunded_at: new Date().toISOString(),
+            })
+            .eq('stripe_payment_intent_id', paymentIntentId)
+            .select('id, skill_id, user_id');
+
+          if (updated && updated.length > 0) {
+            console.log(`[STRIPE] Refund recorded for payment_intent=${paymentIntentId}, purchase=${updated[0].id}`);
+          }
+        }
         break;
       }
 
