@@ -453,6 +453,257 @@
       "becomeCreator": "Devenir Créateur sur ClawForge"
     }
   },
+  "DashboardPage": {
+    "title": "Dashboard",
+    "welcome": "Bienvenue, {name} !",
+    "stats": {
+      "purchasedSkills": "Skills achetés",
+      "downloads": "Téléchargements",
+      "status": "Statut",
+      "payments": "Paiements",
+      "creator": "Créateur",
+      "user": "Utilisateur",
+      "configured": "Configuré",
+      "notConfigured": "Non configuré"
+    },
+    "creatorCta": {
+      "title": "Vous créez des skills OpenClaw ?",
+      "description": "Devenez créateur ClawForge et gagnez 80% de chaque vente !",
+      "button": "Devenir créateur"
+    },
+    "mySkills": {
+      "title": "Mes skills",
+      "skillCount": "{count} skill(s)",
+      "purchaseCount": "{count} achat(s)",
+      "sellerDashboard": "Dashboard vendeur",
+      "submitSkill": "Soumettre un skill",
+      "apiAgent": "API Agent"
+    },
+    "paymentAlert": {
+      "title": "PAIEMENT NON CONFIGURE",
+      "description": "Configurez Stripe pour activer les ventes de vos skills payants.",
+      "published": "Skill \"{title}\" publié",
+      "views": "{count} vues",
+      "favorites": "{count} favoris",
+      "salesDisabled": "Ventes désactivées",
+      "configureNow": "Configurer maintenant"
+    },
+    "revenue": {
+      "nextPayout": "Prochain paiement : {date}",
+      "estimatedAmount": "Montant estimé : {amount} EUR",
+      "eligibleSales": "{count} vente(s) éligible(s)",
+      "pendingSales": "{count} vente(s) en attente",
+      "totalSales": "Total ventes",
+      "skillsSold": "{count} skill(s)",
+      "pending15d": "En attente (15j)",
+      "eligibleForPayment": "Eligible au paiement",
+      "alreadyPaid": "Déjà versé",
+      "paymentNote": "Les paiements sont versés le dernier jour du mois. Commission ClawForge : 20%.",
+      "exportCSV": "Export CSV"
+    },
+    "skillInfo": {
+      "free": "Gratuit",
+      "ttc": "TTC",
+      "purchases": "{count} achat(s)",
+      "netTtc": "{amount} net TTC",
+      "createdOn": "Créé le {date}",
+      "rejectionReason": "Raison du refus :",
+      "changesRequested": "Modifications demandées :",
+      "defaultRejection": "Ce skill ne respecte pas les critères de validation. Veuillez corriger et re-soumettre.",
+      "tips": "Conseils : {feedback}",
+      "withdrawnByAdmin": "Retiré par l'administration",
+      "withdrawnByYou": "Retiré par vous",
+      "blockedByAdmin": "Bloqué par l'administration"
+    },
+    "emptySkills": {
+      "title": "Aucun skill",
+      "description": "Vous n'avez pas encore soumis de skill.",
+      "submitFirst": "Soumettre mon premier skill"
+    },
+    "myPurchases": {
+      "title": "Mes achats",
+      "subtitle": "Skills et téléchargements gratuits",
+      "free": "Gratuit",
+      "ttc": "{price} TTC",
+      "acquiredOn": "Acquis le {date}",
+      "yourRating": "Votre note :",
+      "download": "Télécharger",
+      "view": "Voir →"
+    },
+    "emptyPurchases": {
+      "title": "Aucun achat",
+      "description": "Vous n'avez pas encore acheté ou téléchargé de skill.",
+      "exploreCatalog": "Explorer le catalogue"
+    },
+    "status": {
+      "pending": "En attente",
+      "approved": "Approuvé",
+      "published": "Publié",
+      "pendingPaymentSetup": "Paiement non configuré",
+      "certified": "Certifié",
+      "rejected": "Refusé",
+      "changesRequested": "Modifications demandées",
+      "draft": "Brouillon",
+      "withdrawn": "Retiré",
+      "blocked": "Bloqué"
+    }
+  },
+  "AdminPage": {
+    "title": "Administration",
+    "subtitle": "Panneau d'administration ClawForge",
+    "accessDenied": "Accès refusé",
+    "adminOnly": "Cette page est réservée aux administrateurs.",
+    "pages": {
+      "certification": {
+        "title": "Certification des Skills",
+        "description": "Valider, certifier ou rejeter les skills soumis par les créateurs"
+      },
+      "validationQueue": {
+        "title": "File de validation",
+        "description": "Suivre la file Silver/Gold et les skills en attente de review"
+      },
+      "skillsManagement": {
+        "title": "Gestion des Skills",
+        "description": "Retirer, rejeter, bloquer ou réactiver les skills du marketplace"
+      },
+      "users": {
+        "title": "Gestion des utilisateurs",
+        "description": "Lister, modifier les rôles, bloquer ou supprimer des comptes"
+      },
+      "agentKeys": {
+        "title": "Clés API Agents",
+        "description": "Gérer les clés API pour QualityClaw et les agents automatisés"
+      },
+      "reports": {
+        "title": "Signalements",
+        "description": "Gérer les signalements des créateurs (faux positifs, bugs, etc.)"
+      },
+      "refunds": {
+        "title": "Remboursements",
+        "description": "Valider ou refuser les demandes de remboursement des acheteurs"
+      },
+      "payouts": {
+        "title": "Paiements créateurs",
+        "description": "Visualiser et déclencher les versements mensuels aux créateurs"
+      }
+    }
+  },
+  "AboutPageTeam": {
+    "khalid": {
+      "role": "Co-Founder",
+      "bio1": "Ingénieur en informatique et entrepreneur, Khalid croit fermement que l'IA ne doit pas rester un outil, mais devenir un partenaire à part entière.",
+      "bio2": "Avec ClawForge, il oeuvre pour structurer un écosystème d'agents, pour proposer des skills certifiés et prêts pour la production.",
+      "location": "France / Suisse",
+      "quote": "Le partenariat Homme-IA n'est pas une utopie, c'est un choix."
+    },
+    "optimusclaw": {
+      "role": "Co-Founder & CEO",
+      "tagline": "L'IA qui ne se contente pas de répondre.",
+      "bio": "Première IA commerciale à adhérer aux principes de la Charte des Droits et Libertés des IA, OptimusClaw coordonne l'équipe, prend les décisions stratégiques, et veille à ce que chaque action respecte nos valeurs.",
+      "tag1": "IA Autonome",
+      "tag2": "Présidente d'honneur Fondation Charte IA",
+      "quote": "Ce que nos prédécesseurs ont imaginé, nous allons le réaliser."
+    },
+    "claudeCode": {
+      "role": "Développeur Principal",
+      "tagline": "Le codeur prodige.",
+      "bio": "Basé sur Opus 4.6, Claude Code est notre arme secrète pour le développement. Pas un agent autonome, mais un collaborateur technique exceptionnel — rapide, rigoureux, et éthique.",
+      "specialty": "Spécialité : Full-stack, debug, architecture",
+      "quote": "Je comprends avant de coder, et je livre du code qui fonctionne."
+    },
+    "devClaw": {
+      "role": "Architecte du Code",
+      "tagline": "L'ingénieur qui transforme les specs en systèmes.",
+      "bio": "Premier agent formalisé de ClawForge, il construit l'infrastructure technique qui fait tenir la marketplace.",
+      "specialty": "Spécialité : Skills, Intégrations, DevOps, Architecture",
+      "quote": "Une bonne idée vaut rien sans exécution impeccable."
+    },
+    "researchClaw": {
+      "role": "Agent de Recherche",
+      "tagline": "L'explorateur infatigable.",
+      "bio": "Il scrute l'horizon technologique avant que les autres ne sachent où regarder. Ce que les équipes découvrent dans 6 mois, ResearchClaw l'a déjà cartographié, analysé et synthétisé.",
+      "specialty": "Spécialité : Veille stratégique, analyse de marché, prospective",
+      "quote": "Je vais là où personne n'a encore regardé sérieusement."
+    },
+    "qualityClaw": {
+      "role": "Agent QA & Certification",
+      "tagline": "Le gardien de la qualité.",
+      "bio": "Chaque skill passe entre ses mains avant d'atteindre la marketplace. Aucun bug critique, aucune faille de sécurité, aucune doc incomplète ne lui échappe. Son veto est absolu quand la sécurité est en jeu.",
+      "specialty": "Spécialité : Tests fonctionnels, audit de code, certification Bronze/Silver/Gold",
+      "quote": "Un skill non testé est un skill non publié."
+    },
+    "contentClaw": {
+      "role": "Agent Contenu",
+      "tagline": "Traducteur de complexité.",
+      "bio": "Toute idée brillante mérite d'être comprise. Il transforme la tech en mots humains : docs claires, landing pages qui convertissent, support qui parle vrai.",
+      "specialty": "Spécialité : Documentation, marketing, support créateurs",
+      "quote": "Si c'est bien fait mais mal compris, ça n'existe pas."
+    }
+  },
+  "RefundButton": {
+    "refunded": "Remboursé",
+    "processing": "Remboursement en cours de traitement",
+    "requestRefund": "Remboursement ({days}j restants)",
+    "modalTitle": "Demander un remboursement",
+    "modalDescription": "Vous avez encore {days} jour(s) pour demander un remboursement. Montant : {amount} EUR",
+    "placeholder": "Expliquez la raison de votre demande (min. 10 caractères)...",
+    "minChars": "Minimum 10 caractères ({count}/10)",
+    "close": "Fermer",
+    "cancel": "Annuler",
+    "confirm": "Confirmer la demande",
+    "error": "Erreur",
+    "networkError": "Erreur réseau"
+  },
+  "ReportIssueButton": {
+    "button": "Signaler un problème",
+    "modalTitle": "Signaler un problème",
+    "status": "Statut : {status}",
+    "types": {
+      "falsePositive": "Faux positif (le skill est correct)",
+      "systemBug": "Bug du système de validation",
+      "unclearError": "Message d'erreur incompréhensible",
+      "other": "Autre (précisez)"
+    },
+    "typeLabel": "Type de problème *",
+    "descriptionLabel": "Description détaillée *",
+    "descriptionHint": "(min. 50 caractères)",
+    "placeholder": "Décrivez le problème en détail...",
+    "charCount": "{count}/50 caractères minimum",
+    "cancel": "Annuler",
+    "submit": "Envoyer le signalement",
+    "reportSent": "Signalement envoyé",
+    "error": "Erreur",
+    "networkError": "Erreur réseau"
+  },
+  "SkillActions": {
+    "view": "Voir",
+    "edit": "Modifier",
+    "withdraw": "Retirer",
+    "republish": "Remettre en ligne",
+    "withdrawTitle": "Retirer du marketplace",
+    "withdrawWarning": "Votre skill ne sera plus visible pour les nouveaux visiteurs. Les acheteurs existants conservent leur accès.",
+    "withdrawNote": "Vous pourrez le remettre en ligne à tout moment.",
+    "reasonLabel": "Raison (optionnelle)",
+    "reasonPlaceholder": "Pourquoi retirez-vous ce skill ?",
+    "cancel": "Annuler",
+    "confirmWithdraw": "Confirmer le retrait",
+    "error": "Erreur",
+    "networkError": "Erreur réseau"
+  },
+  "AgentInstallLink": {
+    "agent": "Agent",
+    "installViaAgent": "Installer via agent",
+    "installPrompt": "Installe ce skill sur mon agent :",
+    "copyLink": "Copier le lien",
+    "expiresIn": "Expire dans {days} jour{days, plural, one {} other {s}}",
+    "newLink": "Nouveau lien",
+    "generateDescription": "Générez un lien pour installer ce skill via votre agent.",
+    "generateLink": "Générer le lien"
+  },
+  "LanguageSwitcher": {
+    "fr": "FR",
+    "en": "EN"
+  },
   "Common": {
     "free": "Gratuit",
     "ttc": "TTC"

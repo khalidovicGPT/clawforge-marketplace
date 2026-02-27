@@ -6,6 +6,7 @@ import { Menu, X, Search, User, LogOut, BookOpen, Shield } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
+import { LanguageSwitcher } from '@/components/layout/language-switcher';
 
 export function Header() {
   const t = useTranslations('Header');
@@ -124,6 +125,7 @@ export function Header() {
 
         {/* Search & Auth */}
         <div className="hidden md:flex md:items-center md:gap-4">
+          <LanguageSwitcher />
           <button className="rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700">
             <Search className="h-5 w-5" />
           </button>
@@ -228,6 +230,9 @@ export function Header() {
               <BookOpen className="h-4 w-4" />
               {t('charteIA')}
             </Link>
+            <div className="px-3 py-2">
+              <LanguageSwitcher />
+            </div>
             <hr className="my-2" />
             {user ? (
               <>

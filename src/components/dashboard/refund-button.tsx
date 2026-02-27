@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { RotateCcw, Loader2, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface RefundButtonProps {
   purchaseId: string;
@@ -14,6 +15,7 @@ interface RefundButtonProps {
 const REFUND_WINDOW_DAYS = 15;
 
 export function RefundButton({ purchaseId, purchasedAt, pricePaid, paymentStatus, refundStatus }: RefundButtonProps) {
+  const t = useTranslations('RefundButton');
   const [showModal, setShowModal] = useState(false);
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
@@ -27,7 +29,7 @@ export function RefundButton({ purchaseId, purchasedAt, pricePaid, paymentStatus
     return (
       <span className="inline-flex items-center gap-1 text-xs text-gray-400">
         <CheckCircle className="h-3 w-3" />
-        Remboursé
+        {t('refunded')}
       </span>
     );
   }
@@ -37,7 +39,7 @@ export function RefundButton({ purchaseId, purchasedAt, pricePaid, paymentStatus
     return (
       <span className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700">
         <Clock className="h-3 w-3" />
-        Remboursement en cours de traitement
+        {t('processing')}
       </span>
     );
   }
@@ -64,10 +66,10 @@ export function RefundButton({ purchaseId, purchasedAt, pricePaid, paymentStatus
       if (data.success) {
         setResult({ success: true, message: data.message });
       } else {
-        setResult({ success: false, message: data.error || 'Erreur' });
+        setResult({ success: false, message: data.error || t('error') });
       }
     } catch {
-      setResult({ success: false, message: 'Erreur reseau' });
+      setResult({ success: false, message: t('networkError') });
     } finally {
       setLoading(false);
     }
@@ -80,16 +82,15 @@ export function RefundButton({ purchaseId, purchasedAt, pricePaid, paymentStatus
         className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50"
       >
         <RotateCcw className="h-3 w-3" />
-        Remboursement ({daysLeft}j restants)
+        {t('requestRefund', { days: daysLeft })}
       </button>
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-bold text-gray-900">Demander un remboursement</h3>
+            <h3 className="text-lg font-bold text-gray-900">{t('modalTitle')}</h3>
             <p className="mt-2 text-sm text-gray-600">
-              Vous avez encore {daysLeft} jour(s) pour demander un remboursement.
-              Montant : {(pricePaid / 100).toFixed(2)} EUR
+              {t('modalDescription', { days: daysLeft, amount: (pricePaid / 100).toFixed(2) })}
             </p>
 
             {result ? (
@@ -108,7 +109,7 @@ export function RefundButton({ purchaseId, purchasedAt, pricePaid, paymentStatus
                   onClick={() => { setShowModal(false); setResult(null); setReason(''); }}
                   className="mt-3 text-sm font-medium text-gray-600 hover:text-gray-800"
                 >
-                  Fermer
+                  {t('close')}
                 </button>
               </div>
             ) : (
@@ -116,12 +117,12 @@ export function RefundButton({ purchaseId, purchasedAt, pricePaid, paymentStatus
                 <textarea
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  placeholder="Expliquez la raison de votre demande (min. 10 caractères)..."
+                  placeholder={t('placeholder')}
                   className="mt-4 w-full rounded-lg border p-3 text-sm focus:border-rose-300 focus:outline-none focus:ring-2 focus:ring-rose-100"
                   rows={3}
                 />
                 {reason.length > 0 && reason.length < 10 && (
-                  <p className="mt-1 text-xs text-red-500">Minimum 10 caractères ({reason.length}/10)</p>
+                  <p className="mt-1 text-xs text-red-500">{t('minChars', { count: reason.length })}</p>
                 )}
 
                 <div className="mt-4 flex justify-end gap-3">
@@ -129,7 +130,7 @@ export function RefundButton({ purchaseId, purchasedAt, pricePaid, paymentStatus
                     onClick={() => { setShowModal(false); setReason(''); }}
                     className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800"
                   >
-                    Annuler
+                    {t('cancel')}
                   </button>
                   <button
                     onClick={handleSubmit}
@@ -137,7 +138,7 @@ export function RefundButton({ purchaseId, purchasedAt, pricePaid, paymentStatus
                     className="inline-flex items-center gap-2 rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-700 disabled:opacity-50"
                   >
                     {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
-                    Confirmer la demande
+                    {t('confirm')}
                   </button>
                 </div>
               </>

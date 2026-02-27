@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Loader2, X, Flag } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface ReportIssueButtonProps {
   skillId: string;
@@ -10,14 +11,11 @@ interface ReportIssueButtonProps {
   skillStatus: string;
 }
 
-const REPORT_TYPES = [
-  { value: 'false_positive', label: 'Faux positif (le skill est correct)' },
-  { value: 'system_bug', label: 'Bug du systeme de validation' },
-  { value: 'unclear_error', label: 'Message d\'erreur incomprehensible' },
-  { value: 'other', label: 'Autre (precisez)' },
-];
+const REPORT_TYPE_KEYS = ['falsePositive', 'systemBug', 'unclearError', 'other'] as const;
+const REPORT_TYPE_VALUES = ['false_positive', 'system_bug', 'unclear_error', 'other'];
 
 export function ReportIssueButton({ skillId, skillTitle, skillVersion, skillStatus }: ReportIssueButtonProps) {
+  const t = useTranslations('ReportIssueButton');
   const [showModal, setShowModal] = useState(false);
   const [reportType, setReportType] = useState('');
   const [description, setDescription] = useState('');
@@ -42,11 +40,11 @@ export function ReportIssueButton({ skillId, skillTitle, skillVersion, skillStat
       const data = await res.json();
 
       if (!res.ok) {
-        setResult({ type: 'error', message: data.error || 'Erreur' });
+        setResult({ type: 'error', message: data.error || t('error') });
         return;
       }
 
-      setResult({ type: 'success', message: data.message || 'Signalement envoye' });
+      setResult({ type: 'success', message: data.message || t('reportSent') });
       setTimeout(() => {
         setShowModal(false);
         setReportType('');
@@ -54,7 +52,7 @@ export function ReportIssueButton({ skillId, skillTitle, skillVersion, skillStat
         setResult(null);
       }, 3000);
     } catch {
-      setResult({ type: 'error', message: 'Erreur reseau' });
+      setResult({ type: 'error', message: t('networkError') });
     } finally {
       setLoading(false);
     }
@@ -71,14 +69,14 @@ export function ReportIssueButton({ skillId, skillTitle, skillVersion, skillStat
         className="inline-flex items-center gap-1.5 rounded-lg border border-orange-300 bg-orange-50 px-3 py-1.5 text-xs font-medium text-orange-700 hover:bg-orange-100"
       >
         <Flag className="h-3.5 w-3.5" />
-        Signaler un probleme
+        {t('button')}
       </button>
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="mx-4 w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900">Signaler un probleme</h3>
+              <h3 className="text-lg font-bold text-gray-900">{t('modalTitle')}</h3>
               <button
                 onClick={() => { setShowModal(false); setResult(null); }}
                 className="rounded p-1 hover:bg-gray-100"
@@ -89,7 +87,7 @@ export function ReportIssueButton({ skillId, skillTitle, skillVersion, skillStat
 
             <div className="mb-4 rounded-lg bg-gray-50 p-3">
               <p className="text-sm font-medium text-gray-900">{skillTitle} v{skillVersion}</p>
-              <p className="text-xs text-gray-500">Statut : {skillStatus}</p>
+              <p className="text-xs text-gray-500">{t('status', { status: skillStatus })}</p>
             </div>
 
             {result ? (
@@ -105,20 +103,20 @@ export function ReportIssueButton({ skillId, skillTitle, skillVersion, skillStat
                 {/* Type de probleme */}
                 <div className="mb-4">
                   <label className="mb-2 block text-sm font-medium text-gray-700">
-                    Type de probleme *
+                    {t('typeLabel')}
                   </label>
                   <div className="space-y-2">
-                    {REPORT_TYPES.map((type) => (
-                      <label key={type.value} className="flex items-center gap-3 cursor-pointer">
+                    {REPORT_TYPE_KEYS.map((key, idx) => (
+                      <label key={key} className="flex items-center gap-3 cursor-pointer">
                         <input
                           type="radio"
                           name="report_type"
-                          value={type.value}
-                          checked={reportType === type.value}
+                          value={REPORT_TYPE_VALUES[idx]}
+                          checked={reportType === REPORT_TYPE_VALUES[idx]}
                           onChange={(e) => setReportType(e.target.value)}
                           className="h-4 w-4 border-gray-300 text-blue-600"
                         />
-                        <span className="text-sm text-gray-700">{type.label}</span>
+                        <span className="text-sm text-gray-700">{t(`types.${key}`)}</span>
                       </label>
                     ))}
                   </div>
@@ -127,17 +125,17 @@ export function ReportIssueButton({ skillId, skillTitle, skillVersion, skillStat
                 {/* Description */}
                 <div className="mb-4">
                   <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Description detaillee * <span className="text-xs text-gray-400">(min. 50 caracteres)</span>
+                    {t('descriptionLabel')} <span className="text-xs text-gray-400">{t('descriptionHint')}</span>
                   </label>
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={4}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    placeholder="Decrivez le probleme en detail..."
+                    placeholder={t('placeholder')}
                   />
                   <p className="mt-1 text-xs text-gray-400">
-                    {description.length}/50 caracteres minimum
+                    {t('charCount', { count: description.length })}
                   </p>
                 </div>
 
@@ -147,7 +145,7 @@ export function ReportIssueButton({ skillId, skillTitle, skillVersion, skillStat
                     onClick={() => { setShowModal(false); setResult(null); }}
                     className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                   >
-                    Annuler
+                    {t('cancel')}
                   </button>
                   <button
                     onClick={handleSubmit}
@@ -157,7 +155,7 @@ export function ReportIssueButton({ skillId, skillTitle, skillVersion, skillStat
                     {loading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      'Envoyer le signalement'
+                      t('submit')
                     )}
                   </button>
                 </div>

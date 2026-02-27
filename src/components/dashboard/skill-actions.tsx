@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Pencil, EyeOff, Eye, Loader2, X, RotateCcw } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface SkillActionsProps {
   skillId: string;
@@ -15,6 +16,7 @@ interface SkillActionsProps {
 }
 
 export function SkillActions({ skillId, skillSlug, status, publishedAt, certifiedAt, withdrawnBy }: SkillActionsProps) {
+  const t = useTranslations('SkillActions');
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
@@ -31,7 +33,7 @@ export function SkillActions({ skillId, skillSlug, status, publishedAt, certifie
 
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error || 'Erreur');
+        alert(data.error || t('error'));
         return;
       }
 
@@ -39,7 +41,7 @@ export function SkillActions({ skillId, skillSlug, status, publishedAt, certifie
       setWithdrawReason('');
       router.refresh();
     } catch {
-      alert('Erreur reseau');
+      alert(t('networkError'));
     } finally {
       setLoading(null);
     }
@@ -61,7 +63,7 @@ export function SkillActions({ skillId, skillSlug, status, publishedAt, certifie
             className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
           >
             <Eye className="h-3.5 w-3.5" />
-            Voir
+            {t('view')}
           </Link>
         )}
 
@@ -72,7 +74,7 @@ export function SkillActions({ skillId, skillSlug, status, publishedAt, certifie
             className="inline-flex items-center gap-1.5 rounded-lg border border-blue-300 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100"
           >
             <Pencil className="h-3.5 w-3.5" />
-            Modifier
+            {t('edit')}
           </Link>
         )}
 
@@ -88,7 +90,7 @@ export function SkillActions({ skillId, skillSlug, status, publishedAt, certifie
             ) : (
               <EyeOff className="h-3.5 w-3.5" />
             )}
-            Retirer
+            {t('withdraw')}
           </button>
         )}
 
@@ -104,7 +106,7 @@ export function SkillActions({ skillId, skillSlug, status, publishedAt, certifie
             ) : (
               <RotateCcw className="h-3.5 w-3.5" />
             )}
-            Remettre en ligne
+            {t('republish')}
           </button>
         )}
       </div>
@@ -114,7 +116,7 @@ export function SkillActions({ skillId, skillSlug, status, publishedAt, certifie
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900">Retirer du marketplace</h3>
+              <h3 className="text-lg font-bold text-gray-900">{t('withdrawTitle')}</h3>
               <button
                 onClick={() => { setShowWithdrawModal(false); setWithdrawReason(''); }}
                 className="rounded p-1 hover:bg-gray-100"
@@ -125,24 +127,23 @@ export function SkillActions({ skillId, skillSlug, status, publishedAt, certifie
 
             <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
               <p className="text-sm text-amber-800">
-                Votre skill ne sera plus visible pour les nouveaux visiteurs.
-                Les acheteurs existants conservent leur acces.
+                {t('withdrawWarning')}
               </p>
               <p className="mt-2 text-sm text-amber-800">
-                Vous pourrez le remettre en ligne a tout moment.
+                {t('withdrawNote')}
               </p>
             </div>
 
             <div className="mb-4">
               <label className="mb-1 block text-sm font-medium text-gray-700">
-                Raison (optionnelle)
+                {t('reasonLabel')}
               </label>
               <textarea
                 value={withdrawReason}
                 onChange={(e) => setWithdrawReason(e.target.value)}
                 rows={2}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                placeholder="Pourquoi retirez-vous ce skill ?"
+                placeholder={t('reasonPlaceholder')}
               />
             </div>
 
@@ -151,7 +152,7 @@ export function SkillActions({ skillId, skillSlug, status, publishedAt, certifie
                 onClick={() => { setShowWithdrawModal(false); setWithdrawReason(''); }}
                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
-                Annuler
+                {t('cancel')}
               </button>
               <button
                 onClick={() => handleAction('withdraw', withdrawReason || undefined)}
@@ -161,7 +162,7 @@ export function SkillActions({ skillId, skillSlug, status, publishedAt, certifie
                 {loading === 'withdraw' ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  'Confirmer le retrait'
+                  t('confirmWithdraw')
                 )}
               </button>
             </div>
