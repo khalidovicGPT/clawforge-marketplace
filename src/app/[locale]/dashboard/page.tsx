@@ -184,7 +184,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">{t('title')}</h1>
           <p className="mt-2 text-gray-600">
-            {t('welcome', { name: profile?.display_name || profile?.name || user.email?.split('@')[0] || '' })}
+            {t('welcome', { name: profile?.name || user.email?.split('@')[0] || '' })}
           </p>
         </div>
 

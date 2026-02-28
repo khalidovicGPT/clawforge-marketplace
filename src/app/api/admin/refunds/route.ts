@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
       .select(`
         id, purchase_id, user_id, skill_id, reason, status, amount,
         admin_id, admin_notes, stripe_refund_id, requested_at, resolved_at,
-        user:users!refund_requests_user_id_fkey(id, email, display_name),
+        user:users!refund_requests_user_id_fkey(id, email, name),
         skill:skills!refund_requests_skill_id_fkey(id, title, slug, creator_id)
       `)
       .order('requested_at', { ascending: true });

@@ -114,7 +114,7 @@ async function SkillsGrid({ searchParams, params }: { searchParams: PageProps['s
       const u = c as Record<string, unknown>;
       const email = u.email as string | undefined;
       const pseudo = email ? email.split('@')[0] : null;
-      creatorNameMap[u.id as string] = String(u.display_name || u.name || pseudo || 'Createur');
+      creatorNameMap[u.id as string] = String(u.name || pseudo || 'Createur');
     });
   }
 

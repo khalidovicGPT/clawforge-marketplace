@@ -122,13 +122,13 @@ export default function AdminPayoutsPage() {
       if (creatorIds.length > 0) {
         const { data: creators } = await supabase
           .from('users')
-          .select('id, email, display_name')
+          .select('id, email, name')
           .in('id', creatorIds);
         for (const c of (creators || [])) {
           const entry = creatorMap.get(c.id);
           if (entry) {
             entry.creator_email = c.email;
-            entry.creator_name = c.display_name || c.email.split('@')[0];
+            entry.creator_name = c.name || c.email.split('@')[0];
           }
         }
       }

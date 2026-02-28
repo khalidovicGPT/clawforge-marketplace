@@ -34,7 +34,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const c = creator as Record<string, unknown>;
   const emailMeta = c?.email as string | undefined;
   const pseudoMeta = emailMeta ? emailMeta.split('@')[0] : null;
-  const name = String(c?.display_name || c?.name || pseudoMeta || t('defaultCreator'));
+  const name = String(c?.name || pseudoMeta || t('defaultCreator'));
 
   return {
     title: t('metaTitle', { name }),
@@ -67,7 +67,7 @@ export default async function CreatorProfilePage({ params }: PageProps) {
   const creator = creatorData as Record<string, unknown>;
   const emailStr = creator.email as string | undefined;
   const pseudoFromEmail = emailStr ? emailStr.split('@')[0] : null;
-  const creatorName = String(creator.display_name || creator.name || pseudoFromEmail || t('defaultCreator'));
+  const creatorName = String(creator.name || pseudoFromEmail || t('defaultCreator'));
 
   // Fetch creator's published skills with purchase counts
   const { data: skills } = await supabase

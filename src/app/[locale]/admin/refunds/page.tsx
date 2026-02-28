@@ -27,7 +27,7 @@ interface RefundRequest {
   admin_notes: string | null;
   requested_at: string;
   resolved_at: string | null;
-  user: { id: string; email: string; display_name: string | null } | null;
+  user: { id: string; email: string; name: string | null } | null;
   skill: { id: string; title: string; slug: string; creator_id: string } | null;
 }
 
@@ -180,7 +180,7 @@ export default function AdminRefundsPage() {
 
                       <div className="mt-3 space-y-1 text-sm text-gray-600">
                         <p><span className="font-medium">{t('skill')} :</span> {req.skill?.title || 'N/A'}</p>
-                        <p><span className="font-medium">{t('buyer')} :</span> {req.user?.display_name || req.user?.email || 'N/A'}</p>
+                        <p><span className="font-medium">{t('buyer')} :</span> {req.user?.name || req.user?.email || 'N/A'}</p>
                         <p><span className="font-medium">{t('date')} :</span> {new Date(req.requested_at).toLocaleDateString(undefined)}</p>
                       </div>
 
