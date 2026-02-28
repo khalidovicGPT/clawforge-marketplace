@@ -2,28 +2,29 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, Link } from '@/i18n/routing';
+import { useTranslations } from 'next-intl';
 import { Upload, ArrowLeft, Loader2, CheckCircle, AlertCircle, X, BookOpen, Download } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { SKILL_CATEGORIES, type SkillCategory } from '@/types/database';
 import { validateSkillZip, type ValidationResult } from '@/lib/skill-validator';
 
-const LICENSES = [
+const LICENSES: { value: string; label?: string; labelKey?: string }[] = [
   { value: 'MIT', label: 'MIT' },
   { value: 'Apache-2.0', label: 'Apache 2.0' },
-  { value: 'Proprietary', label: 'Propriétaire' },
+  { value: 'Proprietary', labelKey: 'proprietaryLicense' },
 ];
 
-const PRICE_OPTIONS = [
-  { value: 0, label: 'Gratuit' },
-  { value: 200, label: '2 €' },
-  { value: 400, label: '4 €' },
-  { value: 500, label: '5 €' },
-  { value: 800, label: '8 €' },
-  { value: 1000, label: '10 €' },
+const PRICE_OPTIONS: { value: number; label?: string; labelKey?: string }[] = [
+  { value: 0, labelKey: 'freePrice' },
+  { value: 200, label: '2 \u20ac' },
+  { value: 400, label: '4 \u20ac' },
+  { value: 500, label: '5 \u20ac' },
+  { value: 800, label: '8 \u20ac' },
+  { value: 1000, label: '10 \u20ac' },
 ];
 
 const AVAILABLE_TAGS = [
-  'API', 'Authentification', 'Productivité', 'AI', 'Automatisation',
+  'API', 'Authentification', 'Productivit\u00e9', 'AI', 'Automatisation',
   'Email', 'SEO', 'Analytics', 'DevOps', 'Database', 'Cloud',
   'Scraping', 'Chatbot', 'CRM', 'Paiement',
 ];
@@ -41,6 +42,7 @@ function slugify(text: string): string {
 
 export default function NewSkillPage() {
   const router = useRouter();
+  const t = useTranslations('NewSkillPage');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -117,7 +119,7 @@ export default function NewSkillPage() {
           .limit(1);
 
         if (data && data.length > 0) {
-          setNameError('Ce nom est déjà utilisé');
+          setNameError(t('nameAlreadyUsed'));
         } else {
           setNameError(null);
         }
@@ -129,7 +131,7 @@ export default function NewSkillPage() {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [formData.title]);
+  }, [formData.title, t]);
 
   const toggleTag = (tag: string) => {
     setFormData(prev => {
@@ -173,52 +175,52 @@ export default function NewSkillPage() {
       }
 
       if (!file) {
-        throw new Error('Veuillez sélectionner un fichier ZIP');
+        throw new Error(t('selectFile'));
       }
 
       if (file.size > 50 * 1024 * 1024) {
-        throw new Error('Le fichier ne doit pas dépasser 50 MB');
+        throw new Error(t('fileTooLarge'));
       }
 
       if (!file.name.endsWith('.zip')) {
-        throw new Error('Le fichier doit être au format ZIP');
+        throw new Error(t('fileFormatZip'));
       }
 
       // Step 1: Auth
-      setUploadStep('Vérification de l\'authentification...');
+      setUploadStep(t('authCheck'));
       const supabase = createClient();
       const { data: { user }, error: authError } = await supabase.auth.getUser();
 
       if (authError) {
         console.error('[1/4] Auth error:', authError);
-        throw new Error(`Erreur d'authentification : ${authError.message}`);
+        throw new Error(`${authError.message}`);
       }
 
       if (!user) {
-        throw new Error('Vous devez être connecté');
+        throw new Error(t('mustBeConnected'));
       }
       console.log('[1/4] Auth OK - user:', user.id);
 
       // Step 2: Check bucket exists
-      setUploadStep('Vérification du stockage...');
+      setUploadStep(t('storageCheck'));
       const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
       console.log('[2/4] Buckets disponibles:', buckets?.map(b => b.name), 'Error:', bucketsError);
 
       if (bucketsError) {
-        throw new Error(`Erreur stockage : ${bucketsError.message}`);
+        throw new Error(`${bucketsError.message}`);
       }
 
       const skillsBucket = buckets?.find(b => b.name === 'skills');
       if (!skillsBucket) {
         throw new Error(
           'Le bucket de stockage "skills" n\'existe pas. ' +
-          'Créez-le dans Supabase Dashboard > Storage > New bucket (nom: skills, public: activé).'
+          'Cr\u00e9ez-le dans Supabase Dashboard > Storage > New bucket (nom: skills, public: activ\u00e9).'
         );
       }
-      console.log('[2/4] Bucket "skills" trouvé, public:', skillsBucket.public);
+      console.log('[2/4] Bucket "skills" trouv\u00e9, public:', skillsBucket.public);
 
       // Step 3: Upload file
-      setUploadStep(`Upload du fichier (${(file.size / 1024 / 1024).toFixed(1)} MB)...`);
+      setUploadStep(t('uploadFile', { size: (file.size / 1024 / 1024).toFixed(1) }));
       const fileName = `${user.id}/${formData.slug}-${Date.now()}.zip`;
       console.log('[3/4] Upload vers:', fileName, 'Taille:', file.size);
 
@@ -231,24 +233,24 @@ export default function NewSkillPage() {
 
       if (uploadError) {
         console.error('[3/4] Upload error:', JSON.stringify(uploadError));
-        const msg = (uploadError as { message?: string; statusCode?: string }).message || 'Erreur inconnue';
+        const msg = (uploadError as { message?: string; statusCode?: string }).message || 'Unknown error';
         const code = (uploadError as { statusCode?: string }).statusCode || '';
 
         if (msg.includes('Bucket not found') || code === '404') {
           throw new Error(
-            'Bucket "skills" introuvable. Créez-le dans Supabase Dashboard > Storage.'
+            'Bucket "skills" introuvable. Cr\u00e9ez-le dans Supabase Dashboard > Storage.'
           );
         }
         if (msg.includes('row-level security') || msg.includes('policy') || code === '403') {
           throw new Error(
-            'Permission refusée. Ajoutez une Storage Policy dans Supabase : ' +
+            'Permission refus\u00e9e. Ajoutez une Storage Policy dans Supabase : ' +
             'Allow authenticated users to upload (INSERT) dans le bucket "skills".'
           );
         }
         if (msg.includes('Payload too large') || code === '413') {
-          throw new Error('Fichier trop volumineux pour le stockage Supabase.');
+          throw new Error(t('fileTooLarge'));
         }
-        throw new Error(`Upload échoué : ${msg}`);
+        throw new Error(`Upload failed: ${msg}`);
       }
       console.log('[3/4] Upload OK:', uploadData);
 
@@ -259,7 +261,7 @@ export default function NewSkillPage() {
       console.log('[3/4] Public URL:', publicUrl);
 
       // Step 4: Create skill in database
-      setUploadStep('Enregistrement du skill...');
+      setUploadStep(t('registerSkill'));
       const { error: insertError } = await supabase
         .from('skills')
         .insert({
@@ -284,9 +286,9 @@ export default function NewSkillPage() {
 
       if (insertError) {
         console.error('[4/4] Insert error:', JSON.stringify(insertError));
-        throw new Error(`Erreur base de données : ${insertError.message}`);
+        throw new Error(`${insertError.message}`);
       }
-      console.log('[4/4] Skill créé avec succès');
+      console.log('[4/4] Skill cr\u00e9\u00e9 avec succ\u00e8s');
 
       setSuccess(true);
       setTimeout(() => {
@@ -295,7 +297,7 @@ export default function NewSkillPage() {
 
     } catch (err) {
       console.error('Submit error:', err);
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      setError(err instanceof Error ? err.message : t('genericError'));
     } finally {
       setLoading(false);
       setUploadStep(null);
@@ -317,11 +319,11 @@ export default function NewSkillPage() {
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <div className="text-center">
           <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
-          <h2 className="mt-4 text-2xl font-bold text-gray-900">Skill soumis !</h2>
+          <h2 className="mt-4 text-2xl font-bold text-gray-900">{t('successTitle')}</h2>
           <p className="mt-2 text-gray-600">
-            Votre skill est en attente de certification. Vous serez notifié par email.
+            {t('successDescription')}
           </p>
-          <p className="mt-4 text-sm text-gray-400">Redirection...</p>
+          <p className="mt-4 text-sm text-gray-400">{t('redirecting')}</p>
         </div>
       </div>
     );
@@ -336,13 +338,13 @@ export default function NewSkillPage() {
           className="mb-6 inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
         >
           <ArrowLeft className="h-4 w-4" />
-          Retour au dashboard
+          {t('backToDashboard')}
         </Link>
 
         <div className="rounded-xl border bg-white p-8 shadow-sm">
-          <h1 className="text-2xl font-bold text-gray-900">Soumettre un nouveau skill</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
           <p className="mt-2 text-gray-600">
-            Votre skill sera examiné par notre équipe avant d&apos;être publié.
+            {t('subtitle')}
           </p>
 
           {error && (
@@ -356,7 +358,7 @@ export default function NewSkillPage() {
             {/* Name with duplicate check */}
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Nom du skill *
+                {t('skillName')}
               </label>
               <div className="relative">
                 <input
@@ -371,7 +373,7 @@ export default function NewSkillPage() {
                       ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
                       : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
                   }`}
-                  placeholder="Ex: Email Assistant"
+                  placeholder={t('namePlaceholder')}
                 />
                 {checkingName && (
                   <Loader2 className="absolute right-3 top-3.5 h-4 w-4 animate-spin text-gray-400" />
@@ -385,7 +387,7 @@ export default function NewSkillPage() {
             {/* Slug (auto-generated, editable) */}
             <div>
               <label htmlFor="slug" className="block text-sm font-medium text-gray-700">
-                Slug (URL) <span className="text-gray-400">— auto-généré, modifiable</span>
+                {t('slug')} <span className="text-gray-400">{'\u2014'} {t('slugAutoGenerated')}</span>
               </label>
               <input
                 type="text"
@@ -396,14 +398,14 @@ export default function NewSkillPage() {
                 placeholder="email-assistant"
               />
               <p className="mt-1 text-xs text-gray-500">
-                URL: clawforge.io/skills/{formData.slug || 'mon-skill'}
+                {t('slugPreview', { slug: formData.slug || 'mon-skill' })}
               </p>
             </div>
 
             {/* Category */}
             <div>
               <label htmlFor="category" className="block text-sm font-medium text-gray-700">
-                Catégorie *
+                {t('category')}
               </label>
               <select
                 id="category"
@@ -423,7 +425,7 @@ export default function NewSkillPage() {
             {/* Short description */}
             <div>
               <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                Description courte * <span className="text-gray-400">({formData.description.length}/200)</span>
+                {t('shortDescription')} <span className="text-gray-400">{t('shortDescriptionCount', { count: formData.description.length })}</span>
               </label>
               <textarea
                 id="description"
@@ -433,14 +435,14 @@ export default function NewSkillPage() {
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Une description concise de votre skill..."
+                placeholder={t('shortDescriptionPlaceholder')}
               />
             </div>
 
             {/* Long description */}
             <div>
               <label htmlFor="descriptionLong" className="block text-sm font-medium text-gray-700">
-                Description détaillée <span className="text-gray-400">(Markdown supporté)</span>
+                {t('longDescription')} <span className="text-gray-400">({t('markdownSupported')})</span>
               </label>
               <textarea
                 id="descriptionLong"
@@ -448,14 +450,14 @@ export default function NewSkillPage() {
                 value={formData.descriptionLong}
                 onChange={(e) => setFormData({ ...formData, descriptionLong: e.target.value })}
                 className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 font-mono text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="## Fonctionnalités&#10;- Feature 1&#10;- Feature 2&#10;&#10;## Installation&#10;..."
+                placeholder="## Features&#10;- Feature 1&#10;- Feature 2&#10;&#10;## Installation&#10;..."
               />
             </div>
 
             {/* Price - Dropdown */}
             <div>
               <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-                Prix *
+                {t('price')}
               </label>
               <select
                 id="price"
@@ -464,19 +466,19 @@ export default function NewSkillPage() {
                 onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) })}
                 className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                {PRICE_OPTIONS.map(({ value, label }) => (
-                  <option key={value} value={value}>{label}</option>
+                {PRICE_OPTIONS.map(({ value, labelKey, label }) => (
+                  <option key={value} value={value}>{labelKey ? t(labelKey) : label}</option>
                 ))}
               </select>
               <p className="mt-1 text-xs text-gray-500">
-                Vous recevez 80% du prix de vente.
+                {t('priceNote')}
               </p>
             </div>
 
             {/* Tags - Chips */}
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Tags <span className="text-gray-400">({formData.tags.length}/{MAX_TAGS} max)</span>
+                {t('tags')} <span className="text-gray-400">{t('tagsCount', { count: formData.tags.length, max: MAX_TAGS })}</span>
               </label>
               <div className="mt-2 flex flex-wrap gap-2">
                 {AVAILABLE_TAGS.map((tag) => {
@@ -507,7 +509,7 @@ export default function NewSkillPage() {
             {/* License */}
             <div>
               <label htmlFor="license" className="block text-sm font-medium text-gray-700">
-                Licence *
+                {t('license')}
               </label>
               <select
                 id="license"
@@ -516,8 +518,8 @@ export default function NewSkillPage() {
                 onChange={(e) => setFormData({ ...formData, license: e.target.value })}
                 className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                {LICENSES.map(({ value, label }) => (
-                  <option key={value} value={value}>{label}</option>
+                {LICENSES.map(({ value, label, labelKey }) => (
+                  <option key={value} value={value}>{labelKey ? t(labelKey) : label}</option>
                 ))}
               </select>
             </div>
@@ -525,7 +527,7 @@ export default function NewSkillPage() {
             {/* Support URL - Optional */}
             <div>
               <label htmlFor="supportUrl" className="block text-sm font-medium text-gray-700">
-                URL de support <span className="text-gray-400">(optionnel)</span>
+                {t('supportUrl')} <span className="text-gray-400">({t('supportUrlOptional')})</span>
               </label>
               <input
                 type="url"
@@ -533,10 +535,10 @@ export default function NewSkillPage() {
                 value={formData.supportUrl}
                 onChange={(e) => setFormData({ ...formData, supportUrl: e.target.value })}
                 className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="https://github.com/votre-repo/issues"
+                placeholder={t('supportUrlPlaceholder')}
               />
               <p className="mt-1 text-xs text-gray-500">
-                Lien vers les issues GitHub ou page de support
+                {t('supportUrlHint')}
               </p>
             </div>
 
@@ -545,14 +547,16 @@ export default function NewSkillPage() {
               <BookOpen className="h-5 w-5 flex-shrink-0 text-blue-600" />
               <div className="flex-1">
                 <p className="text-sm font-medium text-blue-800">
-                  Nouveau sur ClawForge ?
+                  {t('newOnClawForge')}
                 </p>
                 <p className="text-sm text-blue-600">
-                  Consultez notre{' '}
-                  <Link href="/docs/creators" className="font-medium underline hover:text-blue-800">
-                    guide de packaging
-                  </Link>
-                  {' '}pour preparer votre skill correctement.
+                  {t.rich('packagingGuide', {
+                    link: (chunks) => (
+                      <Link href="/docs/creators" className="font-medium underline hover:text-blue-800">
+                        {chunks}
+                      </Link>
+                    ),
+                  })}
                 </p>
               </div>
               <a
@@ -561,14 +565,14 @@ export default function NewSkillPage() {
                 className="inline-flex items-center gap-1.5 rounded-lg border border-blue-300 bg-white px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-50"
               >
                 <Download className="h-3.5 w-3.5" />
-                Template
+                {t('template')}
               </a>
             </div>
 
             {/* File upload */}
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Fichier ZIP *
+                {t('fileZip')}
               </label>
               <div className="mt-1">
                 <label
@@ -595,17 +599,17 @@ export default function NewSkillPage() {
                       <p className="mt-2 font-medium text-gray-900">{file.name}</p>
                       <p className="text-sm text-gray-500">
                         {(file.size / 1024 / 1024).toFixed(2)} MB
-                        {validatingZip && ' — Validation en cours...'}
+                        {validatingZip && ` \u2014 ${t('validatingZip')}`}
                       </p>
                     </div>
                   ) : (
                     <div className="text-center">
                       <Upload className="mx-auto h-10 w-10 text-gray-400" />
                       <p className="mt-2 text-sm text-gray-600">
-                        <span className="font-medium text-blue-600">Cliquez pour upload</span>
-                        {' '}ou glissez-deposez
+                        <span className="font-medium text-blue-600">{t('clickToUpload')}</span>
+                        {' '}{t('orDragDrop')}
                       </p>
-                      <p className="text-xs text-gray-500">ZIP uniquement, max 50 MB</p>
+                      <p className="text-xs text-gray-500">{t('zipOnly')}</p>
                     </div>
                   )}
                   <input
@@ -631,9 +635,13 @@ export default function NewSkillPage() {
                     </div>
                   ))}
                   <p className="text-xs text-gray-500">
-                    Consultez le{' '}
-                    <Link href="/docs/creators" className="text-blue-600 underline">guide de packaging</Link>
-                    {' '}pour corriger ces erreurs.
+                    {t.rich('fixErrors', {
+                      link: (chunks) => (
+                        <Link href="/docs/creators" className="text-blue-600 underline">
+                          {chunks}
+                        </Link>
+                      ),
+                    })}
                   </p>
                 </div>
               )}
@@ -649,7 +657,7 @@ export default function NewSkillPage() {
               )}
               {zipValidation?.valid && zipValidation.metadata && (
                 <div className="mt-3 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-                  <p className="font-medium">Structure valide</p>
+                  <p className="font-medium">{t('structureValid')}</p>
                   <p className="text-green-600">
                     {zipValidation.metadata.name} v{zipValidation.metadata.version} — {zipValidation.stats.fileCount} fichier{zipValidation.stats.fileCount > 1 ? 's' : ''}
                   </p>
@@ -671,7 +679,7 @@ export default function NewSkillPage() {
                 href="/dashboard"
                 className="rounded-lg px-6 py-2 text-gray-600 hover:text-gray-900"
               >
-                Annuler
+                {t('cancel')}
               </Link>
               <button
                 type="submit"
@@ -681,12 +689,12 @@ export default function NewSkillPage() {
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Envoi en cours...
+                    {t('submitting')}
                   </>
                 ) : (
                   <>
                     <Upload className="h-4 w-4" />
-                    Soumettre le skill
+                    {t('submitSkill')}
                   </>
                 )}
               </button>

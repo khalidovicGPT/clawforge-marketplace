@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, Link } from '@/i18n/routing';
 import { createClient } from '@/lib/supabase/client';
+import { useTranslations } from 'next-intl';
 import {
   Upload,
   CreditCard,
@@ -26,6 +27,7 @@ type StripeStatus = 'loading' | 'complete' | 'pending' | 'no_account';
 
 export default function SellerDashboardPage() {
   const router = useRouter();
+  const t = useTranslations('SellerDashboardPage');
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Record<string, unknown> | null>(null);
   const [stripeStatus, setStripeStatus] = useState<StripeStatus>('loading');
@@ -130,7 +132,7 @@ export default function SellerDashboardPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Erreur lors de la connexion Stripe');
+        throw new Error(data.error || t('stripeError'));
       }
 
       if (data.url) {
@@ -138,7 +140,7 @@ export default function SellerDashboardPage() {
       }
     } catch (err) {
       // Keep current stripeStatus (don't switch to 'error'), show inline message instead
-      const message = err instanceof Error ? err.message : 'Erreur inconnue';
+      const message = err instanceof Error ? err.message : t('unknownError');
       setStripeError(message);
       setConnectLoading(false);
     }
@@ -149,7 +151,7 @@ export default function SellerDashboardPage() {
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <div className="text-center">
           <Loader2 className="mx-auto h-8 w-8 animate-spin text-gray-400" />
-          <p className="mt-4 text-gray-500">Chargement de votre espace createur...</p>
+          <p className="mt-4 text-gray-500">{t('loading')}</p>
         </div>
       </div>
     );
@@ -163,13 +165,13 @@ export default function SellerDashboardPage() {
         {/* Welcome Header */}
         <div className="mb-8 rounded-xl bg-gradient-to-r from-gray-900 to-gray-800 p-8 text-white">
           <span className="inline-block rounded-full bg-blue-500/20 px-3 py-1 text-sm font-medium text-blue-300">
-            Espace Createur
+            {t('creatorSpace')}
           </span>
           <h1 className="mt-4 text-3xl font-bold">
-            Bienvenue, {displayName} !
+            {t('welcome', { name: displayName })}
           </h1>
           <p className="mt-2 text-gray-300">
-            Gerez vos skills, configurez vos paiements et suivez vos ventes.
+            {t('subtitle')}
           </p>
         </div>
 
@@ -184,17 +186,17 @@ export default function SellerDashboardPage() {
               <Plus className="h-6 w-6" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Creer un skill</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{t('createSkill')}</h3>
               <p className="mt-1 text-sm text-gray-500">
-                Soumettez un nouveau skill au catalogue ClawForge.
+                {t('createSkillDescription')}
               </p>
               {stripeStatus !== 'complete' && (
                 <p className="mt-1 text-xs text-amber-600">
-                  Les skills gratuits sont disponibles sans Stripe.
+                  {t('freeSkillsAvailable')}
                 </p>
               )}
               <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-blue-600">
-                Commencer <ArrowRight className="h-4 w-4" />
+                {t('start')} <ArrowRight className="h-4 w-4" />
               </span>
             </div>
           </Link>
@@ -208,15 +210,15 @@ export default function SellerDashboardPage() {
               <Package className="h-6 w-6" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Mes skills</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{t('mySkills')}</h3>
               <p className="mt-1 text-sm text-gray-500">
                 {skillCount === 0
-                  ? "Vous n'avez pas encore soumis de skill."
-                  : `${skillCount} skill(s) soumis.`
+                  ? t('noSkillsYet')
+                  : t('skillsSubmitted', { count: skillCount })
                 }
               </p>
               <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-purple-600">
-                Voir le dashboard <ArrowRight className="h-4 w-4" />
+                {t('viewDashboard')} <ArrowRight className="h-4 w-4" />
               </span>
             </div>
           </Link>
@@ -227,10 +229,10 @@ export default function SellerDashboardPage() {
           <div className="border-b p-6">
             <div className="flex items-center gap-3">
               <CreditCard className="h-5 w-5 text-gray-700" />
-              <h2 className="text-xl font-bold text-gray-900">Configuration des paiements</h2>
+              <h2 className="text-xl font-bold text-gray-900">{t('paymentConfig')}</h2>
             </div>
             <p className="mt-1 text-sm text-gray-500">
-              Connectez Stripe pour recevoir les paiements de vos ventes.
+              {t('paymentConfigDescription')}
             </p>
           </div>
 
@@ -239,9 +241,9 @@ export default function SellerDashboardPage() {
               <div className="flex items-start gap-4 rounded-lg bg-green-50 p-4">
                 <CheckCircle className="h-6 w-6 flex-shrink-0 text-green-600" />
                 <div>
-                  <h3 className="font-semibold text-green-900">Stripe connecte</h3>
+                  <h3 className="font-semibold text-green-900">{t('stripeConnected')}</h3>
                   <p className="mt-1 text-sm text-green-700">
-                    Votre compte Stripe est configure. Vous recevrez 80% de chaque vente directement sur votre compte.
+                    {t('stripeConnectedDescription')}
                   </p>
                 </div>
               </div>
@@ -251,9 +253,9 @@ export default function SellerDashboardPage() {
               <div className="flex items-start gap-4 rounded-lg bg-amber-50 p-4">
                 <AlertTriangle className="h-6 w-6 flex-shrink-0 text-amber-600" />
                 <div>
-                  <h3 className="font-semibold text-amber-900">Configuration en cours</h3>
+                  <h3 className="font-semibold text-amber-900">{t('configInProgress')}</h3>
                   <p className="mt-1 text-sm text-amber-700">
-                    Votre compte Stripe n&apos;est pas encore finalise. Completez la configuration pour recevoir des paiements.
+                    {t('configInProgressDescription')}
                   </p>
                   <button
                     onClick={handleConnectStripe}
@@ -263,11 +265,11 @@ export default function SellerDashboardPage() {
                     {connectLoading ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        Chargement...
+                        {t('connecting')}
                       </>
                     ) : (
                       <>
-                        Reprendre la configuration
+                        {t('resumeConfig')}
                         <ExternalLink className="h-4 w-4" />
                       </>
                     )}
@@ -280,17 +282,16 @@ export default function SellerDashboardPage() {
               <div className="flex items-start gap-4 rounded-lg bg-blue-50 p-4">
                 <CreditCard className="h-6 w-6 flex-shrink-0 text-blue-600" />
                 <div>
-                  <h3 className="font-semibold text-gray-900">Configurer mes paiements</h3>
+                  <h3 className="font-semibold text-gray-900">{t('configurePayments')}</h3>
                   <p className="mt-1 text-sm text-gray-600">
-                    Pour vendre des skills payants, connectez votre compte Stripe.
-                    C&apos;est securise et prend 2 minutes. ClawForge preleve 20% de commission, vous gardez 80%.
+                    {t('configurePaymentsDescription')}
                   </p>
 
                   {stripeError && (
                     <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
                       <div className="flex items-center gap-2">
                         <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-                        La connexion a echoue. Reessayez ou creez un skill gratuit en attendant.
+                        {t('connectionFailed')}
                       </div>
                       <p className="mt-1 pl-6 text-xs text-amber-600">{stripeError}</p>
                     </div>
@@ -305,11 +306,11 @@ export default function SellerDashboardPage() {
                       {connectLoading ? (
                         <>
                           <Loader2 className="h-4 w-4 animate-spin" />
-                          Connexion en cours...
+                          {t('connecting')}
                         </>
                       ) : (
                         <>
-                          Connecter mon compte Stripe
+                          {t('connectStripe')}
                           <ExternalLink className="h-4 w-4" />
                         </>
                       )}
@@ -320,14 +321,14 @@ export default function SellerDashboardPage() {
                         className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700"
                       >
                         <Plus className="h-4 w-4" />
-                        Creer un skill gratuit
+                        {t('createFreeSkill')}
                       </Link>
                     ) : (
                       <Link
                         href="/faq"
                         className="text-sm font-medium text-gray-500 hover:text-gray-700"
                       >
-                        En savoir plus sur les frais
+                        {t('learnMoreFees')}
                       </Link>
                     )}
                   </div>
@@ -338,7 +339,7 @@ export default function SellerDashboardPage() {
             {stripeStatus === 'loading' && (
               <div className="flex items-center gap-3 p-4">
                 <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-                <p className="text-sm text-gray-500">Verification du statut Stripe...</p>
+                <p className="text-sm text-gray-500">{t('checkingStripe')}</p>
               </div>
             )}
           </div>
@@ -350,17 +351,16 @@ export default function SellerDashboardPage() {
             <div className="flex items-start gap-4">
               <FileText className="h-6 w-6 flex-shrink-0 text-amber-600" />
               <div>
-                <h3 className="font-semibold text-amber-900">Nouvelles conditions createur</h3>
+                <h3 className="font-semibold text-amber-900">{t('newCreatorTerms')}</h3>
                 <p className="mt-1 text-sm text-amber-700">
-                  Pour continuer a vendre, veuillez accepter les nouvelles conditions generales
-                  (paiement mensuel avec delai de protection de 15 jours).
+                  {t('newCreatorTermsDescription')}
                 </p>
                 <button
                   onClick={() => setShowTermsModal(true)}
                   className="mt-3 inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
                 >
                   <FileText className="h-4 w-4" />
-                  Consulter et accepter
+                  {t('consultAndAccept')}
                 </button>
               </div>
             </div>
@@ -373,7 +373,7 @@ export default function SellerDashboardPage() {
             <div className="border-b p-6">
               <div className="flex items-center gap-3">
                 <Wallet className="h-5 w-5 text-gray-700" />
-                <h2 className="text-xl font-bold text-gray-900">Revenus</h2>
+                <h2 className="text-xl font-bold text-gray-900">{t('revenue')}</h2>
               </div>
             </div>
             <div className="p-6">
@@ -383,10 +383,10 @@ export default function SellerDashboardPage() {
                   <CalendarClock className="h-5 w-5 text-blue-600" />
                   <div>
                     <p className="text-sm font-semibold text-blue-900">
-                      Prochain paiement : {new Date(payoutSummary.next_payout_date).toLocaleDateString('fr-FR')}
+                      {t('nextPayout', { date: new Date(payoutSummary.next_payout_date).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) })}
                     </p>
                     <p className="text-xs text-blue-700">
-                      Montant estime : {(payoutSummary.next_payout_estimated / 100).toFixed(2)} EUR
+                      {t('estimatedAmount', { amount: (payoutSummary.next_payout_estimated / 100).toFixed(2) })}
                     </p>
                   </div>
                 </div>
@@ -396,26 +396,26 @@ export default function SellerDashboardPage() {
                 <div className="rounded-lg bg-amber-50 p-4">
                   <div className="flex items-center gap-1.5">
                     <Clock className="h-3.5 w-3.5 text-amber-600" />
-                    <p className="text-xs font-medium text-amber-700">En attente (15j)</p>
+                    <p className="text-xs font-medium text-amber-700">{t('pending15d')}</p>
                   </div>
                   <p className="mt-1 text-xl font-bold text-amber-700">
                     {(payoutSummary.pending.amount / 100).toFixed(2)} EUR
                   </p>
-                  <p className="text-xs text-amber-600">{payoutSummary.pending.count} vente(s)</p>
+                  <p className="text-xs text-amber-600">{payoutSummary.pending.count} {t('sales')}</p>
                 </div>
                 <div className="rounded-lg bg-green-50 p-4">
                   <div className="flex items-center gap-1.5">
                     <CheckCircle className="h-3.5 w-3.5 text-green-600" />
-                    <p className="text-xs font-medium text-green-700">Eligible au paiement</p>
+                    <p className="text-xs font-medium text-green-700">{t('eligibleForPayment')}</p>
                   </div>
                   <p className="mt-1 text-xl font-bold text-green-700">
                     {(payoutSummary.eligible.amount / 100).toFixed(2)} EUR
                   </p>
-                  <p className="text-xs text-green-600">{payoutSummary.eligible.count} vente(s)</p>
+                  <p className="text-xs text-green-600">{payoutSummary.eligible.count} {t('sales')}</p>
                 </div>
               </div>
               <p className="mt-3 text-xs text-gray-500">
-                Les paiements sont verses le dernier jour de chaque mois. Commission ClawForge : 20%.
+                {t('paymentNote')}
               </p>
             </div>
           </div>
@@ -435,18 +435,18 @@ export default function SellerDashboardPage() {
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
           <div className="rounded-xl border bg-white p-5">
             <Code className="h-5 w-5 text-blue-600" />
-            <h3 className="mt-3 font-semibold text-gray-900">Documentation</h3>
-            <p className="mt-1 text-sm text-gray-500">Guides pour creer des skills de qualite.</p>
+            <h3 className="mt-3 font-semibold text-gray-900">{t('documentation')}</h3>
+            <p className="mt-1 text-sm text-gray-500">{t('documentationDescription')}</p>
           </div>
           <div className="rounded-xl border bg-white p-5">
             <Zap className="h-5 w-5 text-amber-600" />
-            <h3 className="mt-3 font-semibold text-gray-900">Bonnes pratiques</h3>
-            <p className="mt-1 text-sm text-gray-500">Conseils pour maximiser vos ventes.</p>
+            <h3 className="mt-3 font-semibold text-gray-900">{t('bestPractices')}</h3>
+            <p className="mt-1 text-sm text-gray-500">{t('bestPracticesDescription')}</p>
           </div>
           <div className="rounded-xl border bg-white p-5">
             <CheckCircle className="h-5 w-5 text-green-600" />
-            <h3 className="mt-3 font-semibold text-gray-900">Certification</h3>
-            <p className="mt-1 text-sm text-gray-500">Obtenez un badge Bronze, Silver ou Gold.</p>
+            <h3 className="mt-3 font-semibold text-gray-900">{t('certification')}</h3>
+            <p className="mt-1 text-sm text-gray-500">{t('certificationDescription')}</p>
           </div>
         </div>
       </div>

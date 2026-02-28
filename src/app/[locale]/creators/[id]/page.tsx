@@ -4,6 +4,7 @@ import { Metadata } from 'next';
 import { createServiceClient } from '@/lib/supabase/service';
 import { ArrowLeft, Package, Download, Star, ShoppingCart } from 'lucide-react';
 import { SkillCard } from '@/components/skills/skill-card';
+import { getTranslations } from 'next-intl/server';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -11,6 +12,7 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
+  const t = await getTranslations('CreatorProfilePage');
 
   let supabase;
   try {
@@ -18,8 +20,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   } catch (e) {
     console.error('Failed to create Supabase service client in generateMetadata:', e);
     return {
-      title: 'Createur | ClawForge',
-      description: 'Profil createur sur ClawForge Marketplace.',
+      title: t('defaultMetaTitle'),
+      description: t('defaultMetaDescription'),
     };
   }
 
@@ -32,16 +34,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const c = creator as Record<string, unknown>;
   const emailMeta = c?.email as string | undefined;
   const pseudoMeta = emailMeta ? emailMeta.split('@')[0] : null;
-  const name = String(c?.display_name || c?.name || pseudoMeta || 'Createur');
+  const name = String(c?.display_name || c?.name || pseudoMeta || t('defaultCreator'));
 
   return {
-    title: `${name} — Createur ClawForge`,
-    description: `Decouvrez les skills publies par ${name} sur ClawForge Marketplace.`,
+    title: t('metaTitle', { name }),
+    description: t('metaDescription', { name }),
   };
 }
 
 export default async function CreatorProfilePage({ params }: PageProps) {
   const { id } = await params;
+  const t = await getTranslations('CreatorProfilePage');
   let supabase;
   try {
     supabase = createServiceClient();
@@ -64,7 +67,7 @@ export default async function CreatorProfilePage({ params }: PageProps) {
   const creator = creatorData as Record<string, unknown>;
   const emailStr = creator.email as string | undefined;
   const pseudoFromEmail = emailStr ? emailStr.split('@')[0] : null;
-  const creatorName = String(creator.display_name || creator.name || pseudoFromEmail || 'Createur');
+  const creatorName = String(creator.display_name || creator.name || pseudoFromEmail || t('defaultCreator'));
 
   // Fetch creator's published skills with purchase counts
   const { data: skills } = await supabase
@@ -96,7 +99,7 @@ export default async function CreatorProfilePage({ params }: PageProps) {
           className="mb-6 inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
         >
           <ArrowLeft className="h-4 w-4" />
-          Retour aux createurs
+          {t('backToCreators')}
         </Link>
 
         {/* Creator Header */}
@@ -118,27 +121,27 @@ export default async function CreatorProfilePage({ params }: PageProps) {
             <div className="text-center sm:text-left">
               <h1 className="text-2xl font-bold text-gray-900">{creatorName}</h1>
               <p className="mt-1 text-sm text-gray-500">
-                Membre depuis {new Date(String(creator.created_at)).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+                {t('memberSince', { date: new Date(String(creator.created_at)).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) })}
               </p>
 
               {/* Stats */}
               <div className="mt-4 flex flex-wrap items-center justify-center gap-6 text-sm text-gray-600 sm:justify-start">
                 <div className="flex items-center gap-1.5">
                   <Package className="h-4 w-4 text-blue-500" />
-                  <span><strong>{totalSkills}</strong> skill{totalSkills > 1 ? 's' : ''}</span>
+                  <span><strong>{totalSkills}</strong> {t('skills')}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <ShoppingCart className="h-4 w-4 text-green-500" />
-                  <span><strong>{totalPurchases.toLocaleString('fr-FR')}</strong> achat{totalPurchases > 1 ? 's' : ''}</span>
+                  <span><strong>{totalPurchases.toLocaleString()}</strong> {t('purchases')}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Download className="h-4 w-4 text-purple-500" />
-                  <span><strong>{totalDownloads.toLocaleString('fr-FR')}</strong> telechargement{totalDownloads > 1 ? 's' : ''}</span>
+                  <span><strong>{totalDownloads.toLocaleString()}</strong> {t('downloads')}</span>
                 </div>
                 {avgRating && (
                   <div className="flex items-center gap-1.5">
                     <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <span><strong>{avgRating.toFixed(1)}</strong> note moyenne</span>
+                    <span><strong>{avgRating.toFixed(1)}</strong> {t('avgRating')}</span>
                   </div>
                 )}
               </div>
@@ -148,7 +151,7 @@ export default async function CreatorProfilePage({ params }: PageProps) {
 
         {/* Skills */}
         <h2 className="mb-4 text-xl font-bold text-gray-900">
-          Skills de {creatorName}
+          {t('skillsOf', { name: creatorName })}
         </h2>
 
         {skills && skills.length > 0 ? (
@@ -160,9 +163,9 @@ export default async function CreatorProfilePage({ params }: PageProps) {
         ) : (
           <div className="rounded-xl border bg-white p-12 text-center">
             <Package className="mx-auto h-12 w-12 text-gray-300" />
-            <h3 className="mt-4 text-lg font-medium text-gray-900">Aucun skill publie</h3>
+            <h3 className="mt-4 text-lg font-medium text-gray-900">{t('noSkills')}</h3>
             <p className="mt-2 text-gray-500">
-              Ce createur n'a pas encore publie de skill.
+              {t('noSkillsDescription')}
             </p>
           </div>
         )}

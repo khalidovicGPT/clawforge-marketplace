@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, Link } from '@/i18n/routing';
+import { useTranslations } from 'next-intl';
 import {
   Banknote,
   Loader2,
@@ -41,14 +42,16 @@ interface Payout {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  pending: { label: 'En attente', color: 'bg-yellow-100 text-yellow-800' },
-  processing: { label: 'En cours', color: 'bg-blue-100 text-blue-800' },
-  completed: { label: 'Complete', color: 'bg-green-100 text-green-800' },
-  failed: { label: 'Echec', color: 'bg-red-100 text-red-800' },
+  pending: { label: 'statusPending', color: 'bg-yellow-100 text-yellow-800' },
+  processing: { label: 'statusProcessing', color: 'bg-blue-100 text-blue-800' },
+  completed: { label: 'statusCompleted', color: 'bg-green-100 text-green-800' },
+  failed: { label: 'statusFailed', color: 'bg-red-100 text-red-800' },
 };
 
 export default function AdminPayoutsPage() {
   const router = useRouter();
+  const t = useTranslations('AdminPayouts');
+  const tc = useTranslations('Common');
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [payouts, setPayouts] = useState<Payout[]>([]);
@@ -142,7 +145,7 @@ export default function AdminPayoutsPage() {
   }, [isAdmin, fetchData]);
 
   const handleTriggerPayout = async () => {
-    if (!confirm('Declencher le paiement mensuel pour tous les createurs eligibles ?')) return;
+    if (!confirm(t('confirmTrigger'))) return;
     setTriggerLoading(true);
     try {
       const res = await fetch('/api/admin/trigger-payout', {
@@ -151,13 +154,13 @@ export default function AdminPayoutsPage() {
       });
       const data = await res.json();
       if (data.success) {
-        alert(`Paiement termine : ${data.summary?.completed || 0} reussis, ${data.summary?.failed || 0} echecs`);
+        alert(t('payoutSuccess', { completed: data.summary?.completed || 0, failed: data.summary?.failed || 0 }));
         fetchData();
       } else {
-        alert(data.error || 'Erreur');
+        alert(data.error || tc('error'));
       }
     } catch {
-      alert('Erreur reseau');
+      alert(tc('networkError'));
     } finally {
       setTriggerLoading(false);
     }
@@ -176,7 +179,7 @@ export default function AdminPayoutsPage() {
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
           <XCircle className="mx-auto h-12 w-12 text-red-400" />
-          <h1 className="mt-4 text-xl font-bold text-red-800">Acces refuse</h1>
+          <h1 className="mt-4 text-xl font-bold text-red-800">{tc('accessDenied')}</h1>
         </div>
       </div>
     );
@@ -189,15 +192,15 @@ export default function AdminPayoutsPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
         <Link href="/admin" className="mb-6 inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700">
-          <ArrowLeft className="h-4 w-4" /> Retour admin
+          <ArrowLeft className="h-4 w-4" /> {t('backAdmin')}
         </Link>
 
         <div className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Banknote className="h-8 w-8 text-emerald-600" />
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Paiements createurs</h1>
-              <p className="mt-1 text-gray-600">Versements mensuels via Stripe Connect</p>
+              <h1 className="text-3xl font-bold text-gray-900">{t('title')}</h1>
+              <p className="mt-1 text-gray-600">{t('subtitle')}</p>
             </div>
           </div>
           <button
@@ -206,7 +209,7 @@ export default function AdminPayoutsPage() {
             className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-3 font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
           >
             {triggerLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-            Declencher le paiement
+            {t('triggerPayout')}
           </button>
         </div>
 
@@ -215,21 +218,21 @@ export default function AdminPayoutsPage() {
           <div className="rounded-xl border bg-white p-6 shadow-sm">
             <div className="flex items-center gap-2 text-amber-600">
               <Clock className="h-5 w-5" />
-              <p className="text-sm font-medium">En attente (15j)</p>
+              <p className="text-sm font-medium">{t('pendingLabel')}</p>
             </div>
             <p className="mt-2 text-2xl font-bold text-gray-900">{(totalPending / 100).toFixed(2)} EUR</p>
           </div>
           <div className="rounded-xl border bg-white p-6 shadow-sm">
             <div className="flex items-center gap-2 text-blue-600">
               <CheckCircle className="h-5 w-5" />
-              <p className="text-sm font-medium">Eligible au paiement</p>
+              <p className="text-sm font-medium">{t('eligibleLabel')}</p>
             </div>
             <p className="mt-2 text-2xl font-bold text-gray-900">{(totalEligible / 100).toFixed(2)} EUR</p>
           </div>
           <div className="rounded-xl border bg-white p-6 shadow-sm">
             <div className="flex items-center gap-2 text-gray-600">
               <Banknote className="h-5 w-5" />
-              <p className="text-sm font-medium">Createurs concernes</p>
+              <p className="text-sm font-medium">{t('creatorsLabel')}</p>
             </div>
             <p className="mt-2 text-2xl font-bold text-gray-900">{summary.length}</p>
           </div>
@@ -244,15 +247,15 @@ export default function AdminPayoutsPage() {
             {/* Créateurs avec ventes éligibles */}
             {summary.length > 0 && (
               <div className="mb-8">
-                <h2 className="mb-4 text-lg font-bold text-gray-900">Ventes eligibles par createur</h2>
+                <h2 className="mb-4 text-lg font-bold text-gray-900">{t('eligibleByCreator')}</h2>
                 <div className="rounded-xl border bg-white shadow-sm">
                   <table className="w-full">
                     <thead className="border-b bg-gray-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">Createur</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500">Eligible</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500">En attente</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500">Ventes</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">{t('colCreator')}</th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500">{t('colEligible')}</th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500">{t('colPending')}</th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500">{t('colSales')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
@@ -280,11 +283,11 @@ export default function AdminPayoutsPage() {
             )}
 
             {/* Historique des payouts */}
-            <h2 className="mb-4 text-lg font-bold text-gray-900">Historique des versements</h2>
+            <h2 className="mb-4 text-lg font-bold text-gray-900">{t('payoutHistory')}</h2>
             {payouts.length === 0 ? (
               <div className="rounded-xl border bg-white p-12 text-center shadow-sm">
                 <Banknote className="mx-auto h-12 w-12 text-gray-300" />
-                <p className="mt-4 text-gray-500">Aucun versement effectue pour le moment</p>
+                <p className="mt-4 text-gray-500">{t('noPayouts')}</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -297,11 +300,11 @@ export default function AdminPayoutsPage() {
                           <p className="font-medium text-gray-900">
                             {(p.amount / 100).toFixed(2)} EUR
                             <span className="ml-2 text-sm text-gray-500">
-                              (brut: {(p.gross_amount / 100).toFixed(2)} EUR, commission: {(p.platform_fee / 100).toFixed(2)} EUR)
+                              ({t('gross')}: {(p.gross_amount / 100).toFixed(2)} EUR, {t('commission')}: {(p.platform_fee / 100).toFixed(2)} EUR)
                             </span>
                           </p>
                           <p className="mt-1 text-xs text-gray-500">
-                            Periode: {p.period_start} au {p.period_end} — {p.purchases_count} vente(s)
+                            {t('period')}: {p.period_start} {t('periodTo')} {p.period_end} — {p.purchases_count} {t('salesCount')}
                           </p>
                           {p.stripe_transfer_id && (
                             <p className="mt-1 text-xs text-gray-400">Transfer: {p.stripe_transfer_id}</p>
@@ -315,11 +318,11 @@ export default function AdminPayoutsPage() {
                         </div>
                         <div className="text-right">
                           <span className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${statusConf.color}`}>
-                            {statusConf.label}
+                            {t(statusConf.label)}
                           </span>
                           {p.paid_at && (
                             <p className="mt-1 text-xs text-gray-400">
-                              {new Date(p.paid_at).toLocaleDateString('fr-FR')}
+                              {new Date(p.paid_at).toLocaleDateString(undefined)}
                             </p>
                           )}
                         </div>

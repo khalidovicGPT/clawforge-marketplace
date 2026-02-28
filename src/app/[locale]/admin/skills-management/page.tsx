@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from '@/i18n/routing';
 import {
@@ -52,28 +53,31 @@ interface HistoryEntry {
   admin: { name: string | null; email: string } | null;
 }
 
-const STATUS_BADGES: Record<string, { label: string; color: string }> = {
-  published: { label: 'Publie', color: 'bg-green-100 text-green-700' },
-  pending: { label: 'En attente', color: 'bg-yellow-100 text-yellow-700' },
-  rejected: { label: 'Rejete', color: 'bg-red-100 text-red-700' },
-  withdrawn: { label: 'Retire', color: 'bg-gray-100 text-gray-600' },
-  blocked: { label: 'Bloque', color: 'bg-red-200 text-red-800' },
-  draft: { label: 'Brouillon', color: 'bg-gray-100 text-gray-500' },
-  certified: { label: 'Certifie', color: 'bg-blue-100 text-blue-700' },
-  pending_payment_setup: { label: 'Paiement non config.', color: 'bg-amber-100 text-amber-700' },
-};
-
-const CERT_BADGES: Record<string, { label: string; emoji: string }> = {
-  none: { label: 'Aucune', emoji: '' },
-  bronze: { label: 'Bronze', emoji: '🥉' },
-  silver: { label: 'Silver', emoji: '🥈' },
-  gold: { label: 'Gold', emoji: '🥇' },
-};
-
 type ModalType = 'withdraw' | 'reject' | 'block' | 'reactivate' | 'history' | null;
 
 export default function SkillsManagementPage() {
   const router = useRouter();
+  const t = useTranslations('AdminSkillsManagement');
+  const tc = useTranslations('Common');
+
+  const STATUS_BADGES: Record<string, { label: string; color: string }> = {
+    published: { label: t('statusPublished'), color: 'bg-green-100 text-green-700' },
+    pending: { label: t('statusPending'), color: 'bg-yellow-100 text-yellow-700' },
+    rejected: { label: t('statusRejected'), color: 'bg-red-100 text-red-700' },
+    withdrawn: { label: t('statusWithdrawn'), color: 'bg-gray-100 text-gray-600' },
+    blocked: { label: t('statusBlocked'), color: 'bg-red-200 text-red-800' },
+    draft: { label: t('statusDraft'), color: 'bg-gray-100 text-gray-500' },
+    certified: { label: t('statusCertified'), color: 'bg-blue-100 text-blue-700' },
+    pending_payment_setup: { label: t('statusPendingPayment'), color: 'bg-amber-100 text-amber-700' },
+  };
+
+  const CERT_BADGES: Record<string, { label: string; emoji: string }> = {
+    none: { label: t('certNone'), emoji: '' },
+    bronze: { label: t('certBronze'), emoji: '🥉' },
+    silver: { label: t('certSilver'), emoji: '🥈' },
+    gold: { label: t('certGold'), emoji: '🥇' },
+  };
+
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [skills, setSkills] = useState<SkillRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -127,18 +131,18 @@ export default function SkillsManagementPage() {
       });
 
       const res = await fetch(`/api/admin/skills-management?${params}`);
-      if (!res.ok) throw new Error('Erreur de chargement');
+      if (!res.ok) throw new Error(t('errorPrefix'));
 
       const data = await res.json();
       setSkills(data.skills || []);
       setTotal(data.total || 0);
       setTotalPages(data.totalPages || 1);
     } catch {
-      setToast({ type: 'error', message: 'Erreur de chargement des skills' });
+      setToast({ type: 'error', message: t('errorPrefix') });
     } finally {
       setLoading(false);
     }
-  }, [page, statusFilter, certFilter]);
+  }, [page, statusFilter, certFilter, t]);
 
   useEffect(() => {
     if (isAdmin) fetchSkills();
@@ -147,8 +151,8 @@ export default function SkillsManagementPage() {
   // Toast auto-dismiss
   useEffect(() => {
     if (toast) {
-      const t = setTimeout(() => setToast(null), 4000);
-      return () => clearTimeout(t);
+      const timer = setTimeout(() => setToast(null), 4000);
+      return () => clearTimeout(timer);
     }
   }, [toast]);
 
@@ -222,15 +226,15 @@ export default function SkillsManagementPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setToast({ type: 'error', message: data.error || 'Erreur' });
+        setToast({ type: 'error', message: data.error || tc('error') });
         return;
       }
 
-      setToast({ type: 'success', message: data.message || 'Action effectuee' });
+      setToast({ type: 'success', message: data.message || t('actionSuccess') });
       closeModal();
       fetchSkills();
     } catch {
-      setToast({ type: 'error', message: 'Erreur reseau' });
+      setToast({ type: 'error', message: tc('networkError') });
     } finally {
       setModalLoading(false);
     }
@@ -260,7 +264,8 @@ export default function SkillsManagementPage() {
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
           <XCircle className="mx-auto h-12 w-12 text-red-400" />
-          <h1 className="mt-4 text-xl font-bold text-red-800">Acces refuse</h1>
+          <h1 className="mt-4 text-xl font-bold text-red-800">{tc('accessDenied')}</h1>
+          <p className="mt-2 text-sm text-red-600">{tc('adminOnly')}</p>
         </div>
       </div>
     );
@@ -282,8 +287,8 @@ export default function SkillsManagementPage() {
         <div className="mb-8 flex items-center gap-3">
           <Shield className="h-8 w-8 text-blue-600" />
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Gestion des Skills</h1>
-            <p className="mt-1 text-gray-600">{total} skill(s) au total</p>
+            <h1 className="text-3xl font-bold text-gray-900">{t('title')}</h1>
+            <p className="mt-1 text-gray-600">{t('subtitle', { count: total })}</p>
           </div>
         </div>
 
@@ -293,7 +298,7 @@ export default function SkillsManagementPage() {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Rechercher par nom ou createur..."
+              placeholder={t('searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -305,13 +310,13 @@ export default function SkillsManagementPage() {
             onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
             className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
           >
-            <option value="all">Tous les statuts</option>
-            <option value="published">Publies</option>
-            <option value="pending">En attente</option>
-            <option value="rejected">Rejetes</option>
-            <option value="withdrawn">Retires</option>
-            <option value="blocked">Bloques</option>
-            <option value="draft">Brouillons</option>
+            <option value="all">{t('allStatuses')}</option>
+            <option value="published">{t('statusPublished')}</option>
+            <option value="pending">{t('statusPending')}</option>
+            <option value="rejected">{t('statusRejected')}</option>
+            <option value="withdrawn">{t('statusWithdrawn')}</option>
+            <option value="blocked">{t('statusBlocked')}</option>
+            <option value="draft">{t('statusDraft')}</option>
           </select>
 
           <select
@@ -319,11 +324,11 @@ export default function SkillsManagementPage() {
             onChange={(e) => { setCertFilter(e.target.value); setPage(1); }}
             className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
           >
-            <option value="all">Toutes certifications</option>
-            <option value="none">Non certifies</option>
-            <option value="bronze">Bronze</option>
-            <option value="silver">Silver</option>
-            <option value="gold">Gold</option>
+            <option value="all">{t('allCertifications')}</option>
+            <option value="none">{t('certNone')}</option>
+            <option value="bronze">{t('certBronze')}</option>
+            <option value="silver">{t('certSilver')}</option>
+            <option value="gold">{t('certGold')}</option>
           </select>
         </div>
 
@@ -334,19 +339,19 @@ export default function SkillsManagementPage() {
               <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
             </div>
           ) : filteredSkills.length === 0 ? (
-            <div className="p-12 text-center text-gray-500">Aucun skill trouve</div>
+            <div className="p-12 text-center text-gray-500">{t('noSkillsFound')}</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="border-b bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Skill</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Createur</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Statut</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Certification</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Cree le</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Ventes</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Actions</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">{t('colSkill')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">{t('colCreator')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">{t('colStatus')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">{t('colCertification')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">{t('colDate')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">{t('colSales')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">{t('colActions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -369,10 +374,10 @@ export default function SkillsManagementPage() {
                             {statusBadge.label}
                           </span>
                           {skill.withdrawn_by === 'admin' && skill.status === 'withdrawn' && (
-                            <span className="ml-1 text-xs text-gray-400">(admin)</span>
+                            <span className="ml-1 text-xs text-gray-400">({t('withdrawnByAdmin')})</span>
                           )}
                           {skill.withdrawn_by === 'creator' && skill.status === 'withdrawn' && (
-                            <span className="ml-1 text-xs text-gray-400">(createur)</span>
+                            <span className="ml-1 text-xs text-gray-400">({t('withdrawnByCreator')})</span>
                           )}
                         </td>
                         <td className="px-4 py-3">
@@ -381,7 +386,7 @@ export default function SkillsManagementPage() {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-500">
-                          {new Date(skill.created_at).toLocaleDateString('fr-FR')}
+                          {new Date(skill.created_at).toLocaleDateString(undefined)}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-700 font-medium">
                           {skill.sales_count}
@@ -395,7 +400,7 @@ export default function SkillsManagementPage() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                                title="Voir"
+                                title={t('viewPage')}
                               >
                                 <Eye className="h-4 w-4" />
                               </a>
@@ -406,7 +411,7 @@ export default function SkillsManagementPage() {
                               <button
                                 onClick={() => openModal('withdraw', skill)}
                                 className="rounded p-1.5 text-amber-500 hover:bg-amber-50 hover:text-amber-700"
-                                title="Retirer"
+                                title={t('withdrawSkill')}
                               >
                                 <EyeOff className="h-4 w-4" />
                               </button>
@@ -417,7 +422,7 @@ export default function SkillsManagementPage() {
                               <button
                                 onClick={() => openModal('reject', skill)}
                                 className="rounded p-1.5 text-red-400 hover:bg-red-50 hover:text-red-600"
-                                title="Rejeter"
+                                title={t('rejectSkill')}
                               >
                                 <XCircle className="h-4 w-4" />
                               </button>
@@ -428,7 +433,7 @@ export default function SkillsManagementPage() {
                               <button
                                 onClick={() => openModal('block', skill)}
                                 className="rounded p-1.5 text-red-600 hover:bg-red-50 hover:text-red-800"
-                                title="Bloquer"
+                                title={t('blockSkill')}
                               >
                                 <Ban className="h-4 w-4" />
                               </button>
@@ -439,7 +444,7 @@ export default function SkillsManagementPage() {
                               <button
                                 onClick={() => openModal('reactivate', skill)}
                                 className="rounded p-1.5 text-green-500 hover:bg-green-50 hover:text-green-700"
-                                title="Reactiver"
+                                title={t('reactivateSkill')}
                               >
                                 <RotateCcw className="h-4 w-4" />
                               </button>
@@ -449,7 +454,7 @@ export default function SkillsManagementPage() {
                             <button
                               onClick={() => openModal('history', skill)}
                               className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                              title="Historique"
+                              title={t('historyTitle')}
                             >
                               <FileText className="h-4 w-4" />
                             </button>
@@ -467,7 +472,7 @@ export default function SkillsManagementPage() {
           {totalPages > 1 && (
             <div className="flex items-center justify-between border-t px-4 py-3">
               <p className="text-sm text-gray-500">
-                Page {page} / {totalPages}
+                {t('pageOf', { page, total: totalPages })}
               </p>
               <div className="flex gap-2">
                 <button
@@ -496,10 +501,10 @@ export default function SkillsManagementPage() {
           <div className="mx-4 w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-gray-900">
-                {modalType === 'withdraw' && 'Retirer le skill'}
-                {modalType === 'reject' && 'Rejeter le skill'}
-                {modalType === 'block' && 'Bloquer le skill'}
-                {modalType === 'reactivate' && 'Reactiver le skill'}
+                {modalType === 'withdraw' && t('modalWithdrawTitle')}
+                {modalType === 'reject' && t('modalRejectTitle')}
+                {modalType === 'block' && t('modalBlockTitle')}
+                {modalType === 'reactivate' && t('modalReactivateTitle')}
               </h2>
               <button onClick={closeModal} className="rounded p-1 hover:bg-gray-100">
                 <X className="h-5 w-5 text-gray-400" />
@@ -516,9 +521,9 @@ export default function SkillsManagementPage() {
               <div className="mb-4 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3">
                 <AlertTriangle className="h-5 w-5 flex-shrink-0 text-red-600" />
                 <div>
-                  <p className="text-sm font-medium text-red-800">Action severe</p>
+                  <p className="text-sm font-medium text-red-800">{t('blockWarningTitle')}</p>
                   <p className="text-xs text-red-600">
-                    Le skill sera retire et le createur ne pourra pas le resoumettre.
+                    {t('blockWarningDescription')}
                   </p>
                 </div>
               </div>
@@ -527,7 +532,7 @@ export default function SkillsManagementPage() {
             {/* Champ raison */}
             <div className="mb-4">
               <label className="mb-1 block text-sm font-medium text-gray-700">
-                {modalType === 'reactivate' ? 'Note (optionnelle)' : 'Raison *'}
+                {modalType === 'reactivate' ? t('labelNoteOptional') : t('labelReasonRequired')}
               </label>
               <textarea
                 value={modalReason}
@@ -535,10 +540,10 @@ export default function SkillsManagementPage() {
                 rows={3}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 placeholder={
-                  modalType === 'withdraw' ? 'Raison du retrait...' :
-                  modalType === 'reject' ? 'Raison du rejet...' :
-                  modalType === 'block' ? 'Raison du blocage...' :
-                  'Note optionnelle...'
+                  modalType === 'withdraw' ? t('placeholderWithdraw') :
+                  modalType === 'reject' ? t('placeholderReject') :
+                  modalType === 'block' ? t('placeholderBlock') :
+                  t('placeholderReactivate')
                 }
               />
             </div>
@@ -547,14 +552,14 @@ export default function SkillsManagementPage() {
             {modalType === 'reject' && (
               <div className="mb-4">
                 <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Conseils d'amelioration
+                  {t('labelFeedback')}
                 </label>
                 <textarea
                   value={modalFeedback}
                   onChange={(e) => setModalFeedback(e.target.value)}
                   rows={2}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  placeholder="Suggestions pour le createur..."
+                  placeholder={t('placeholderFeedback')}
                 />
               </div>
             )}
@@ -568,14 +573,14 @@ export default function SkillsManagementPage() {
                   onChange={(e) => setModalPermanent(e.target.checked)}
                   className="rounded border-gray-300"
                 />
-                <span className="text-sm text-gray-700">Blocage definitif (irreversible)</span>
+                <span className="text-sm text-gray-700">{t('permanentBlock')}</span>
               </label>
             )}
 
             {/* Notification email */}
             {modalType !== 'reactivate' && (
               <div className="mb-4 flex items-center gap-2 text-xs text-gray-500">
-                <span>Le createur sera notifie par email</span>
+                <span>{t('emailNotification')}</span>
               </div>
             )}
 
@@ -585,7 +590,7 @@ export default function SkillsManagementPage() {
                 onClick={closeModal}
                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
-                Annuler
+                {t('cancel')}
               </button>
               <button
                 onClick={handleAction}
@@ -600,10 +605,10 @@ export default function SkillsManagementPage() {
                 {modalLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  modalType === 'withdraw' ? 'Confirmer le retrait' :
-                  modalType === 'reject' ? 'Confirmer le rejet' :
-                  modalType === 'block' ? 'Confirmer le blocage' :
-                  'Confirmer la reactivation'
+                  modalType === 'withdraw' ? t('confirmWithdraw') :
+                  modalType === 'reject' ? t('confirmReject') :
+                  modalType === 'block' ? t('confirmBlock') :
+                  t('confirmReactivate')
                 )}
               </button>
             </div>
@@ -617,7 +622,7 @@ export default function SkillsManagementPage() {
           <div className="mx-4 w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-gray-900">
-                Historique — {selectedSkill.title}
+                {t('historyTitle')} — {selectedSkill.title}
               </h2>
               <button onClick={closeModal} className="rounded p-1 hover:bg-gray-100">
                 <X className="h-5 w-5 text-gray-400" />
@@ -625,7 +630,7 @@ export default function SkillsManagementPage() {
             </div>
 
             {history.length === 0 ? (
-              <p className="py-8 text-center text-sm text-gray-500">Aucun historique</p>
+              <p className="py-8 text-center text-sm text-gray-500">{t('noHistory')}</p>
             ) : (
               <div className="max-h-96 divide-y overflow-y-auto">
                 {history.map((entry) => (
@@ -635,7 +640,7 @@ export default function SkillsManagementPage() {
                         {entry.action.replace(/_/g, ' ')}
                       </span>
                       <span className="text-xs text-gray-500">
-                        {new Date(entry.action_at).toLocaleDateString('fr-FR', {
+                        {new Date(entry.action_at).toLocaleDateString(undefined, {
                           day: '2-digit', month: '2-digit', year: 'numeric',
                           hour: '2-digit', minute: '2-digit',
                         })}
@@ -643,7 +648,7 @@ export default function SkillsManagementPage() {
                     </div>
                     <div className="mt-1 text-xs text-gray-500">
                       {entry.previous_status} → {entry.new_status}
-                      {entry.admin && ` • par ${entry.admin.name || entry.admin.email}`}
+                      {entry.admin && ` • ${t('byAdmin', { name: entry.admin.name || entry.admin.email })}`}
                     </div>
                     {entry.reason && (
                       <p className="mt-1 text-xs text-gray-600 italic">{entry.reason}</p>
@@ -658,7 +663,7 @@ export default function SkillsManagementPage() {
                 onClick={closeModal}
                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
-                Fermer
+                {t('close')}
               </button>
             </div>
           </div>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Loader2, FileText, CheckCircle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface CreatorTermsModalProps {
   onAccepted: () => void;
@@ -9,6 +10,7 @@ interface CreatorTermsModalProps {
 }
 
 export function CreatorTermsModal({ onAccepted, onClose }: CreatorTermsModalProps) {
+  const t = useTranslations('CreatorTermsModal');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -21,10 +23,10 @@ export function CreatorTermsModal({ onAccepted, onClose }: CreatorTermsModalProp
       if (data.success) {
         onAccepted();
       } else {
-        setError(data.error || 'Erreur');
+        setError(data.error || t('errorGeneric'));
       }
     } catch {
-      setError('Erreur reseau');
+      setError(t('networkError'));
     } finally {
       setLoading(false);
     }
@@ -35,40 +37,34 @@ export function CreatorTermsModal({ onAccepted, onClose }: CreatorTermsModalProp
       <div className="mx-4 w-full max-w-lg rounded-xl bg-white p-8 shadow-xl">
         <div className="flex items-center gap-3">
           <FileText className="h-8 w-8 text-blue-600" />
-          <h2 className="text-xl font-bold text-gray-900">Conditions Generales Createur</h2>
+          <h2 className="text-xl font-bold text-gray-900">{t('title')}</h2>
         </div>
 
         <div className="mt-6 max-h-64 overflow-y-auto rounded-lg bg-gray-50 p-4 text-sm text-gray-700">
-          <p className="font-semibold">En devenant createur sur ClawForge, vous acceptez :</p>
+          <p className="font-semibold">{t('intro')}</p>
           <ul className="mt-3 space-y-2">
             <li className="flex items-start gap-2">
               <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-500" />
               <span>
-                <strong>Delai de protection de 15 jours minimum</strong> — Les acheteurs disposent
-                d'une periode de 15 jours apres l'achat pour demander un remboursement.
+                <strong>{t('term1Title')}</strong> — {t('term1Description')}
               </span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-500" />
               <span>
-                <strong>Paiements mensuels le dernier jour du mois</strong> — Vos revenus sont
-                verses en une fois, le dernier jour de chaque mois, pour tous les achats
-                eligibles (ayant depasse le delai de 15 jours).
+                <strong>{t('term2Title')}</strong> — {t('term2Description')}
               </span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-500" />
               <span>
-                <strong>Annulation en cas de remboursement</strong> — Si un acheteur obtient un
-                remboursement dans les 15 jours, la vente est annulee et ne sera pas incluse
-                dans votre versement.
+                <strong>{t('term3Title')}</strong> — {t('term3Description')}
               </span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-500" />
               <span>
-                <strong>Commission ClawForge de 20%</strong> — La plateforme retient 20% de chaque
-                vente. Vous recevez 80% du montant TTC.
+                <strong>{t('term4Title')}</strong> — {t('term4Description')}
               </span>
             </li>
           </ul>
@@ -84,7 +80,7 @@ export function CreatorTermsModal({ onAccepted, onClose }: CreatorTermsModalProp
               onClick={onClose}
               className="rounded-lg px-4 py-3 text-sm font-medium text-gray-600 hover:text-gray-800"
             >
-              Plus tard
+              {t('later')}
             </button>
           )}
           <button
@@ -93,7 +89,7 @@ export function CreatorTermsModal({ onAccepted, onClose }: CreatorTermsModalProp
             className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
-            J'accepte les conditions
+            {t('accept')}
           </button>
         </div>
       </div>

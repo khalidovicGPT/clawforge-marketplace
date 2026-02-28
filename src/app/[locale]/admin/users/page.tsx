@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, Link } from '@/i18n/routing';
 import {
@@ -33,16 +34,18 @@ interface AdminUser {
   skills_count: number;
 }
 
-const ROLE_LABELS: Record<string, { label: string; color: string }> = {
-  admin: { label: 'Admin', color: 'bg-red-100 text-red-700' },
-  creator: { label: 'Createur', color: 'bg-blue-100 text-blue-700' },
-  user: { label: 'Utilisateur', color: 'bg-gray-100 text-gray-700' },
+const ROLE_LABELS: Record<string, { labelKey: string; color: string }> = {
+  admin: { labelKey: 'roleAdmin', color: 'bg-red-100 text-red-700' },
+  creator: { labelKey: 'roleCreator', color: 'bg-blue-100 text-blue-700' },
+  user: { labelKey: 'roleUser', color: 'bg-gray-100 text-gray-700' },
 };
 
 type ModalType = 'role' | 'block' | 'unblock' | 'delete' | null;
 
 export default function AdminUsersPage() {
   const router = useRouter();
+  const t = useTranslations('AdminUsers');
+  const tc = useTranslations('Common');
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,7 +98,7 @@ export default function AdminUsersPage() {
       const res = await fetch(`/api/admin/users?${params}`);
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || `Erreur ${res.status}`);
+        throw new Error(errData.error || `${t('errorPrefix')} ${res.status}`);
       }
 
       const data = await res.json();
@@ -104,11 +107,11 @@ export default function AdminUsersPage() {
       setTotal(data.total);
     } catch (e) {
       console.error('Fetch users error:', e);
-      setFetchError(e instanceof Error ? e.message : 'Erreur inconnue');
+      setFetchError(e instanceof Error ? e.message : t('unknownError'));
     } finally {
       setLoading(false);
     }
-  }, [page, search, roleFilter]);
+  }, [page, search, roleFilter, t]);
 
   useEffect(() => {
     if (isAdmin) fetchUsers();
@@ -147,7 +150,7 @@ export default function AdminUsersPage() {
       if (modalType === 'delete') {
         const res = await fetch(`/api/admin/users/${selectedUser.id}`, { method: 'DELETE' });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Erreur');
+        if (!res.ok) throw new Error(data.error || tc('error'));
         setActionMessage({ type: 'success', text: data.message });
         setTimeout(() => { closeModal(); fetchUsers(); }, 1500);
       } else if (modalType === 'role') {
@@ -157,7 +160,7 @@ export default function AdminUsersPage() {
           body: JSON.stringify({ action: 'change_role', role: newRole }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Erreur');
+        if (!res.ok) throw new Error(data.error || tc('error'));
         setActionMessage({ type: 'success', text: data.message });
         setTimeout(() => { closeModal(); fetchUsers(); }, 1500);
       } else if (modalType === 'block' || modalType === 'unblock') {
@@ -167,12 +170,12 @@ export default function AdminUsersPage() {
           body: JSON.stringify({ action: modalType }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Erreur');
+        if (!res.ok) throw new Error(data.error || tc('error'));
         setActionMessage({ type: 'success', text: data.message });
         setTimeout(() => { closeModal(); fetchUsers(); }, 1500);
       }
     } catch (e) {
-      setActionMessage({ type: 'error', text: e instanceof Error ? e.message : 'Erreur inconnue' });
+      setActionMessage({ type: 'error', text: e instanceof Error ? e.message : t('unknownError') });
     } finally {
       setActionLoading(false);
     }
@@ -192,9 +195,9 @@ export default function AdminUsersPage() {
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
           <XCircle className="mx-auto h-12 w-12 text-red-400" />
-          <h1 className="mt-4 text-xl font-bold text-red-800">Acces refuse</h1>
+          <h1 className="mt-4 text-xl font-bold text-red-800">{tc('accessDenied')}</h1>
           <p className="mt-2 text-red-600">
-            Cette page est reservee aux administrateurs.
+            {tc('adminOnly')}
           </p>
         </div>
       </div>
@@ -211,14 +214,14 @@ export default function AdminUsersPage() {
             className="mb-4 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700"
           >
             <ArrowLeft className="h-4 w-4" />
-            Retour a l'administration
+            {t('backAdmin')}
           </Link>
           <div className="flex items-center gap-3">
             <Users className="h-8 w-8 text-blue-600" />
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Gestion des utilisateurs</h1>
+              <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
               <p className="mt-1 text-gray-600">
-                {total} utilisateur{total !== 1 ? 's' : ''} inscrits
+                {t('userCount', { total })}
               </p>
             </div>
           </div>
@@ -230,7 +233,7 @@ export default function AdminUsersPage() {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Rechercher par email ou nom..."
+              placeholder={t('searchPlaceholder')}
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-100"
@@ -241,17 +244,17 @@ export default function AdminUsersPage() {
             onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
             className="rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-100"
           >
-            <option value="">Tous les roles</option>
-            <option value="admin">Admins</option>
-            <option value="creator">Createurs</option>
-            <option value="user">Utilisateurs</option>
+            <option value="">{t('allRoles')}</option>
+            <option value="admin">{t('admins')}</option>
+            <option value="creator">{t('creatorsFilter')}</option>
+            <option value="user">{t('usersFilter')}</option>
           </select>
         </div>
 
         {/* Erreur */}
         {fetchError && (
           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            <strong>Erreur :</strong> {fetchError}
+            <strong>{t('errorPrefix')}</strong> {fetchError}
           </div>
         )}
 
@@ -263,19 +266,19 @@ export default function AdminUsersPage() {
             </div>
           ) : users.length === 0 ? (
             <div className="py-20 text-center text-gray-500">
-              Aucun utilisateur trouve
+              {t('noUsersFound')}
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b bg-gray-50 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    <th className="px-6 py-3">Utilisateur</th>
-                    <th className="px-6 py-3">Role</th>
-                    <th className="px-6 py-3">Skills</th>
-                    <th className="px-6 py-3">Stripe</th>
-                    <th className="px-6 py-3">Inscription</th>
-                    <th className="px-6 py-3 text-right">Actions</th>
+                    <th className="px-6 py-3">{t('colUser')}</th>
+                    <th className="px-6 py-3">{t('colRole')}</th>
+                    <th className="px-6 py-3">{t('colSkills')}</th>
+                    <th className="px-6 py-3">{t('colStripe')}</th>
+                    <th className="px-6 py-3">{t('colRegistration')}</th>
+                    <th className="px-6 py-3 text-right">{t('colActions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -296,7 +299,7 @@ export default function AdminUsersPage() {
                             </div>
                             <div>
                               <p className="text-sm font-medium text-gray-900">
-                                {u.name || 'Sans nom'}
+                                {u.name || t('noName')}
                               </p>
                               <p className="text-xs text-gray-500">{u.email}</p>
                             </div>
@@ -304,7 +307,7 @@ export default function AdminUsersPage() {
                         </td>
                         <td className="px-6 py-4">
                           <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${roleInfo.color}`}>
-                            {roleInfo.label}
+                            {t(roleInfo.labelKey)}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-600">
@@ -312,36 +315,36 @@ export default function AdminUsersPage() {
                         </td>
                         <td className="px-6 py-4">
                           {u.stripe_onboarding_complete ? (
-                            <span className="text-xs text-green-600">Configure</span>
+                            <span className="text-xs text-green-600">{t('stripeConfigured')}</span>
                           ) : u.stripe_account_id ? (
-                            <span className="text-xs text-amber-600">En cours</span>
+                            <span className="text-xs text-amber-600">{t('stripeInProgress')}</span>
                           ) : (
                             <span className="text-xs text-gray-400">—</span>
                           )}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500">
-                          {new Date(u.created_at).toLocaleDateString('fr-FR')}
+                          {new Date(u.created_at).toLocaleDateString(undefined)}
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-end gap-1">
                             <button
                               onClick={() => openModal('role', u)}
                               className="rounded-lg p-2 text-gray-400 hover:bg-blue-50 hover:text-blue-600"
-                              title="Changer le role"
+                              title={t('changeRole')}
                             >
                               <UserCog className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => openModal('block', u)}
                               className="rounded-lg p-2 text-gray-400 hover:bg-amber-50 hover:text-amber-600"
-                              title="Bloquer"
+                              title={t('block')}
                             >
                               <Ban className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => openModal('unblock', u)}
                               className="rounded-lg p-2 text-gray-400 hover:bg-green-50 hover:text-green-600"
-                              title="Debloquer"
+                              title={t('unblock')}
                             >
                               <Unlock className="h-4 w-4" />
                             </button>
@@ -349,7 +352,7 @@ export default function AdminUsersPage() {
                               <button
                                 onClick={() => openModal('delete', u)}
                                 className="rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600"
-                                title="Supprimer"
+                                title={t('delete')}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </button>
@@ -369,7 +372,7 @@ export default function AdminUsersPage() {
         {totalPages > 1 && (
           <div className="mt-4 flex items-center justify-between">
             <p className="text-sm text-gray-500">
-              Page {page} sur {totalPages}
+              {t('pageOf', { page, total: totalPages })}
             </p>
             <div className="flex gap-2">
               <button
@@ -378,14 +381,14 @@ export default function AdminUsersPage() {
                 className="inline-flex items-center gap-1 rounded-lg border bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
               >
                 <ChevronLeft className="h-4 w-4" />
-                Precedent
+                {t('previous')}
               </button>
               <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
                 className="inline-flex items-center gap-1 rounded-lg border bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
               >
-                Suivant
+                {t('next')}
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
@@ -404,10 +407,10 @@ export default function AdminUsersPage() {
               {modalType === 'unblock' && <Unlock className="h-6 w-6 text-green-500" />}
               {modalType === 'role' && <Shield className="h-6 w-6 text-blue-500" />}
               <h2 className="text-lg font-semibold text-gray-900">
-                {modalType === 'delete' && 'Supprimer l\'utilisateur'}
-                {modalType === 'block' && 'Bloquer l\'utilisateur'}
-                {modalType === 'unblock' && 'Debloquer l\'utilisateur'}
-                {modalType === 'role' && 'Changer le role'}
+                {modalType === 'delete' && t('deleteUserTitle')}
+                {modalType === 'block' && t('blockUserTitle')}
+                {modalType === 'unblock' && t('unblockUserTitle')}
+                {modalType === 'role' && t('changeRoleTitle')}
               </h2>
             </div>
 
@@ -419,36 +422,35 @@ export default function AdminUsersPage() {
 
             {modalType === 'delete' && (
               <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                Cette action est irreversible. L'utilisateur, ses skills et toutes ses donnees seront
-                definitivement supprimes.
+                {t('deleteWarning')}
               </div>
             )}
 
             {modalType === 'block' && (
               <p className="mb-4 text-sm text-gray-500">
-                L'utilisateur ne pourra plus se connecter a ClawForge. Ses skills resteront visibles.
+                {t('blockWarning')}
               </p>
             )}
 
             {modalType === 'unblock' && (
               <p className="mb-4 text-sm text-gray-500">
-                L'utilisateur pourra a nouveau se connecter a ClawForge.
+                {t('unblockWarning')}
               </p>
             )}
 
             {modalType === 'role' && (
               <div className="mb-4">
                 <label className="mb-2 block text-sm font-medium text-gray-700">
-                  Nouveau role
+                  {t('newRole')}
                 </label>
                 <select
                   value={newRole}
                   onChange={(e) => setNewRole(e.target.value)}
                   className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-100"
                 >
-                  <option value="user">Utilisateur</option>
-                  <option value="creator">Createur</option>
-                  <option value="admin">Admin</option>
+                  <option value="user">{t('roleUser')}</option>
+                  <option value="creator">{t('roleCreator')}</option>
+                  <option value="admin">{t('roleAdmin')}</option>
                 </select>
               </div>
             )}
@@ -471,7 +473,7 @@ export default function AdminUsersPage() {
                 className="rounded-lg border px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                 disabled={actionLoading}
               >
-                Annuler
+                {tc('cancel')}
               </button>
               <button
                 onClick={executeAction}
@@ -487,10 +489,10 @@ export default function AdminUsersPage() {
                 }`}
               >
                 {actionLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                {modalType === 'delete' && 'Supprimer'}
-                {modalType === 'block' && 'Bloquer'}
-                {modalType === 'unblock' && 'Debloquer'}
-                {modalType === 'role' && 'Mettre a jour'}
+                {modalType === 'delete' && t('delete')}
+                {modalType === 'block' && t('block')}
+                {modalType === 'unblock' && t('unblock')}
+                {modalType === 'role' && t('update')}
               </button>
             </div>
           </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from '@/i18n/routing';
 import {
@@ -30,28 +31,30 @@ interface AgentKey {
 }
 
 const AGENTS = [
-  { name: 'QualityClaw', description: 'Service qualite — validation Silver/Gold', defaultRole: 'moderator', defaultPerms: ['read', 'certify', 'review', 'download'] },
-  { name: 'DevClaw', description: 'Developpement des skills', defaultRole: 'agent', defaultPerms: ['read', 'publish', 'download'] },
-  { name: 'ResearchClaw', description: 'R&D / Analyse', defaultRole: 'readonly', defaultPerms: ['read'] },
-  { name: 'ContentClaw', description: 'Documentation', defaultRole: 'readonly', defaultPerms: ['read'] },
+  { name: 'QualityClaw', descKey: 'agentQualityClawDesc', defaultRole: 'moderator', defaultPerms: ['read', 'certify', 'review', 'download'] },
+  { name: 'DevClaw', descKey: 'agentDevClawDesc', defaultRole: 'agent', defaultPerms: ['read', 'publish', 'download'] },
+  { name: 'ResearchClaw', descKey: 'agentResearchClawDesc', defaultRole: 'readonly', defaultPerms: ['read'] },
+  { name: 'ContentClaw', descKey: 'agentContentClawDesc', defaultRole: 'readonly', defaultPerms: ['read'] },
 ];
 
 const PERMISSIONS = [
-  { id: 'read', label: 'Lecture', description: 'Lire les skills et metadonnees' },
-  { id: 'certify', label: 'Certifier', description: 'Attribuer les certifications Bronze/Silver/Gold' },
-  { id: 'review', label: 'Review', description: 'Publier des revues de securite' },
-  { id: 'download', label: 'Telecharger', description: 'Telecharger les fichiers ZIP des skills' },
-  { id: 'publish', label: 'Publier', description: 'Soumettre et publier des skills' },
+  { id: 'read', labelKey: 'permRead', descKey: 'permReadDesc' },
+  { id: 'certify', labelKey: 'permCertify', descKey: 'permCertifyDesc' },
+  { id: 'review', labelKey: 'permReview', descKey: 'permReviewDesc' },
+  { id: 'download', labelKey: 'permDownload', descKey: 'permDownloadDesc' },
+  { id: 'publish', labelKey: 'permPublish', descKey: 'permPublishDesc' },
 ];
 
-const ROLE_BADGES: Record<string, { label: string; color: string }> = {
-  moderator: { label: 'Moderateur', color: 'bg-purple-100 text-purple-800' },
-  agent: { label: 'Agent', color: 'bg-blue-100 text-blue-800' },
-  readonly: { label: 'Lecture seule', color: 'bg-gray-100 text-gray-700' },
+const ROLE_BADGES: Record<string, { labelKey: string; color: string }> = {
+  moderator: { labelKey: 'roleBadgeModerator', color: 'bg-purple-100 text-purple-800' },
+  agent: { labelKey: 'roleBadgeAgent', color: 'bg-blue-100 text-blue-800' },
+  readonly: { labelKey: 'roleBadgeReadonly', color: 'bg-gray-100 text-gray-700' },
 };
 
 export default function AdminAgentKeysPage() {
   const router = useRouter();
+  const t = useTranslations('AdminAgentKeys');
+  const tc = useTranslations('Common');
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [keys, setKeys] = useState<AgentKey[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,16 +114,16 @@ export default function AdminAgentKeysPage() {
           setIsAdmin(false);
           return;
         }
-        throw new Error(`Erreur ${res.status}`);
+        throw new Error(tc('networkError'));
       }
       const data = await res.json();
       setKeys(data.keys || []);
     } catch (e) {
-      showToast(`Erreur : ${e instanceof Error ? e.message : 'inconnue'}`, 'error');
+      showToast(e instanceof Error ? e.message : tc('networkError'), 'error');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [tc]);
 
   useEffect(() => {
     if (isAdmin) fetchKeys();
@@ -159,7 +162,7 @@ export default function AdminAgentKeysPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.details || data.error || 'Erreur creation');
+        throw new Error(data.details || data.error || tc('networkError'));
       }
 
       setGeneratedKey(data.plain_key);
@@ -168,7 +171,7 @@ export default function AdminAgentKeysPage() {
       showToast(data.message, 'success');
       fetchKeys();
     } catch (e) {
-      showToast(`Erreur : ${e instanceof Error ? e.message : 'inconnue'}`, 'error');
+      showToast(e instanceof Error ? e.message : tc('networkError'), 'error');
     } finally {
       setCreating(false);
     }
@@ -184,19 +187,20 @@ export default function AdminAgentKeysPage() {
 
   // Revoquer une cle
   const handleRevoke = async (keyId: string) => {
+    if (!confirm(t('confirmRevoke'))) return;
     setRevoking(keyId);
     try {
       const res = await fetch(`/api/admin/agent-keys?id=${keyId}`, { method: 'DELETE' });
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.details || data.error || 'Erreur revocation');
+        throw new Error(data.details || data.error || t('revokeError'));
       }
 
-      showToast('Cle revoquee', 'success');
+      showToast(t('revokeKey'), 'success');
       fetchKeys();
     } catch (e) {
-      showToast(`Erreur : ${e instanceof Error ? e.message : 'inconnue'}`, 'error');
+      showToast(e instanceof Error ? e.message : t('revokeError'), 'error');
     } finally {
       setRevoking(null);
     }
@@ -208,8 +212,8 @@ export default function AdminAgentKeysPage() {
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
           <XCircle className="mx-auto h-12 w-12 text-red-400" />
-          <h1 className="mt-4 text-xl font-bold text-red-800">Acces refuse</h1>
-          <p className="mt-2 text-red-600">Cette page est reservee aux administrateurs.</p>
+          <h1 className="mt-4 text-xl font-bold text-red-800">{tc('accessDenied')}</h1>
+          <p className="mt-2 text-red-600">{tc('adminOnly')}</p>
         </div>
       </div>
     );
@@ -247,10 +251,10 @@ export default function AdminAgentKeysPage() {
           <div>
             <div className="flex items-center gap-3">
               <Key className="h-8 w-8 text-purple-600" />
-              <h1 className="text-3xl font-bold text-gray-900">Cles API Agents</h1>
+              <h1 className="text-3xl font-bold text-gray-900">{t('title')}</h1>
             </div>
             <p className="mt-2 text-gray-600">
-              Gerez les cles d&apos;acces API pour les agents OpenClaw
+              {t('subtitle')}
             </p>
           </div>
 
@@ -259,7 +263,7 @@ export default function AdminAgentKeysPage() {
               onClick={fetchKeys}
               disabled={loading}
               className="rounded-lg border bg-white p-2 text-gray-500 hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50"
-              title="Rafraichir"
+              title={t('backAdmin')}
             >
               <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
             </button>
@@ -268,7 +272,7 @@ export default function AdminAgentKeysPage() {
               className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700"
             >
               <Plus className="h-4 w-4" />
-              Generer nouvelle cle
+              {t('generateKey')}
             </button>
           </div>
         </div>
@@ -276,7 +280,7 @@ export default function AdminAgentKeysPage() {
         {/* Formulaire de generation */}
         {showForm && (
           <div className="mb-8 rounded-xl border border-purple-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">Nouvelle cle API</h2>
+            <h2 className="mb-4 text-lg font-semibold text-gray-900">{t('generateFormTitle')}</h2>
 
             {/* Cle generee */}
             {generatedKey && (
@@ -284,7 +288,7 @@ export default function AdminAgentKeysPage() {
                 <div className="mb-2 flex items-center gap-2">
                   <Shield className="h-5 w-5 text-green-600" />
                   <span className="text-sm font-semibold text-green-800">
-                    Cle generee — Copiez-la maintenant !
+                    {t('generatedKeyTitle')}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -294,7 +298,6 @@ export default function AdminAgentKeysPage() {
                   <button
                     onClick={() => setShowKey(!showKey)}
                     className="rounded-md border p-2 text-gray-500 hover:bg-gray-50"
-                    title={showKey ? 'Masquer' : 'Afficher'}
                   >
                     {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -307,19 +310,16 @@ export default function AdminAgentKeysPage() {
                     }`}
                   >
                     {copied ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                    {copied ? 'Copie !' : 'Copier'}
+                    {copied ? t('copied') : t('copy')}
                   </button>
                 </div>
-                <p className="mt-2 text-xs text-green-700">
-                  Cette cle ne sera plus jamais affichee. Conservez-la en lieu sur.
-                </p>
               </div>
             )}
 
             <div className="grid gap-6 sm:grid-cols-2">
               {/* Selection agent */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">Agent</label>
+                <label className="mb-2 block text-sm font-medium text-gray-700">{t('agentLabel')}</label>
                 <div className="space-y-2">
                   {AGENTS.map(agent => (
                     <label
@@ -343,7 +343,7 @@ export default function AdminAgentKeysPage() {
                           <Bot className="h-4 w-4 text-gray-500" />
                           <span className="font-medium text-gray-900">{agent.name}</span>
                         </div>
-                        <p className="text-xs text-gray-500">{agent.description}</p>
+                        <p className="text-xs text-gray-500">{t(agent.descKey)}</p>
                       </div>
                     </label>
                   ))}
@@ -352,18 +352,18 @@ export default function AdminAgentKeysPage() {
 
               {/* Role et permissions */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">Role</label>
+                <label className="mb-2 block text-sm font-medium text-gray-700">{t('roleLabel')}</label>
                 <select
                   value={selectedRole}
                   onChange={e => setSelectedRole(e.target.value)}
                   className="mb-4 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                 >
-                  <option value="moderator">Moderateur — certification et review</option>
-                  <option value="agent">Agent — lecture et publication</option>
-                  <option value="readonly">Lecture seule</option>
+                  <option value="moderator">{t('roleModerator')}</option>
+                  <option value="agent">{t('roleAgent')}</option>
+                  <option value="readonly">{t('roleReadonly')}</option>
                 </select>
 
-                <label className="mb-2 block text-sm font-medium text-gray-700">Permissions</label>
+                <label className="mb-2 block text-sm font-medium text-gray-700">{t('permissionsLabel')}</label>
                 <div className="space-y-2">
                   {PERMISSIONS.map(perm => (
                     <label
@@ -381,8 +381,8 @@ export default function AdminAgentKeysPage() {
                         className="accent-purple-600"
                       />
                       <div>
-                        <span className="text-sm font-medium text-gray-900">{perm.label}</span>
-                        <p className="text-xs text-gray-500">{perm.description}</p>
+                        <span className="text-sm font-medium text-gray-900">{t(perm.labelKey)}</span>
+                        <p className="text-xs text-gray-500">{t(perm.descKey)}</p>
                       </div>
                     </label>
                   ))}
@@ -399,7 +399,7 @@ export default function AdminAgentKeysPage() {
                   onClick={() => { setShowForm(false); setGeneratedKey(null); }}
                   className="rounded-lg border px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
                 >
-                  Annuler
+                  {t('backAdmin')}
                 </button>
                 <button
                   onClick={handleGenerate}
@@ -407,7 +407,7 @@ export default function AdminAgentKeysPage() {
                   className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50"
                 >
                   {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Key className="h-4 w-4" />}
-                  Generer la cle
+                  {t('generateKey')}
                 </button>
               </div>
             </div>
@@ -417,7 +417,7 @@ export default function AdminAgentKeysPage() {
         {/* Liste des cles actives */}
         <div className="mb-8">
           <h2 className="mb-4 text-lg font-semibold text-gray-900">
-            Cles actives ({activeKeys.length})
+            {t('activeKeys')} ({activeKeys.length})
           </h2>
 
           {loading ? (
@@ -427,10 +427,7 @@ export default function AdminAgentKeysPage() {
           ) : activeKeys.length === 0 ? (
             <div className="rounded-xl border bg-white p-12 text-center">
               <Key className="mx-auto h-12 w-12 text-gray-300" />
-              <h3 className="mt-4 text-lg font-medium text-gray-900">Aucune cle active</h3>
-              <p className="mt-2 text-gray-500">
-                Generez une cle API pour permettre aux agents d&apos;acceder a l&apos;API.
-              </p>
+              <h3 className="mt-4 text-lg font-medium text-gray-900">{t('noKeys')}</h3>
             </div>
           ) : (
             <div className="space-y-3">
@@ -446,7 +443,7 @@ export default function AdminAgentKeysPage() {
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-gray-900">{key.agent_name || key.name}</span>
                           <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${roleBadge.color}`}>
-                            {roleBadge.label}
+                            {t(roleBadge.labelKey)}
                           </span>
                         </div>
                         <div className="mt-1 flex flex-wrap gap-1">
@@ -457,9 +454,12 @@ export default function AdminAgentKeysPage() {
                           ))}
                         </div>
                         <p className="mt-1 text-xs text-gray-400">
-                          Creee le {new Date(key.created_at).toLocaleDateString('fr-FR')}
+                          {t('colCreatedAt')} {new Date(key.created_at).toLocaleDateString(undefined)}
                           {key.last_used_at && (
-                            <> &middot; Derniere utilisation : {new Date(key.last_used_at).toLocaleDateString('fr-FR')}</>
+                            <> &middot; {t('colLastUsed')} : {new Date(key.last_used_at).toLocaleDateString(undefined)}</>
+                          )}
+                          {!key.last_used_at && (
+                            <> &middot; {t('colLastUsed')} : {t('never')}</>
                           )}
                         </p>
                       </div>
@@ -475,7 +475,7 @@ export default function AdminAgentKeysPage() {
                       ) : (
                         <Trash2 className="h-4 w-4" />
                       )}
-                      Revoquer
+                      {t('revokeKey')}
                     </button>
                   </div>
                 );
@@ -488,7 +488,7 @@ export default function AdminAgentKeysPage() {
         {revokedKeys.length > 0 && (
           <div>
             <h2 className="mb-4 text-lg font-semibold text-gray-500">
-              Cles revoquees ({revokedKeys.length})
+              {t('revokedKeys')} ({revokedKeys.length})
             </h2>
             <div className="space-y-2">
               {revokedKeys.map(key => (
@@ -500,12 +500,12 @@ export default function AdminAgentKeysPage() {
                     <div>
                       <span className="font-medium text-gray-500">{key.agent_name || key.name}</span>
                       <p className="text-xs text-gray-400">
-                        Revoquee le {new Date(key.revoked_at!).toLocaleDateString('fr-FR')}
+                        {t('revoked')} {new Date(key.revoked_at!).toLocaleDateString(undefined)}
                       </p>
                     </div>
                   </div>
                   <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600">
-                    Revoquee
+                    {t('revoked')}
                   </span>
                 </div>
               ))}

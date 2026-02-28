@@ -3,8 +3,10 @@
 import { useState, Suspense } from 'react';
 import { Link } from '@/i18n/routing';
 import { useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 function VerifyEmailContent() {
+  const t = useTranslations('VerifyEmailPage');
   const searchParams = useSearchParams();
   const email = searchParams.get('email') ?? '';
   const [resending, setResending] = useState(false);
@@ -26,12 +28,12 @@ function VerifyEmailContent() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Erreur lors du renvoi');
+        throw new Error(data.error || t('resendError'));
       }
 
       setResent(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      setError(err instanceof Error ? err.message : t('genericError'));
     } finally {
       setResending(false);
     }
@@ -42,31 +44,30 @@ function VerifyEmailContent() {
       <div className="text-5xl mb-4">&#9993;&#65039;</div>
 
       <h1 className="text-2xl font-bold text-gray-900">
-        Vérifiez votre email
+        {t('title')}
       </h1>
 
       <p className="mt-3 text-gray-600">
-        Un lien d&apos;activation a été envoyé à{' '}
+        {t('sentTo')}{' '}
         {email ? (
           <strong className="text-gray-900">{email}</strong>
         ) : (
-          'votre adresse email'
+          t('yourEmail')
         )}
         .
       </p>
 
       <p className="mt-2 text-sm text-gray-500">
-        Cliquez sur le lien dans l&apos;email pour activer votre compte. Le
-        lien est valable 24&nbsp;heures.
+        {t('clickLink')}
       </p>
 
       <div className="mt-4 flex items-start gap-3 rounded-lg bg-amber-50 border border-amber-200 p-4">
         <span className="text-xl leading-none">&#9888;&#65039;</span>
         <p className="text-sm text-amber-800">
-          <strong>Vous ne trouvez pas l&apos;email ?</strong> Pensez à vérifier
-          votre dossier <strong>Spam</strong> ou{' '}
-          <strong>Courrier indésirable</strong>. L&apos;email peut parfois y
-          être redirigé automatiquement.
+          <strong>{t('cantFind')}</strong>{' '}
+          {t.rich('checkSpam', {
+            strong: (chunks) => <strong>{chunks}</strong>,
+          })}
         </p>
       </div>
 
@@ -79,7 +80,7 @@ function VerifyEmailContent() {
 
         {resent && (
           <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
-            Email renvoyé avec succès !
+            {t('resentSuccess')}
           </div>
         )}
 
@@ -90,10 +91,10 @@ function VerifyEmailContent() {
             className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
           >
             {resending
-              ? 'Envoi en cours...'
+              ? t('resending')
               : resent
-                ? 'Email renvoyé'
-                : 'Renvoyer l\'email'}
+                ? t('resent')
+                : t('resend')}
           </button>
         )}
 
@@ -101,7 +102,7 @@ function VerifyEmailContent() {
           href="/login"
           className="block w-full rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-gray-800 text-center"
         >
-          Aller à la connexion
+          {t('goToLogin')}
         </Link>
       </div>
 
@@ -110,10 +111,11 @@ function VerifyEmailContent() {
 }
 
 export default function VerifyEmailPage() {
+  const t = useTranslations('VerifyEmailPage');
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="max-w-md w-full text-center">
-        <Suspense fallback={<div className="text-gray-500">Chargement...</div>}>
+        <Suspense fallback={<div className="text-gray-500">{t('loading')}</div>}>
           <VerifyEmailContent />
         </Suspense>
       </div>

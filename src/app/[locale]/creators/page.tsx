@@ -1,13 +1,18 @@
 import { createServiceClient } from '@/lib/supabase/service';
 import { Link } from '@/i18n/routing';
 import { Package, Download, Star, Users } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 
-export const metadata = {
-  title: 'Createurs — ClawForge',
-  description: 'Decouvrez les createurs de skills sur ClawForge Marketplace',
-};
+export async function generateMetadata() {
+  const t = await getTranslations('CreatorsPage');
+  return {
+    title: t('metaTitle'),
+    description: t('metaDescription'),
+  };
+}
 
 export default async function CreatorsPage() {
+  const t = await getTranslations('CreatorsPage');
   let supabase;
   try {
     supabase = createServiceClient();
@@ -20,22 +25,22 @@ export default async function CreatorsPage() {
             <div className="mb-4 flex justify-center">
               <Users className="h-12 w-12 text-blue-600" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900">Createurs</h1>
+            <h1 className="text-3xl font-bold text-gray-900">{t('title')}</h1>
             <p className="mt-2 text-gray-600">
-              Decouvrez les createurs de skills sur ClawForge
+              {t('subtitle')}
             </p>
           </div>
           <div className="rounded-xl border bg-white p-12 text-center">
             <Users className="mx-auto h-12 w-12 text-gray-300" />
-            <h3 className="mt-4 text-lg font-medium text-gray-900">Aucun createur pour le moment</h3>
+            <h3 className="mt-4 text-lg font-medium text-gray-900">{t('noCreators')}</h3>
             <p className="mt-2 text-gray-500">
-              Soyez le premier a publier un skill !
+              {t('beFirst')}
             </p>
             <Link
               href="/become-creator"
               className="mt-4 inline-flex items-center gap-2 rounded-lg bg-gray-900 px-6 py-3 font-medium text-white hover:bg-gray-800"
             >
-              Devenir createur
+              {t('becomeCreator')}
             </Link>
           </div>
         </div>
@@ -94,24 +99,24 @@ export default async function CreatorsPage() {
           <div className="mb-4 flex justify-center">
             <Users className="h-12 w-12 text-blue-600" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Createurs</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t('title')}</h1>
           <p className="mt-2 text-gray-600">
-            Decouvrez les createurs de skills sur ClawForge
+            {t('subtitle')}
           </p>
         </div>
 
         {creatorsWithStats.length === 0 ? (
           <div className="rounded-xl border bg-white p-12 text-center">
             <Users className="mx-auto h-12 w-12 text-gray-300" />
-            <h3 className="mt-4 text-lg font-medium text-gray-900">Aucun createur pour le moment</h3>
+            <h3 className="mt-4 text-lg font-medium text-gray-900">{t('noCreators')}</h3>
             <p className="mt-2 text-gray-500">
-              Soyez le premier a publier un skill !
+              {t('beFirst')}
             </p>
             <Link
               href="/become-creator"
               className="mt-4 inline-flex items-center gap-2 rounded-lg bg-gray-900 px-6 py-3 font-medium text-white hover:bg-gray-800"
             >
-              Devenir createur
+              {t('becomeCreator')}
             </Link>
           </div>
         ) : (
@@ -147,7 +152,7 @@ export default async function CreatorsPage() {
                   </div>
                   <div className="flex items-center gap-1">
                     <Download className="h-4 w-4" />
-                    <span>{creator.downloads.toLocaleString('fr-FR')}</span>
+                    <span>{creator.downloads.toLocaleString()}</span>
                   </div>
                   {creator.avgRating && (
                     <div className="flex items-center gap-1">
@@ -162,7 +167,7 @@ export default async function CreatorsPage() {
                   href={`/creators/${creator.id}`}
                   className="mt-6 inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
-                  Voir les skills
+                  {t('viewSkills')}
                 </Link>
               </div>
             ))}

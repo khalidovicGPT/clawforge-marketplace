@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import { Link } from '@/i18n/routing';
+import { useTranslations } from 'next-intl';
 
 export default function ForgotPasswordPage() {
+  const t = useTranslations('ForgotPasswordPage');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -24,12 +26,12 @@ export default function ForgotPasswordPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Erreur lors de l\'envoi');
+        throw new Error(data.error || t('sendError'));
       }
 
       setSuccess(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      setError(err instanceof Error ? err.message : t('genericError'));
     } finally {
       setLoading(false);
     }
@@ -40,15 +42,15 @@ export default function ForgotPasswordPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
         <div className="max-w-md w-full text-center">
           <div className="text-5xl mb-4">📧</div>
-          <h1 className="text-2xl font-bold text-gray-900">Email envoyé !</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t('emailSent')}</h1>
           <p className="mt-2 text-gray-600">
-            Si un compte existe avec cet email, vous recevrez un lien de réinitialisation.
+            {t('emailSentDescription')}
           </p>
           <Link
             href="/login"
             className="mt-6 inline-block text-blue-600 hover:underline"
           >
-            Retour à la connexion
+            {t('backToLogin')}
           </Link>
         </div>
       </div>
@@ -60,9 +62,9 @@ export default function ForgotPasswordPage() {
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
           <span className="text-4xl">🦾</span>
-          <h1 className="mt-4 text-2xl font-bold text-gray-900">Mot de passe oublié</h1>
+          <h1 className="mt-4 text-2xl font-bold text-gray-900">{t('title')}</h1>
           <p className="mt-1 text-gray-600">
-            Entrez votre email pour recevoir un lien de réinitialisation
+            {t('subtitle')}
           </p>
         </div>
 
@@ -76,7 +78,7 @@ export default function ForgotPasswordPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email
+                {t('email')}
               </label>
               <input
                 id="email"
@@ -85,7 +87,7 @@ export default function ForgotPasswordPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="vous@exemple.com"
+                placeholder={t('emailPlaceholder')}
               />
             </div>
 
@@ -94,13 +96,13 @@ export default function ForgotPasswordPage() {
               disabled={loading}
               className="w-full rounded-lg bg-gray-900 px-4 py-3 font-semibold text-white hover:bg-gray-800 disabled:opacity-50"
             >
-              {loading ? 'Envoi...' : 'Envoyer le lien'}
+              {loading ? t('sending') : t('sendLink')}
             </button>
           </form>
 
           <div className="mt-6 text-center text-sm">
             <Link href="/login" className="text-blue-600 hover:underline">
-              ← Retour à la connexion
+              ← {t('backToLogin')}
             </Link>
           </div>
         </div>
