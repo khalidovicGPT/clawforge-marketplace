@@ -1,5 +1,5 @@
 import { createServiceClient } from '@/lib/supabase/service';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { Package, Download, Star, Users } from 'lucide-react';
 
 export const metadata = {

@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { Metadata } from 'next';
 import { Search, Shield, Zap, Wallet, Star, BookOpen, ArrowRight } from 'lucide-react';
 import { SKILL_CATEGORIES, CERTIFICATION_BADGES } from '@/types/database';

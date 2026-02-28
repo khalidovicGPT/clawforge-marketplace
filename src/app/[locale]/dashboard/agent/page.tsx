@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
+import { useLocale } from 'next-intl';
 import {
   ArrowLeft, Bot, Key, Eye, EyeOff, Copy, RefreshCw,
   CheckCircle, Loader2, AlertTriangle, Clock, Trash2,
@@ -48,6 +49,7 @@ function clearKeyFromStorage() {
 }
 
 export default function AgentDashboardPage() {
+  const locale = useLocale();
   const [isCreator, setIsCreator] = useState<boolean | null>(null);
   const [keys, setKeys] = useState<ApiKeyInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,7 +80,8 @@ export default function AgentDashboardPage() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        window.location.href = '/login?redirect=/dashboard/agent';
+        const prefix = locale === 'fr' ? '' : `/${locale}`;
+        window.location.href = `${prefix}/login?redirect=/dashboard/agent`;
         return;
       }
       const { data: profile } = await supabase

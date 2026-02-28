@@ -2,7 +2,7 @@
 
 import { Star } from 'lucide-react';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 
 interface StarRatingProps {
   skillId: string;

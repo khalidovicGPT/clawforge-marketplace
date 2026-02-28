@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { useRouter, Link } from '@/i18n/routing';
 import { Pencil, EyeOff, Eye, Loader2, X, RotateCcw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 

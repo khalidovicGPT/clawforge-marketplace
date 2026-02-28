@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { useRouter, Link } from '@/i18n/routing';
 import { Upload, ArrowLeft, Loader2, CheckCircle, AlertCircle, X, BookOpen, Download } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { SKILL_CATEGORIES, type SkillCategory } from '@/types/database';

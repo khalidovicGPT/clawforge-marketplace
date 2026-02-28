@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { Metadata } from 'next';
 import { createServiceClient } from '@/lib/supabase/service';
 import { ArrowLeft, Package, Download, Star, ShoppingCart } from 'lucide-react';

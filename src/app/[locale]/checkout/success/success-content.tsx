@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { CheckCircle, Download, ArrowLeft, Loader2 } from 'lucide-react';
 
 interface Skill {
