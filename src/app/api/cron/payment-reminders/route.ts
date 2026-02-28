@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
         download_count,
         published_at,
         creator_id,
-        creator:users!skills_creator_id_fkey(id, email, display_name)
+        creator:users!skills_creator_id_fkey(id, email, name)
       `)
       .eq('status', 'pending_payment_setup');
 
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
       if (!publishedAt) continue;
 
       const daysSincePublish = Math.floor((now.getTime() - publishedAt.getTime()) / (1000 * 60 * 60 * 24));
-      const creatorArr = skill.creator as unknown as Array<{ id: string; email: string; display_name: string | null }> | null;
+      const creatorArr = skill.creator as unknown as Array<{ id: string; email: string; name: string | null }> | null;
       const creator = creatorArr?.[0] ?? null;
       if (!creator?.email) continue;
 
@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
             skill_views: skill.download_count || 0,
             creator_id: creator.id,
             creator_email: creator.email,
-            creator_name: creator.display_name || creator.email.split('@')[0],
+            creator_name: creator.name || creator.email.split('@')[0],
             reminder_type: schedule.type,
             subject: schedule.subject,
             template: schedule.template,

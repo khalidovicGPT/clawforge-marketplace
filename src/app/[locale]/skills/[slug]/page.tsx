@@ -106,7 +106,7 @@ export default async function SkillDetailPage({ params }: PageProps) {
   // Fetch reviews for this skill
   const { data: reviews } = await supabase
     .from('reviews')
-    .select('id, rating, comment, created_at, user_id, users(display_name)')
+    .select('id, rating, comment, created_at, user_id, users(name)')
     .eq('skill_id', skill.id)
     .order('created_at', { ascending: false });
 
@@ -216,7 +216,7 @@ export default async function SkillDetailPage({ params }: PageProps) {
             {reviews && reviews.length > 0 ? (
               <div className="mt-4 space-y-4">
                 {reviews.map((review: Record<string, unknown>) => {
-                  const user = review.users as { display_name: string | null } | null;
+                  const user = review.users as { name: string | null } | null;
                   return (
                     <div key={review.id as string} className="rounded-lg border bg-gray-50 p-4">
                       <div className="flex items-center justify-between">
@@ -234,7 +234,7 @@ export default async function SkillDetailPage({ params }: PageProps) {
                             ))}
                           </div>
                           <span className="text-sm font-medium text-gray-700">
-                            {user?.display_name || t('user')}
+                            {user?.name || t('user')}
                           </span>
                         </div>
                         <span className="text-xs text-gray-400">
