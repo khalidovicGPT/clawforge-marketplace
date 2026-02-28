@@ -119,7 +119,6 @@ export interface Purchase {
   stripe_payment_intent_id: string | null;
   stripe_checkout_session_id: string | null;
   purchased_at: string;
-  created_at: string;
 }
 
 export interface CreatorPayout {
