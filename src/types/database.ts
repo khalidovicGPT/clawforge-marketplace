@@ -109,8 +109,6 @@ export interface Purchase {
   skill_id: string;
   type: PurchaseType;
   price_paid: number;
-  platform_fee: number;
-  creator_amount: number;
   currency: string;
   payment_status: PaymentStatus;
   eligible_at: string | null;
@@ -118,7 +116,7 @@ export interface Purchase {
   refunded_at: string | null;
   stripe_payment_intent_id: string | null;
   stripe_checkout_session_id: string | null;
-  purchased_at: string;
+  created_at: string;
 }
 
 export interface CreatorPayout {

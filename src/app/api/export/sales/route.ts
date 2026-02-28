@@ -43,7 +43,7 @@ export async function GET() {
 
     const { data: purchases } = await serviceClient
       .from('purchases')
-      .select('skill_id, price_paid, platform_fee, creator_amount, currency, created_at, stripe_payment_intent_id, payment_status')
+      .select('skill_id, price_paid, currency, created_at, stripe_payment_intent_id, payment_status')
       .in('skill_id', skillIds)
       .order('created_at', { ascending: false });
 
@@ -58,8 +58,8 @@ export async function GET() {
     const header = 'Date,Skill,Prix TTC,Commission CF (20%),Revenu net TTC (80%),Statut paiement,Statut versement';
     const rows = (purchases || []).map(p => {
       const priceTTC = (p.price_paid || 0) / 100;
-      const commission = (p.platform_fee || Math.round(p.price_paid * 0.20)) / 100;
-      const revenueNet = (p.creator_amount || Math.round(p.price_paid * 0.80)) / 100;
+      const commission = Math.round(p.price_paid * 0.20) / 100;
+      const revenueNet = Math.round(p.price_paid * 0.80) / 100;
       const date = new Date(p.created_at).toLocaleDateString('fr-FR');
       const skillName = (skillNames[p.skill_id] || 'Inconnu').replace(/,/g, ' ');
       const statut = priceTTC === 0 ? 'Gratuit' : 'Paye';

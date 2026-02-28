@@ -71,7 +71,7 @@ describe('POST /api/refunds/request', () => {
     chainable.select = vi.fn().mockReturnValue(chainable);
     chainable.eq = vi.fn().mockReturnValue(chainable);
     chainable.single = vi.fn().mockResolvedValue({
-      data: { id: 'p1', user_id: 'user-1', price_paid: 0, payment_status: 'paid', purchased_at: new Date().toISOString() },
+      data: { id: 'p1', user_id: 'user-1', price_paid: 0, payment_status: 'paid', created_at: new Date().toISOString() },
       error: null,
     });
     mockServiceFrom.mockReturnValue(chainable);
@@ -87,7 +87,7 @@ describe('POST /api/refunds/request', () => {
     chainable.select = vi.fn().mockReturnValue(chainable);
     chainable.eq = vi.fn().mockReturnValue(chainable);
     chainable.single = vi.fn().mockResolvedValue({
-      data: { id: 'p1', user_id: 'user-1', price_paid: 1000, payment_status: 'refunded', purchased_at: new Date().toISOString() },
+      data: { id: 'p1', user_id: 'user-1', price_paid: 1000, payment_status: 'refunded', created_at: new Date().toISOString() },
       error: null,
     });
     mockServiceFrom.mockReturnValue(chainable);
@@ -103,7 +103,7 @@ describe('POST /api/refunds/request', () => {
     chainable.select = vi.fn().mockReturnValue(chainable);
     chainable.eq = vi.fn().mockReturnValue(chainable);
     chainable.single = vi.fn().mockResolvedValue({
-      data: { id: 'p1', user_id: 'user-1', price_paid: 1000, payment_status: 'paid', purchased_at: new Date().toISOString() },
+      data: { id: 'p1', user_id: 'user-1', price_paid: 1000, payment_status: 'paid', created_at: new Date().toISOString() },
       error: null,
     });
     mockServiceFrom.mockReturnValue(chainable);
@@ -122,7 +122,7 @@ describe('POST /api/refunds/request', () => {
     chainable.select = vi.fn().mockReturnValue(chainable);
     chainable.eq = vi.fn().mockReturnValue(chainable);
     chainable.single = vi.fn().mockResolvedValue({
-      data: { id: 'p1', user_id: 'user-1', price_paid: 1000, payment_status: 'pending', purchased_at: oldDate.toISOString() },
+      data: { id: 'p1', user_id: 'user-1', price_paid: 1000, payment_status: 'pending', created_at: oldDate.toISOString() },
       error: null,
     });
     mockServiceFrom.mockReturnValue(chainable);

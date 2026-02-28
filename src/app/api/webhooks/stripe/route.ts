@@ -1,4 +1,4 @@
-import { stripe, calculatePlatformFee } from '@/lib/stripe';
+import { stripe } from '@/lib/stripe';
 import { createClient } from '@supabase/supabase-js';
 import { generateDownloadToken } from '@/lib/download-tokens';
 import { headers } from 'next/headers';
@@ -67,25 +67,25 @@ export async function POST(request: Request) {
 
           if (user) {
             const pricePaid = session.amount_total || 0;
-            const platformFee = calculatePlatformFee(pricePaid);
-            const creatorAmount = pricePaid - platformFee;
             const eligibleAt = new Date(Date.now() + ELIGIBILITY_DELAY_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
-            await supabaseAdmin
+            const { error: upsertError } = await supabaseAdmin
               .from('purchases')
               .upsert({
                 user_id: user.id,
                 skill_id: skillId,
                 type: 'purchase',
                 price_paid: pricePaid,
-                platform_fee: platformFee,
-                creator_amount: creatorAmount,
                 currency: session.currency?.toUpperCase() || 'EUR',
                 stripe_checkout_session_id: session.id,
                 stripe_payment_intent_id: session.payment_intent as string,
                 payment_status: 'pending',
                 eligible_at: eligibleAt,
               }, { onConflict: 'user_id,skill_id' });
+
+            if (upsertError) {
+              console.error('Webhook purchase upsert error:', upsertError);
+            }
 
             await supabaseAdmin.rpc('increment_downloads', { skill_uuid: skillId });
 

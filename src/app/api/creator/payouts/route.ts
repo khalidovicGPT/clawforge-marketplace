@@ -53,27 +53,27 @@ export async function GET() {
       // Achats en attente (< 15 jours)
       const { data: pendingPurchases } = await serviceClient
         .from('purchases')
-        .select('creator_amount')
+        .select('price_paid')
         .in('skill_id', skillIds)
         .eq('payment_status', 'pending')
         .gt('price_paid', 0);
 
       if (pendingPurchases) {
         pendingCount = pendingPurchases.length;
-        pendingAmount = pendingPurchases.reduce((sum, p) => sum + (p.creator_amount || 0), 0);
+        pendingAmount = pendingPurchases.reduce((sum, p) => sum + Math.round((p.price_paid || 0) * 0.8), 0);
       }
 
       // Achats éligibles (prêts pour le prochain payout)
       const { data: eligiblePurchases } = await serviceClient
         .from('purchases')
-        .select('creator_amount')
+        .select('price_paid')
         .in('skill_id', skillIds)
         .eq('payment_status', 'eligible')
         .gt('price_paid', 0);
 
       if (eligiblePurchases) {
         eligibleCount = eligiblePurchases.length;
-        eligibleAmount = eligiblePurchases.reduce((sum, p) => sum + (p.creator_amount || 0), 0);
+        eligibleAmount = eligiblePurchases.reduce((sum, p) => sum + Math.round((p.price_paid || 0) * 0.8), 0);
       }
     }
 

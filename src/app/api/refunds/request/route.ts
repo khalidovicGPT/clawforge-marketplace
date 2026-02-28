@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     // Récupérer l'achat
     const { data: purchase, error: purchaseError } = await serviceClient
       .from('purchases')
-      .select('id, user_id, skill_id, price_paid, payment_status, purchased_at')
+      .select('id, user_id, skill_id, price_paid, payment_status, created_at')
       .eq('id', purchaseId)
       .eq('user_id', user.id)
       .single();
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Vérifier la fenêtre de remboursement (15 jours)
-    const purchasedAt = new Date(purchase.purchased_at);
+    const purchasedAt = new Date(purchase.created_at);
     const refundDeadline = new Date(purchasedAt.getTime() + REFUND_WINDOW_DAYS * 24 * 60 * 60 * 1000);
     const now = new Date();
 
