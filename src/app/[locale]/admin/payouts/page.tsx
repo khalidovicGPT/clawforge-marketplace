@@ -86,7 +86,7 @@ export default function AdminPayoutsPage() {
       const { data: eligiblePurchases } = await supabase
         .from('purchases')
         .select(`
-          skill_id, creator_amount, payment_status,
+          skill_id, price_paid, payment_status,
           skill:skills!purchases_skill_id_fkey(creator_id)
         `)
         .in('payment_status', ['eligible', 'pending'])
@@ -106,11 +106,12 @@ export default function AdminPayoutsPage() {
           pending_amount: 0,
           pending_count: 0,
         };
+        const creatorAmt = Math.round((p.price_paid || 0) * 0.8);
         if (p.payment_status === 'eligible') {
-          existing.eligible_amount += p.creator_amount || 0;
+          existing.eligible_amount += creatorAmt;
           existing.eligible_count++;
         } else {
-          existing.pending_amount += p.creator_amount || 0;
+          existing.pending_amount += creatorAmt;
           existing.pending_count++;
         }
         creatorMap.set(creatorId, existing);

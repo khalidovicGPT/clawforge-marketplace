@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     const { data: eligiblePurchases, error: fetchError } = await supabase
       .from('purchases')
       .select(`
-        id, skill_id, price_paid, platform_fee, creator_amount,
+        id, skill_id, price_paid,
         skill:skills!purchases_skill_id_fkey(creator_id)
       `)
       .eq('payment_status', 'eligible')
@@ -84,8 +84,8 @@ export async function POST(request: NextRequest) {
         purchaseIds: [],
       };
 
-      existing.totalAmount += purchase.creator_amount || 0;
-      existing.totalFee += purchase.platform_fee || 0;
+      existing.totalAmount += Math.round((purchase.price_paid || 0) * 0.8);
+      existing.totalFee += Math.round((purchase.price_paid || 0) * 0.2);
       existing.totalGross += purchase.price_paid;
       existing.purchaseIds.push(purchase.id);
       creatorMap.set(creatorId, existing);

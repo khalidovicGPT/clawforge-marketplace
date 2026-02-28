@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       .eq('payment_status', 'pending')
       .lte('eligible_at', now)
       .gt('price_paid', 0)
-      .select('id, skill_id, creator_amount');
+      .select('id, skill_id, price_paid');
 
     if (error) {
       console.error('[CRON] mark-eligible error:', error);

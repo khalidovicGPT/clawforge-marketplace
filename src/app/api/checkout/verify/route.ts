@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
-import { calculatePlatformFee } from '@/lib/stripe';
+
 import Stripe from 'stripe';
 
 const ELIGIBILITY_DELAY_DAYS = 15;
@@ -97,8 +97,6 @@ export async function GET(request: NextRequest) {
     // Create purchase if not exists
     if (!existingPurchase) {
       const pricePaid = session.amount_total || 0;
-      const platformFee = calculatePlatformFee(pricePaid);
-      const creatorAmount = pricePaid - platformFee;
       const eligibleAt = new Date(Date.now() + ELIGIBILITY_DELAY_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
       const { error: purchaseError } = await serviceClient
@@ -108,8 +106,6 @@ export async function GET(request: NextRequest) {
           skill_id: skillId,
           type: 'purchase',
           price_paid: pricePaid,
-          platform_fee: platformFee,
-          creator_amount: creatorAmount,
           currency: session.currency?.toUpperCase() || 'EUR',
           stripe_checkout_session_id: sessionId,
           stripe_payment_intent_id: session.payment_intent as string,
@@ -119,7 +115,6 @@ export async function GET(request: NextRequest) {
 
       if (purchaseError) {
         console.error('Purchase creation error:', purchaseError);
-        // Continue anyway, don't block the user
       }
     }
 
