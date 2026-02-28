@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
-
+import { sendPurchaseConfirmationEmail } from '@/lib/purchase-emails';
 import Stripe from 'stripe';
 
 const ELIGIBILITY_DELAY_DAYS = 15;
@@ -115,6 +115,14 @@ export async function GET(request: NextRequest) {
 
       if (purchaseError) {
         console.error('Purchase creation error:', purchaseError);
+      } else {
+        // Email de confirmation d'achat paye
+        const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL || ''}/dashboard`;
+        const customerName = user.user_metadata?.name || user.user_metadata?.display_name || user.email?.split('@')[0] || '';
+        const currency = session.currency?.toUpperCase() || 'EUR';
+        sendPurchaseConfirmationEmail(user.email!, customerName, skill.title, pricePaid, currency, dashboardUrl).catch(e =>
+          console.error('Purchase confirmation email error:', e)
+        );
       }
     }
 

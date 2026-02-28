@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import { createRefund } from '@/lib/stripe';
+import { sendRefundApprovedEmail, sendRefundRejectedEmail } from '@/lib/purchase-emails';
 
 /**
  * Admin : gestion des demandes de remboursement
@@ -121,6 +122,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Achat associé non trouvé' }, { status: 404 });
     }
 
+    // Recuperer les infos utilisateur et skill pour l'email
+    const [{ data: refundUser }, { data: refundSkill }] = await Promise.all([
+      serviceClient.from('users').select('email, name').eq('id', refundReq.user_id).single(),
+      serviceClient.from('skills').select('title').eq('id', refundReq.skill_id).single(),
+    ]);
+
     const now = new Date().toISOString();
 
     if (action === 'approve') {
@@ -172,6 +179,15 @@ export async function POST(request: NextRequest) {
         })
         .eq('id', refundReq.purchase_id);
 
+      // Email de confirmation de remboursement
+      if (refundUser?.email) {
+        const customerName = refundUser.name || refundUser.email.split('@')[0];
+        sendRefundApprovedEmail(
+          refundUser.email, customerName, refundSkill?.title || 'Skill',
+          refundReq.amount, 'EUR', adminNotes || null,
+        ).catch(e => console.error('Refund approved email error:', e));
+      }
+
       return NextResponse.json({
         success: true,
         action: 'approved',
@@ -197,6 +213,15 @@ export async function POST(request: NextRequest) {
         resolved_at: now,
       })
       .eq('id', refundRequestId);
+
+    // Email de notification de refus
+    if (refundUser?.email) {
+      const customerName = refundUser.name || refundUser.email.split('@')[0];
+      sendRefundRejectedEmail(
+        refundUser.email, customerName, refundSkill?.title || 'Skill',
+        refundReq.amount, 'EUR', adminNotes,
+      ).catch(e => console.error('Refund rejected email error:', e));
+    }
 
     return NextResponse.json({
       success: true,

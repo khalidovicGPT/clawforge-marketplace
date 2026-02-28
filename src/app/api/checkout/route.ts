@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import { ensureUserProfile } from '@/lib/ensure-profile';
 import { generateDownloadToken } from '@/lib/download-tokens';
+import { sendPurchaseConfirmationEmail } from '@/lib/purchase-emails';
 import Stripe from 'stripe';
 
 const stripe = process.env.STRIPE_SECRET_KEY
@@ -103,6 +104,13 @@ export async function POST(request: NextRequest) {
       } catch (e) {
         console.error('Download token generation error:', e);
       }
+
+      // Email de confirmation d'achat
+      const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL || ''}/dashboard`;
+      const customerName = user.user_metadata?.name || user.user_metadata?.display_name || user.email?.split('@')[0] || '';
+      sendPurchaseConfirmationEmail(user.email!, customerName, skill.title, 0, 'EUR', dashboardUrl).catch(e =>
+        console.error('Purchase confirmation email error:', e)
+      );
 
       return NextResponse.json({ free: true, skillId: skill.id });
     }
