@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import {
   Shield,
   ShieldCheck,
@@ -19,65 +20,18 @@ import {
 } from 'lucide-react';
 
 const ADMIN_PAGES = [
-  {
-    href: '/admin/skills',
-    title: 'Certification des Skills',
-    description: 'Valider, certifier ou rejeter les skills soumis par les createurs',
-    icon: ShieldCheck,
-    color: 'bg-blue-100 text-blue-600',
-  },
-  {
-    href: '/admin/validation-queue',
-    title: 'File de validation',
-    description: 'Suivre la file Silver/Gold et les skills en attente de review',
-    icon: ListChecks,
-    color: 'bg-amber-100 text-amber-600',
-  },
-  {
-    href: '/admin/skills-management',
-    title: 'Gestion des Skills',
-    description: 'Retirer, rejeter, bloquer ou reactiver les skills du marketplace',
-    icon: Settings,
-    color: 'bg-orange-100 text-orange-600',
-  },
-  {
-    href: '/admin/users',
-    title: 'Gestion des utilisateurs',
-    description: 'Lister, modifier les roles, bloquer ou supprimer des comptes',
-    icon: Users,
-    color: 'bg-green-100 text-green-600',
-  },
-  {
-    href: '/admin/agent-keys',
-    title: 'Cles API Agents',
-    description: 'Gerer les cles API pour QualityClaw et les agents automatises',
-    icon: Key,
-    color: 'bg-purple-100 text-purple-600',
-  },
-  {
-    href: '/admin/skill-reports',
-    title: 'Signalements',
-    description: 'Gerer les signalements des createurs (faux positifs, bugs, etc.)',
-    icon: Flag,
-    color: 'bg-red-100 text-red-600',
-  },
-  {
-    href: '/admin/refunds',
-    title: 'Remboursements',
-    description: 'Valider ou refuser les demandes de remboursement des acheteurs',
-    icon: RotateCcw,
-    color: 'bg-rose-100 text-rose-600',
-  },
-  {
-    href: '/admin/payouts',
-    title: 'Paiements createurs',
-    description: 'Visualiser et declencher les versements mensuels aux createurs',
-    icon: Banknote,
-    color: 'bg-emerald-100 text-emerald-600',
-  },
+  { href: '/admin/skills', key: 'certification', icon: ShieldCheck, color: 'bg-blue-100 text-blue-600' },
+  { href: '/admin/validation-queue', key: 'validationQueue', icon: ListChecks, color: 'bg-amber-100 text-amber-600' },
+  { href: '/admin/skills-management', key: 'skillsManagement', icon: Settings, color: 'bg-orange-100 text-orange-600' },
+  { href: '/admin/users', key: 'users', icon: Users, color: 'bg-green-100 text-green-600' },
+  { href: '/admin/agent-keys', key: 'agentKeys', icon: Key, color: 'bg-purple-100 text-purple-600' },
+  { href: '/admin/skill-reports', key: 'reports', icon: Flag, color: 'bg-red-100 text-red-600' },
+  { href: '/admin/refunds', key: 'refunds', icon: RotateCcw, color: 'bg-rose-100 text-rose-600' },
+  { href: '/admin/payouts', key: 'payouts', icon: Banknote, color: 'bg-emerald-100 text-emerald-600' },
 ];
 
 export default function AdminPage() {
+  const t = useTranslations('AdminPage');
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
@@ -113,9 +67,9 @@ export default function AdminPage() {
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
           <XCircle className="mx-auto h-12 w-12 text-red-400" />
-          <h1 className="mt-4 text-xl font-bold text-red-800">Acces refuse</h1>
+          <h1 className="mt-4 text-xl font-bold text-red-800">{t('accessDenied')}</h1>
           <p className="mt-2 text-red-600">
-            Cette page est reservee aux administrateurs.
+            {t('adminOnly')}
           </p>
         </div>
       </div>
@@ -128,9 +82,9 @@ export default function AdminPage() {
         <div className="mb-10 flex items-center gap-3">
           <Shield className="h-8 w-8 text-blue-600" />
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Administration</h1>
+            <h1 className="text-3xl font-bold text-gray-900">{t('title')}</h1>
             <p className="mt-1 text-gray-600">
-              Panneau d'administration ClawForge
+              {t('subtitle')}
             </p>
           </div>
         </div>
@@ -148,10 +102,10 @@ export default function AdminPage() {
                   <Icon className="h-6 w-6" />
                 </div>
                 <h2 className="mt-4 text-lg font-semibold text-gray-900 group-hover:text-blue-600">
-                  {page.title}
+                  {t(`pages.${page.key}.title`)}
                 </h2>
                 <p className="mt-2 text-sm text-gray-500">
-                  {page.description}
+                  {t(`pages.${page.key}.description`)}
                 </p>
               </Link>
             );

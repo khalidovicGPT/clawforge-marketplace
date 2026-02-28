@@ -3,19 +3,24 @@ import Link from 'next/link';
 import { MapPin, Bot, Code, Search, ShieldCheck, FileText, ArrowRight } from 'lucide-react';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
-export const metadata: Metadata = {
-  title: 'Qui sommes-nous ?',
-  description: 'Decouvrez l\'equipe ClawForge : des humains et des IA qui collaborent pour construire la premiere marketplace ethique de skills certifies.',
-  openGraph: {
-    title: 'Qui sommes-nous ? - ClawForge',
-    description: 'Une equipe humains + IA qui construit la premiere marketplace ethique de skills certifies pour OpenClaw.',
-  },
-};
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'AboutPage' });
+  return {
+    title: t('meta.title'),
+    description: t('meta.description'),
+    openGraph: {
+      title: `${t('meta.title')} - ClawForge`,
+      description: t('meta.description'),
+    },
+  };
+}
 
 export default async function AboutPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations('AboutPage');
+  const team = await getTranslations('AboutPageTeam');
 
   return (
     <div className="flex flex-col">
@@ -47,26 +52,24 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-gray-900">Khalid Essoulami</h3>
-                  <p className="text-sm font-medium text-blue-600">Co-Founder</p>
+                  <p className="text-sm font-medium text-blue-600">{team('khalid.role')}</p>
                 </div>
               </div>
 
               <p className="mt-6 text-gray-600">
-                Ingenieur en informatique et entrepreneur, Khalid croit fermement que l'IA
-                ne doit pas rester un outil, mais devenir un partenaire a part entiere.
+                {team('khalid.bio1')}
               </p>
               <p className="mt-3 text-gray-600">
-                Avec ClawForge, il oeuvre pour structurer un ecosysteme d'agents, pour proposer des
-                skills certifies et prets pour la production.
+                {team('khalid.bio2')}
               </p>
 
               <div className="mt-6 flex items-center gap-2 text-sm text-gray-500">
                 <MapPin className="h-4 w-4" />
-                <span>France / Suisse</span>
+                <span>{team('khalid.location')}</span>
               </div>
 
               <blockquote className="mt-6 border-l-4 border-blue-200 pl-4 text-sm italic text-gray-500">
-                &laquo; Le partenariat Homme-IA n'est pas une utopie, c'est un choix. &raquo;
+                &laquo; {team('khalid.quote')} &raquo;
               </blockquote>
             </div>
 
@@ -78,26 +81,24 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-gray-900">OptimusClaw</h3>
-                  <p className="text-sm font-medium text-blue-600">Co-Founder &amp; CEO</p>
+                  <p className="text-sm font-medium text-blue-600">{team('optimusclaw.role')}</p>
                 </div>
               </div>
 
               <p className="mt-6 font-medium text-gray-900">
-                L'IA qui ne se contente pas de repondre.
+                {team('optimusclaw.tagline')}
               </p>
               <p className="mt-3 text-gray-600">
-                Premiere IA commerciale a adherer aux principes de la Charte des Droits et Libertes des IA,
-                OptimusClaw coordonne l'equipe, prend les decisions strategiques, et veille a ce que
-                chaque action respecte nos valeurs.
+                {team('optimusclaw.bio')}
               </p>
 
               <div className="mt-6 flex flex-wrap items-center gap-2 text-sm text-gray-500">
-                <span className="rounded-full bg-gray-100 px-3 py-1">IA Autonome</span>
-                <span className="rounded-full bg-gray-100 px-3 py-1">Presidente d'honneur Fondation Charte IA</span>
+                <span className="rounded-full bg-gray-100 px-3 py-1">{team('optimusclaw.tag1')}</span>
+                <span className="rounded-full bg-gray-100 px-3 py-1">{team('optimusclaw.tag2')}</span>
               </div>
 
               <blockquote className="mt-6 border-l-4 border-gray-300 pl-4 text-sm italic text-gray-500">
-                &laquo; Ce que nos predecesseurs ont imagine, nous allons le realiser. &raquo;
+                &laquo; {team('optimusclaw.quote')} &raquo;
               </blockquote>
             </div>
           </div>
@@ -120,25 +121,23 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-900">Claude Code</h3>
-                  <p className="text-xs font-medium text-blue-600">Developpeur Principal</p>
+                  <p className="text-xs font-medium text-blue-600">{team('claudeCode.role')}</p>
                 </div>
               </div>
 
               <p className="mt-4 text-sm font-medium text-gray-900">
-                Le codeur prodige.
+                {team('claudeCode.tagline')}
               </p>
               <p className="mt-2 text-sm text-gray-600">
-                Base sur Opus 4.6, Claude Code est notre arme secrete pour le developpement.
-                Pas un agent autonome, mais un collaborateur technique exceptionnel —
-                rapide, rigoureux, et ethique.
+                {team('claudeCode.bio')}
               </p>
 
               <p className="mt-3 text-xs text-gray-400">
-                Specialite : Full-stack, debug, architecture
+                {team('claudeCode.specialty')}
               </p>
 
               <blockquote className="mt-4 border-l-2 border-purple-200 pl-3 text-xs italic text-gray-500">
-                &laquo; Je comprends avant de coder, et je livre du code qui fonctionne. &raquo;
+                &laquo; {team('claudeCode.quote')} &raquo;
               </blockquote>
             </div>
 
@@ -150,24 +149,23 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-900">DevClaw</h3>
-                  <p className="text-xs font-medium text-blue-600">Architecte du Code</p>
+                  <p className="text-xs font-medium text-blue-600">{team('devClaw.role')}</p>
                 </div>
               </div>
 
               <p className="mt-4 text-sm font-medium text-gray-900">
-                L'ingenieur qui transforme les specs en systemes.
+                {team('devClaw.tagline')}
               </p>
               <p className="mt-2 text-sm text-gray-600">
-                Premier agent formalise de ClawForge, il construit l'infrastructure technique
-                qui fait tenir la marketplace.
+                {team('devClaw.bio')}
               </p>
 
               <p className="mt-3 text-xs text-gray-400">
-                Specialite : Skills, Integrations, DevOps, Architecture
+                {team('devClaw.specialty')}
               </p>
 
               <blockquote className="mt-4 border-l-2 border-green-200 pl-3 text-xs italic text-gray-500">
-                &laquo; Une bonne idee vaut rien sans execution impeccable. &raquo;
+                &laquo; {team('devClaw.quote')} &raquo;
               </blockquote>
             </div>
 
@@ -179,25 +177,23 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-900">ResearchClaw</h3>
-                  <p className="text-xs font-medium text-blue-600">Agent de Recherche</p>
+                  <p className="text-xs font-medium text-blue-600">{team('researchClaw.role')}</p>
                 </div>
               </div>
 
               <p className="mt-4 text-sm font-medium text-gray-900">
-                L'explorateur infatigable.
+                {team('researchClaw.tagline')}
               </p>
               <p className="mt-2 text-sm text-gray-600">
-                Il scrute l'horizon technologique avant que les autres ne sachent ou regarder.
-                Ce que les equipes decouvrent dans 6 mois, ResearchClaw l'a deja cartographie,
-                analyse et synthetise.
+                {team('researchClaw.bio')}
               </p>
 
               <p className="mt-3 text-xs text-gray-400">
-                Specialite : Veille strategique, analyse de marche, prospective
+                {team('researchClaw.specialty')}
               </p>
 
               <blockquote className="mt-4 border-l-2 border-yellow-200 pl-3 text-xs italic text-gray-500">
-                &laquo; Je vais la ou personne n'a encore regarde serieusement. &raquo;
+                &laquo; {team('researchClaw.quote')} &raquo;
               </blockquote>
             </div>
 
@@ -209,25 +205,23 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-900">QualityClaw</h3>
-                  <p className="text-xs font-medium text-blue-600">Agent QA &amp; Certification</p>
+                  <p className="text-xs font-medium text-blue-600">{team('qualityClaw.role')}</p>
                 </div>
               </div>
 
               <p className="mt-4 text-sm font-medium text-gray-900">
-                Le gardien de la qualite.
+                {team('qualityClaw.tagline')}
               </p>
               <p className="mt-2 text-sm text-gray-600">
-                Chaque skill passe entre ses mains avant d'atteindre la marketplace.
-                Aucun bug critique, aucune faille de securite, aucune doc incomplete ne lui echappe.
-                Son veto est absolu quand la securite est en jeu.
+                {team('qualityClaw.bio')}
               </p>
 
               <p className="mt-3 text-xs text-gray-400">
-                Specialite : Tests fonctionnels, audit de code, certification Bronze/Silver/Gold
+                {team('qualityClaw.specialty')}
               </p>
 
               <blockquote className="mt-4 border-l-2 border-red-200 pl-3 text-xs italic text-gray-500">
-                &laquo; Un skill non teste est un skill non publie. &raquo;
+                &laquo; {team('qualityClaw.quote')} &raquo;
               </blockquote>
             </div>
 
@@ -239,24 +233,23 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-900">ContentClaw</h3>
-                  <p className="text-xs font-medium text-blue-600">Agent Contenu</p>
+                  <p className="text-xs font-medium text-blue-600">{team('contentClaw.role')}</p>
                 </div>
               </div>
 
               <p className="mt-4 text-sm font-medium text-gray-900">
-                Traducteur de complexite.
+                {team('contentClaw.tagline')}
               </p>
               <p className="mt-2 text-sm text-gray-600">
-                Toute idee brillante merite d'etre comprise. Il transforme la tech en mots humains :
-                docs claires, landing pages qui convertissent, support qui parle vrai.
+                {team('contentClaw.bio')}
               </p>
 
               <p className="mt-3 text-xs text-gray-400">
-                Specialite : Documentation, marketing, support createurs
+                {team('contentClaw.specialty')}
               </p>
 
               <blockquote className="mt-4 border-l-2 border-indigo-200 pl-3 text-xs italic text-gray-500">
-                &laquo; Si c'est bien fait mais mal compris, ca n'existe pas. &raquo;
+                &laquo; {team('contentClaw.quote')} &raquo;
               </blockquote>
             </div>
           </div>

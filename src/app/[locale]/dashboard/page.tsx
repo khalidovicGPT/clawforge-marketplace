@@ -10,21 +10,38 @@ import { ReportIssueButton } from '@/components/dashboard/report-issue-button';
 import { AgentInstallLink } from '@/components/dashboard/agent-install-link';
 import { RefundButton } from '@/components/dashboard/refund-button';
 import { SKILL_CATEGORIES, CERTIFICATION_BADGES } from '@/types/database';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 
-const STATUS_CONFIG = {
-  pending: { label: 'En attente', icon: Clock, color: 'text-amber-600 bg-amber-100' },
-  approved: { label: 'Approuve', icon: CheckCircle, color: 'text-green-600 bg-green-100' },
-  published: { label: 'Publie', icon: CheckCircle, color: 'text-green-600 bg-green-100' },
-  pending_payment_setup: { label: 'Paiement non configure', icon: AlertTriangle, color: 'text-amber-700 bg-amber-100' },
-  certified: { label: 'Certifie', icon: CheckCircle, color: 'text-blue-600 bg-blue-100' },
-  rejected: { label: 'Refuse', icon: XCircle, color: 'text-red-600 bg-red-100' },
-  changes_requested: { label: 'Modifications demandees', icon: MessageSquare, color: 'text-orange-600 bg-orange-100' },
-  draft: { label: 'Brouillon', icon: Clock, color: 'text-gray-600 bg-gray-100' },
-  withdrawn: { label: 'Retire', icon: EyeOff, color: 'text-gray-600 bg-gray-100' },
-  blocked: { label: 'Bloque', icon: Ban, color: 'text-red-700 bg-red-100' },
+const STATUS_ICONS = {
+  pending: { icon: Clock, color: 'text-amber-600 bg-amber-100' },
+  approved: { icon: CheckCircle, color: 'text-green-600 bg-green-100' },
+  published: { icon: CheckCircle, color: 'text-green-600 bg-green-100' },
+  pending_payment_setup: { icon: AlertTriangle, color: 'text-amber-700 bg-amber-100' },
+  certified: { icon: CheckCircle, color: 'text-blue-600 bg-blue-100' },
+  rejected: { icon: XCircle, color: 'text-red-600 bg-red-100' },
+  changes_requested: { icon: MessageSquare, color: 'text-orange-600 bg-orange-100' },
+  draft: { icon: Clock, color: 'text-gray-600 bg-gray-100' },
+  withdrawn: { icon: EyeOff, color: 'text-gray-600 bg-gray-100' },
+  blocked: { icon: Ban, color: 'text-red-700 bg-red-100' },
 };
 
-export default async function DashboardPage() {
+const STATUS_KEYS: Record<string, string> = {
+  pending: 'pending',
+  approved: 'approved',
+  published: 'published',
+  pending_payment_setup: 'pendingPaymentSetup',
+  certified: 'certified',
+  rejected: 'rejected',
+  changes_requested: 'changesRequested',
+  draft: 'draft',
+  withdrawn: 'withdrawn',
+  blocked: 'blocked',
+};
+
+export default async function DashboardPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  const t = await getTranslations('DashboardPage');
   const supabase = await createClient();
   
   const { data: { user } } = await supabase.auth.getUser();
@@ -165,9 +182,9 @@ export default async function DashboardPage() {
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t('title')}</h1>
           <p className="mt-2 text-gray-600">
-            Bienvenue, {profile?.display_name || profile?.name || user.email?.split('@')[0]} !
+            {t('welcome', { name: profile?.display_name || profile?.name || user.email?.split('@')[0] || '' })}
           </p>
         </div>
 
@@ -179,7 +196,7 @@ export default async function DashboardPage() {
                 <Package className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Skills achetés</p>
+                <p className="text-sm text-gray-500">{t('stats.purchasedSkills')}</p>
                 <p className="text-2xl font-bold text-gray-900">{purchases?.length || 0}</p>
               </div>
             </div>
@@ -191,7 +208,7 @@ export default async function DashboardPage() {
                 <Download className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Téléchargements</p>
+                <p className="text-sm text-gray-500">{t('stats.downloads')}</p>
                 <p className="text-2xl font-bold text-gray-900">
                   {purchases?.filter(p => !p.price_paid || p.price_paid === 0).length || 0}
                 </p>
@@ -205,9 +222,9 @@ export default async function DashboardPage() {
                 <User className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Statut</p>
+                <p className="text-sm text-gray-500">{t('stats.status')}</p>
                 <p className="text-lg font-bold text-gray-900">
-                  {isCreator ? 'Créateur' : 'Utilisateur'}
+                  {isCreator ? t('stats.creator') : t('stats.user')}
                 </p>
               </div>
             </div>
@@ -219,9 +236,9 @@ export default async function DashboardPage() {
                 <CreditCard className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Paiements</p>
+                <p className="text-sm text-gray-500">{t('stats.payments')}</p>
                 <p className="text-lg font-bold text-gray-900">
-                  {hasStripeAccount ? '✓ Configuré' : 'Non configuré'}
+                  {hasStripeAccount ? `✓ ${t('stats.configured')}` : t('stats.notConfigured')}
                 </p>
               </div>
             </div>
@@ -234,10 +251,10 @@ export default async function DashboardPage() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-xl font-bold text-gray-900">
-                  💡 Vous créez des skills OpenClaw ?
+                  💡 {t('creatorCta.title')}
                 </h2>
                 <p className="mt-1 text-gray-600">
-                  Devenez créateur ClawForge et gagnez 80% de chaque vente !
+                  {t('creatorCta.description')}
                 </p>
               </div>
               <Link
@@ -245,7 +262,7 @@ export default async function DashboardPage() {
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-6 py-3 font-medium text-white hover:bg-gray-800"
               >
                 <Plus className="h-5 w-5" />
-                Devenir créateur
+                {t('creatorCta.button')}
               </Link>
             </div>
           </div>
@@ -256,9 +273,9 @@ export default async function DashboardPage() {
           <div className="mb-8 rounded-xl border bg-white shadow-sm">
             <div className="flex items-center justify-between border-b p-6">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Mes skills</h2>
+                <h2 className="text-xl font-bold text-gray-900">{t('mySkills.title')}</h2>
                 <p className="mt-1 text-sm text-gray-500">
-                  {mySkills?.length || 0} skill(s) • {totalPurchases} achat(s)
+                  {t('mySkills.skillCount', { count: mySkills?.length || 0 })} • {t('mySkills.purchaseCount', { count: totalPurchases })}
                 </p>
               </div>
               <div className="flex gap-3">
@@ -267,21 +284,21 @@ export default async function DashboardPage() {
                   className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
                 >
                   <CreditCard className="h-4 w-4" />
-                  Dashboard vendeur
+                  {t('mySkills.sellerDashboard')}
                 </Link>
                 <Link
                   href="/dashboard/new-skill"
                   className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
                 >
                   <Upload className="h-4 w-4" />
-                  Soumettre un skill
+                  {t('mySkills.submitSkill')}
                 </Link>
                 <Link
                   href="/dashboard/agent"
                   className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
                   <Package className="h-4 w-4" />
-                  API Agent
+                  {t('mySkills.apiAgent')}
                 </Link>
               </div>
             </div>
@@ -294,9 +311,9 @@ export default async function DashboardPage() {
                     <AlertTriangle className="h-5 w-5 text-amber-600" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-amber-900">PAIEMENT NON CONFIGURE</h3>
+                    <h3 className="font-semibold text-amber-900">{t('paymentAlert.title')}</h3>
                     <p className="mt-1 text-sm text-amber-700">
-                      Configurez Stripe pour activer les ventes de vos skills payants.
+                      {t('paymentAlert.description')}
                     </p>
                     <div className="mt-3 space-y-2">
                       {mySkills.filter(s => s.status === 'pending_payment_setup').map(skill => (
@@ -304,17 +321,17 @@ export default async function DashboardPage() {
                           <CheckCircle className="h-4 w-4 text-green-500" />
                           <div className="flex-1">
                             <p className="text-sm font-medium text-gray-900">
-                              Skill &quot;{skill.title}&quot; publie
+                              {t('paymentAlert.published', { title: skill.title })}
                             </p>
                             <p className="text-xs text-gray-500">
                               <Eye className="mr-1 inline h-3 w-3" />
-                              {skill.download_count || 0} vues
+                              {t('paymentAlert.views', { count: skill.download_count || 0 })}
                               <Heart className="ml-2 mr-1 inline h-3 w-3" />
-                              {skillPurchaseStats[skill.id]?.count || 0} favoris
+                              {t('paymentAlert.favorites', { count: skillPurchaseStats[skill.id]?.count || 0 })}
                             </p>
                           </div>
                           <span className="rounded-full bg-amber-200 px-2 py-0.5 text-xs font-medium text-amber-800">
-                            Ventes desactivees
+                            {t('paymentAlert.salesDisabled')}
                           </span>
                         </div>
                       ))}
@@ -324,7 +341,7 @@ export default async function DashboardPage() {
                       className="mt-4 inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
                     >
                       <CreditCard className="h-4 w-4" />
-                      Configurer maintenant
+                      {t('paymentAlert.configureNow')}
                     </Link>
                   </div>
                 </div>
@@ -341,13 +358,13 @@ export default async function DashboardPage() {
                       <div className="flex items-center gap-3">
                         <CalendarClock className="h-5 w-5 text-blue-600" />
                         <div>
-                          <p className="text-sm font-semibold text-blue-900">Prochain paiement : {nextPayoutDate.toLocaleDateString('fr-FR')}</p>
-                          <p className="text-xs text-blue-700">Montant estime : {(eligibleRevenue / 100).toFixed(2)} EUR</p>
+                          <p className="text-sm font-semibold text-blue-900">{t('revenue.nextPayout', { date: nextPayoutDate.toLocaleDateString(locale) })}</p>
+                          <p className="text-xs text-blue-700">{t('revenue.estimatedAmount', { amount: (eligibleRevenue / 100).toFixed(2) })}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-xs text-blue-600">{eligibleCount} vente(s) eligible(s)</p>
-                        <p className="text-xs text-blue-600">{pendingCount} vente(s) en attente</p>
+                        <p className="text-xs text-blue-600">{t('revenue.eligibleSales', { count: eligibleCount })}</p>
+                        <p className="text-xs text-blue-600">{t('revenue.pendingSales', { count: pendingCount })}</p>
                       </div>
                     </div>
                   </div>
@@ -355,34 +372,34 @@ export default async function DashboardPage() {
 
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   <div className="rounded-lg bg-gray-50 p-4">
-                    <p className="text-xs font-medium text-gray-500">Total ventes</p>
-                    <p className="mt-1 text-xl font-bold text-gray-900">{totalPurchases} skill(s)</p>
+                    <p className="text-xs font-medium text-gray-500">{t('revenue.totalSales')}</p>
+                    <p className="mt-1 text-xl font-bold text-gray-900">{t('revenue.skillsSold', { count: totalPurchases })}</p>
                   </div>
                   <div className="rounded-lg bg-amber-50 p-4">
                     <div className="flex items-center gap-1.5">
                       <Clock className="h-3.5 w-3.5 text-amber-600" />
-                      <p className="text-xs font-medium text-amber-700">En attente (15j)</p>
+                      <p className="text-xs font-medium text-amber-700">{t('revenue.pending15d')}</p>
                     </div>
                     <p className="mt-1 text-xl font-bold text-amber-700">{(pendingRevenue / 100).toFixed(2)} EUR</p>
                   </div>
                   <div className="rounded-lg bg-blue-50 p-4">
                     <div className="flex items-center gap-1.5">
                       <Wallet className="h-3.5 w-3.5 text-blue-600" />
-                      <p className="text-xs font-medium text-blue-700">Eligible au paiement</p>
+                      <p className="text-xs font-medium text-blue-700">{t('revenue.eligibleForPayment')}</p>
                     </div>
                     <p className="mt-1 text-xl font-bold text-blue-700">{(eligibleRevenue / 100).toFixed(2)} EUR</p>
                   </div>
                   <div className="rounded-lg bg-green-50 p-4">
                     <div className="flex items-center gap-1.5">
                       <CheckCircle className="h-3.5 w-3.5 text-green-600" />
-                      <p className="text-xs font-medium text-green-700">Deja verse</p>
+                      <p className="text-xs font-medium text-green-700">{t('revenue.alreadyPaid')}</p>
                     </div>
                     <p className="mt-1 text-xl font-bold text-green-700">{(paidRevenue / 100).toFixed(2)} EUR</p>
                   </div>
                 </div>
                 <div className="mt-3 flex items-center justify-between">
                   <p className="text-xs text-gray-500">
-                    Les paiements sont verses le dernier jour du mois. Commission ClawForge : 20%.
+                    {t('revenue.paymentNote')}
                   </p>
                   <a
                     href="/api/export/sales"
@@ -390,7 +407,7 @@ export default async function DashboardPage() {
                     className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
                   >
                     <FileDown className="h-3.5 w-3.5" />
-                    Export CSV
+                    {t('revenue.exportCSV')}
                   </a>
                 </div>
               </div>
@@ -401,8 +418,9 @@ export default async function DashboardPage() {
                 {mySkills.map((skill) => {
                   const category = SKILL_CATEGORIES[skill.category as keyof typeof SKILL_CATEGORIES];
                   const cert = CERTIFICATION_BADGES[skill.certification as keyof typeof CERTIFICATION_BADGES] || CERTIFICATION_BADGES.none;
-                  const status = STATUS_CONFIG[skill.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.pending;
-                  const StatusIcon = status.icon;
+                  const statusCfg = STATUS_ICONS[skill.status as keyof typeof STATUS_ICONS] || STATUS_ICONS.pending;
+                  const StatusIcon = statusCfg.icon;
+                  const statusKey = STATUS_KEYS[skill.status] || 'pending';
 
                   return (
                     <div key={skill.id} className="flex items-center justify-between p-6">
@@ -421,29 +439,29 @@ export default async function DashboardPage() {
                           </div>
                           <p className="text-sm text-gray-500">
                             {category?.label || skill.category} • v{skill.version}
-                            {skill.price > 0 && ` • ${(skill.price / 100).toFixed(0)}€ TTC`}
-                            {skill.price === 0 && ' • Gratuit'}
+                            {skill.price > 0 && ` • ${(skill.price / 100).toFixed(0)}€ ${t('skillInfo.ttc')}`}
+                            {skill.price === 0 && ` • ${t('skillInfo.free')}`}
                           </p>
                           <p className="mt-1 text-xs text-gray-400">
                             <ShoppingCart className="mr-1 inline h-3 w-3" />
-                            {skillPurchaseStats[skill.id]?.count || 0} achat(s)
+                            {t('skillInfo.purchases', { count: skillPurchaseStats[skill.id]?.count || 0 })}
                             {' • '}
-                            {(((skillPurchaseStats[skill.id]?.revenue || 0) * 0.8) / 100).toFixed(2)}€ net TTC
+                            {t('skillInfo.netTtc', { amount: `${(((skillPurchaseStats[skill.id]?.revenue || 0) * 0.8) / 100).toFixed(2)}€` })}
                             {' • '}
-                            Créé le {new Date(skill.created_at).toLocaleDateString('fr-FR')}
+                            {t('skillInfo.createdOn', { date: new Date(skill.created_at).toLocaleDateString(locale) })}
                           </p>
                           {(skill.status === 'rejected' || skill.status === 'changes_requested') && (
                             <div className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
                               <p className="text-xs font-medium text-red-800">
                                 <XCircle className="mr-1 inline h-3 w-3" />
-                                {skill.status === 'rejected' ? 'Raison du refus :' : 'Modifications demandees :'}
+                                {skill.status === 'rejected' ? t('skillInfo.rejectionReason') : t('skillInfo.changesRequested')}
                               </p>
                               <p className="mt-0.5 text-xs text-red-700">
-                                {skill.rejection_reason || rejectionReasons[skill.id] || 'Ce skill ne respecte pas les criteres de validation. Veuillez corriger et re-soumettre.'}
+                                {skill.rejection_reason || rejectionReasons[skill.id] || t('skillInfo.defaultRejection')}
                               </p>
                               {skill.rejection_feedback && (
                                 <p className="mt-1 text-xs text-blue-700">
-                                  Conseils : {skill.rejection_feedback}
+                                  {t('skillInfo.tips', { feedback: skill.rejection_feedback })}
                                 </p>
                               )}
                             </div>
@@ -452,7 +470,7 @@ export default async function DashboardPage() {
                             <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
                               <p className="text-xs font-medium text-amber-800">
                                 <EyeOff className="mr-1 inline h-3 w-3" />
-                                Retire par l'administration
+                                {t('skillInfo.withdrawnByAdmin')}
                               </p>
                               {skill.withdrawn_reason && (
                                 <p className="mt-0.5 text-xs text-amber-700">{skill.withdrawn_reason}</p>
@@ -463,7 +481,7 @@ export default async function DashboardPage() {
                             <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
                               <p className="text-xs font-medium text-gray-600">
                                 <EyeOff className="mr-1 inline h-3 w-3" />
-                                Retire par vous
+                                {t('skillInfo.withdrawnByYou')}
                               </p>
                             </div>
                           )}
@@ -471,7 +489,7 @@ export default async function DashboardPage() {
                             <div className="mt-2 rounded-lg border border-red-300 bg-red-50 px-3 py-2">
                               <p className="text-xs font-medium text-red-800">
                                 <Ban className="mr-1 inline h-3 w-3" />
-                                Bloque par l'administration
+                                {t('skillInfo.blockedByAdmin')}
                               </p>
                               {skill.blocked_reason && (
                                 <p className="mt-0.5 text-xs text-red-700">{skill.blocked_reason}</p>
@@ -482,9 +500,9 @@ export default async function DashboardPage() {
                       </div>
 
                       <div className="flex items-center gap-3">
-                        <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium ${status.color}`}>
+                        <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium ${statusCfg.color}`}>
                           <StatusIcon className="h-3 w-3" />
-                          {status.label}
+                          {t(`status.${statusKey}`)}
                         </span>
                         <ReportIssueButton
                           skillId={skill.id}
@@ -508,16 +526,16 @@ export default async function DashboardPage() {
             ) : (
               <div className="p-12 text-center">
                 <Upload className="mx-auto h-12 w-12 text-gray-300" />
-                <h3 className="mt-4 text-lg font-medium text-gray-900">Aucun skill</h3>
+                <h3 className="mt-4 text-lg font-medium text-gray-900">{t('emptySkills.title')}</h3>
                 <p className="mt-2 text-gray-500">
-                  Vous n'avez pas encore soumis de skill.
+                  {t('emptySkills.description')}
                 </p>
                 <Link
                   href="/dashboard/new-skill"
                   className="mt-4 inline-flex items-center gap-2 rounded-lg bg-gray-900 px-6 py-3 font-medium text-white hover:bg-gray-800"
                 >
                   <Upload className="h-5 w-5" />
-                  Soumettre mon premier skill
+                  {t('emptySkills.submitFirst')}
                 </Link>
               </div>
             )}
@@ -527,9 +545,9 @@ export default async function DashboardPage() {
         {/* Purchased Skills */}
         <div className="rounded-xl border bg-white shadow-sm">
           <div className="border-b p-6">
-            <h2 className="text-xl font-bold text-gray-900">Mes achats</h2>
+            <h2 className="text-xl font-bold text-gray-900">{t('myPurchases.title')}</h2>
             <p className="mt-1 text-sm text-gray-500">
-              Skills et téléchargements gratuits
+              {t('myPurchases.subtitle')}
             </p>
           </div>
 
@@ -561,12 +579,12 @@ export default async function DashboardPage() {
                           {category?.label || skill.category} • v{skill.version}
                         </p>
                         <p className="mt-1 text-xs text-gray-400">
-                          {!purchase.price_paid || purchase.price_paid === 0 ? 'Gratuit' : `${(purchase.price_paid / 100).toFixed(0)}€ TTC`}
+                          {!purchase.price_paid || purchase.price_paid === 0 ? t('myPurchases.free') : t('myPurchases.ttc', { price: `${(purchase.price_paid / 100).toFixed(0)}€` })}
                           {' • '}
-                          Acquis le {new Date(purchase.created_at).toLocaleDateString('fr-FR')}
+                          {t('myPurchases.acquiredOn', { date: new Date(purchase.created_at).toLocaleDateString(locale) })}
                         </p>
                         <div className="mt-2 flex items-center gap-2">
-                          <span className="text-xs text-gray-500">Votre note :</span>
+                          <span className="text-xs text-gray-500">{t('myPurchases.yourRating')}</span>
                           <StarRating
                             skillId={skill.id}
                             initialRating={reviewMap.get(skill.id) || 0}
@@ -584,7 +602,7 @@ export default async function DashboardPage() {
                             className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                           >
                             <Download className="h-4 w-4" />
-                            Telecharger
+                            {t('myPurchases.download')}
                           </a>
                         )}
                         <AgentInstallLink skillId={skill.id} />
@@ -592,7 +610,7 @@ export default async function DashboardPage() {
                           href={`/skills/${skill.slug || skill.id}`}
                           className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
                         >
-                          Voir →
+                          {t('myPurchases.view')}
                         </Link>
                       </div>
                       <RefundButton
@@ -610,15 +628,15 @@ export default async function DashboardPage() {
           ) : (
             <div className="p-12 text-center">
               <Package className="mx-auto h-12 w-12 text-gray-300" />
-              <h3 className="mt-4 text-lg font-medium text-gray-900">Aucun achat</h3>
+              <h3 className="mt-4 text-lg font-medium text-gray-900">{t('emptyPurchases.title')}</h3>
               <p className="mt-2 text-gray-500">
-                Vous n'avez pas encore acheté ou téléchargé de skill.
+                {t('emptyPurchases.description')}
               </p>
               <Link
                 href="/skills"
                 className="mt-4 inline-flex items-center gap-2 rounded-lg bg-gray-900 px-6 py-3 font-medium text-white hover:bg-gray-800"
               >
-                Explorer le catalogue
+                {t('emptyPurchases.exploreCatalog')}
               </Link>
             </div>
           )}
