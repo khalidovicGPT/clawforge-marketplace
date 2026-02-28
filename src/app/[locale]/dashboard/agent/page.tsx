@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from '@/i18n/routing';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import {
   ArrowLeft, Bot, Key, Eye, EyeOff, Copy, RefreshCw,
   CheckCircle, Loader2, AlertTriangle, Clock, Trash2,
@@ -20,18 +20,7 @@ interface ApiKeyInfo {
 
 function maskKey(key: string): string {
   if (key.length <= 20) return key;
-  return key.slice(0, 12) + '•'.repeat(key.length - 16) + key.slice(-4);
-}
-
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return 'Jamais';
-  return new Date(dateStr).toLocaleDateString('fr-FR', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  return key.slice(0, 12) + '\u2022'.repeat(key.length - 16) + key.slice(-4);
 }
 
 const STORAGE_KEY = 'clf_agent_api_key';
@@ -50,6 +39,7 @@ function clearKeyFromStorage() {
 
 export default function AgentDashboardPage() {
   const locale = useLocale();
+  const t = useTranslations('AgentDashboardPage');
   const [isCreator, setIsCreator] = useState<boolean | null>(null);
   const [keys, setKeys] = useState<ApiKeyInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,6 +51,17 @@ export default function AgentDashboardPage() {
   const [copied, setCopied] = useState<'key' | 'prompt' | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const formatDate = useCallback((dateStr: string | null): string => {
+    if (!dateStr) return t('never');
+    return new Date(dateStr).toLocaleDateString(undefined, {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }, [t]);
+
   const fetchKeys = useCallback(async () => {
     try {
       const res = await fetch('/api/agent/keys');
@@ -69,7 +70,7 @@ export default function AgentDashboardPage() {
         setKeys(data.keys || []);
       }
     } catch {
-      // Silencieux
+      // Silent
     } finally {
       setLoading(false);
     }
@@ -101,7 +102,7 @@ export default function AgentDashboardPage() {
       }
     };
     checkStatus();
-  }, [fetchKeys]);
+  }, [fetchKeys, locale]);
 
   const handleGenerate = async () => {
     setGenerating(true);
@@ -117,10 +118,10 @@ export default function AgentDashboardPage() {
         saveKeyToStorage(data.api_key);
         await fetchKeys();
       } else {
-        setError(data.error || 'Erreur lors de la generation');
+        setError(data.error || t('generateError'));
       }
     } catch {
-      setError('Erreur reseau');
+      setError(t('networkError'));
     } finally {
       setGenerating(false);
     }
@@ -141,7 +142,7 @@ export default function AgentDashboardPage() {
         clearKeyFromStorage();
       }
     } catch {
-      // Silencieux
+      // Silent
     } finally {
       setRevoking(null);
     }
@@ -161,16 +162,9 @@ export default function AgentDashboardPage() {
   const hasPlainKey = !!plainKey;
   const displayKey = plainKey || (activeKey ? `clf_sk_live_${'•'.repeat(20)}` : null);
 
-  const apiKeyDisplay = plainKey || '[Collez votre cle API ici]';
+  const apiKeyDisplay = plainKey || t('apiKeyPlaceholder');
 
-  const promptTemplate = `J'ai un skill a publier sur ClawForge.
-Voici ma cle API : ${apiKeyDisplay}
-Le skill est dans le dossier : [chemin vers le dossier du skill]
-Instructions :
-1. Cree un ZIP de ce dossier (avec le dossier racine inclus)
-2. Envoie-le a https://clawforge-marketplace.vercel.app/api/skills/agent/publish
-3. Utilise la cle API dans le header Authorization: Bearer ${apiKeyDisplay}
-4. Retourne-moi l'URL du skill publie`;
+  const promptTemplate = t('promptTemplate', { apiKey: apiKeyDisplay });
 
   if (isCreator === null || loading) {
     return (
@@ -185,15 +179,15 @@ Instructions :
       <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
         <div className="text-center">
           <Bot className="mx-auto h-16 w-16 text-gray-300" />
-          <h2 className="mt-4 text-xl font-bold text-gray-900">Acces reserve aux createurs</h2>
+          <h2 className="mt-4 text-xl font-bold text-gray-900">{t('accessReserved')}</h2>
           <p className="mt-2 text-gray-600">
-            Devenez createur pour publier des skills via un agent OpenClaw.
+            {t('accessReservedDescription')}
           </p>
           <Link
             href="/become-creator"
             className="mt-6 inline-block rounded-lg bg-gray-900 px-6 py-2.5 text-sm font-medium text-white hover:bg-gray-800"
           >
-            Devenir createur
+            {t('becomeCreator')}
           </Link>
         </div>
       </div>
@@ -208,7 +202,7 @@ Instructions :
           className="mb-6 inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
         >
           <ArrowLeft className="h-4 w-4" />
-          Retour au dashboard
+          {t('backToDashboard')}
         </Link>
 
         {/* Header */}
@@ -218,9 +212,9 @@ Instructions :
               <Bot className="h-6 w-6 text-blue-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Publier via Agent</h1>
+              <h1 className="text-2xl font-bold text-gray-900">{t('publishViaAgent')}</h1>
               <p className="text-sm text-gray-600">
-                Publiez vos skills automatiquement depuis un agent OpenClaw
+                {t('publishViaAgentDescription')}
               </p>
             </div>
           </div>
@@ -232,16 +226,16 @@ Instructions :
             </div>
           )}
 
-          {/* Section cle API */}
+          {/* API key section */}
           <div className="mt-8">
             <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
               <Key className="h-5 w-5 text-gray-500" />
-              Votre cle API
+              {t('yourApiKey')}
             </h2>
 
             {displayKey ? (
               <div className="mt-4 space-y-4">
-                {/* Affichage de la cle */}
+                {/* Key display */}
                 <div className="flex items-center gap-2 rounded-lg border bg-gray-50 p-3">
                   <code className="flex-1 font-mono text-sm text-gray-800">
                     {showKey && hasPlainKey ? plainKey : maskKey(displayKey)}
@@ -250,7 +244,7 @@ Instructions :
                     <button
                       onClick={() => setShowKey(!showKey)}
                       className="rounded p-1.5 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
-                      title={showKey ? 'Masquer' : 'Reveler'}
+                      title={showKey ? t('hide') : t('show')}
                     >
                       {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
@@ -259,7 +253,7 @@ Instructions :
                     <button
                       onClick={() => copyToClipboard(plainKey!, 'key')}
                       className="rounded p-1.5 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
-                      title="Copier"
+                      title={t('copy')}
                     >
                       {copied === 'key' ? (
                         <CheckCircle className="h-4 w-4 text-green-500" />
@@ -274,8 +268,7 @@ Instructions :
                   <div className="flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
                     <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
                     <span>
-                      <strong>Cle generee avec succes !</strong> Elle est sauvegardee localement dans ce navigateur.
-                      Si vous changez de navigateur, regenerez-en une.
+                      <strong>{t('keyGenerated')}</strong> {t('keySavedLocally')}
                     </span>
                   </div>
                 )}
@@ -284,7 +277,7 @@ Instructions :
                   <div className="flex items-start gap-2 rounded-lg bg-blue-50 p-3 text-sm text-blue-800">
                     <Key className="mt-0.5 h-4 w-4 flex-shrink-0" />
                     <span>
-                      Cle non disponible dans ce navigateur. Regenerez-en une pour la voir.
+                      {t('keyNotAvailable')}
                     </span>
                   </div>
                 )}
@@ -301,7 +294,7 @@ Instructions :
                     ) : (
                       <RefreshCw className="h-4 w-4" />
                     )}
-                    {activeKey ? 'Regenerer la cle' : 'Generer une cle'}
+                    {activeKey ? t('regenerateKey') : t('generateKey')}
                   </button>
                   {activeKey && (
                     <button
@@ -314,14 +307,14 @@ Instructions :
                       ) : (
                         <Trash2 className="h-4 w-4" />
                       )}
-                      Revoquer
+                      {t('revoke')}
                     </button>
                   )}
                 </div>
               </div>
             ) : (
               <div className="mt-4">
-                <p className="text-sm text-gray-600">Aucune cle API active. Generez-en une pour commencer.</p>
+                <p className="text-sm text-gray-600">{t('noActiveKey')}</p>
                 <button
                   onClick={handleGenerate}
                   disabled={generating}
@@ -332,18 +325,18 @@ Instructions :
                   ) : (
                     <Key className="h-4 w-4" />
                   )}
-                  Generer une cle API
+                  {t('generateApiKey')}
                 </button>
               </div>
             )}
           </div>
 
-          {/* Section prompt a copier */}
+          {/* Prompt section */}
           {activeKey && (
             <div className="mt-8">
-              <h2 className="text-lg font-semibold text-gray-900">Prompt pret a copier</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{t('promptReady')}</h2>
               <p className="mt-1 text-sm text-gray-600">
-                Collez ce prompt dans votre agent OpenClaw pour publier un skill :
+                {t('promptDescription')}
               </p>
 
               <div className="relative mt-4 rounded-lg border bg-gray-900 p-4">
@@ -353,7 +346,7 @@ Instructions :
                 <button
                   onClick={() => copyToClipboard(promptTemplate, 'prompt')}
                   className="absolute right-3 top-3 rounded p-1.5 text-gray-400 hover:bg-gray-800 hover:text-white"
-                  title="Copier le prompt"
+                  title={t('copyPrompt')}
                 >
                   {copied === 'prompt' ? (
                     <CheckCircle className="h-4 w-4 text-green-400" />
@@ -365,16 +358,16 @@ Instructions :
 
               {!hasPlainKey && activeKey && (
                 <p className="mt-2 text-xs text-gray-500">
-                  Le prompt contient un placeholder. Regenerez votre cle pour obtenir un prompt complet.
+                  {t('placeholderNote')}
                 </p>
               )}
             </div>
           )}
 
-          {/* Historique des cles */}
+          {/* Key history */}
           {keys.length > 0 && (
             <div className="mt-8">
-              <h2 className="text-lg font-semibold text-gray-900">Historique des cles</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{t('keyHistory')}</h2>
               <div className="mt-3 divide-y rounded-lg border">
                 {keys.map((key) => (
                   <div key={key.id} className="flex items-center justify-between p-3">
@@ -384,11 +377,11 @@ Instructions :
                         <p className="text-sm font-medium text-gray-900">{key.name}</p>
                         <p className="text-xs text-gray-500">
                           {key.revoked_at ? (
-                            <>Revoquee le {formatDate(key.revoked_at)}</>
+                            <>{t('revokedOn', { date: formatDate(key.revoked_at) })}</>
                           ) : (
                             <>
                               <Clock className="mr-1 inline h-3 w-3" />
-                              Dernier usage : {formatDate(key.last_used_at)}
+                              {t('lastUsed', { date: formatDate(key.last_used_at) })}
                             </>
                           )}
                         </p>
@@ -403,14 +396,16 @@ Instructions :
             </div>
           )}
 
-          {/* Lien vers la doc */}
+          {/* Link to doc */}
           <div className="mt-8 rounded-lg border border-blue-200 bg-blue-50 p-4">
             <p className="text-sm text-blue-800">
-              Consultez le{' '}
-              <Link href="/docs/creators" className="font-medium underline hover:text-blue-900">
-                guide de packaging
-              </Link>
-              {' '}pour preparer votre skill au format attendu (SKILL.md obligatoire via agent).
+              {t.rich('packagingGuideNote', {
+                link: (chunks) => (
+                  <Link href="/docs/creators" className="font-medium underline hover:text-blue-900">
+                    {chunks}
+                  </Link>
+                ),
+              })}
             </p>
           </div>
         </div>

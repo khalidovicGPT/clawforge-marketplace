@@ -3,6 +3,7 @@
 import { Star } from 'lucide-react';
 import { useState } from 'react';
 import { useRouter } from '@/i18n/routing';
+import { useTranslations } from 'next-intl';
 
 interface StarRatingProps {
   skillId: string;
@@ -10,6 +11,7 @@ interface StarRatingProps {
 }
 
 export function StarRating({ skillId, initialRating = 0 }: StarRatingProps) {
+  const t = useTranslations('StarRating');
   const [rating, setRating] = useState(initialRating);
   const [hover, setHover] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -32,16 +34,16 @@ export function StarRating({ skillId, initialRating = 0 }: StarRatingProps) {
 
       if (res.ok) {
         setRating(value);
-        setMessage({ text: `${value}/5 enregistre !`, type: 'success' });
+        setMessage({ text: t('saved', { value }), type: 'success' });
         // Refresh server components to update displayed ratings
         router.refresh();
         setTimeout(() => setMessage(null), 3000);
       } else {
-        setMessage({ text: data.error || 'Erreur', type: 'error' });
+        setMessage({ text: data.error || t('error'), type: 'error' });
         setTimeout(() => setMessage(null), 3000);
       }
     } catch {
-      setMessage({ text: 'Erreur reseau', type: 'error' });
+      setMessage({ text: t('networkError'), type: 'error' });
       setTimeout(() => setMessage(null), 3000);
     } finally {
       setSaving(false);

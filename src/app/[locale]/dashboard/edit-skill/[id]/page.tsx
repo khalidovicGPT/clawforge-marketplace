@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useRouter, Link } from '@/i18n/routing';
+import { useTranslations } from 'next-intl';
 import { Upload, ArrowLeft, Loader2, CheckCircle, AlertCircle, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { SKILL_CATEGORIES, type SkillCategory } from '@/types/database';
@@ -10,20 +11,20 @@ import { SKILL_CATEGORIES, type SkillCategory } from '@/types/database';
 const LICENSES = [
   { value: 'MIT', label: 'MIT' },
   { value: 'Apache-2.0', label: 'Apache 2.0' },
-  { value: 'Proprietary', label: 'Propriétaire' },
+  { value: 'Proprietary', labelKey: 'proprietaryLicense' as const },
 ];
 
 const PRICE_OPTIONS = [
-  { value: 0, label: 'Gratuit' },
-  { value: 200, label: '2 €' },
-  { value: 400, label: '4 €' },
-  { value: 500, label: '5 €' },
-  { value: 800, label: '8 €' },
-  { value: 1000, label: '10 €' },
+  { value: 0, labelKey: 'freePrice' as const },
+  { value: 200, label: '2 \u20ac' },
+  { value: 400, label: '4 \u20ac' },
+  { value: 500, label: '5 \u20ac' },
+  { value: 800, label: '8 \u20ac' },
+  { value: 1000, label: '10 \u20ac' },
 ];
 
 const AVAILABLE_TAGS = [
-  'API', 'Authentification', 'Productivité', 'AI', 'Automatisation',
+  'API', 'Authentification', 'Productivit\u00e9', 'AI', 'Automatisation',
   'Email', 'SEO', 'Analytics', 'DevOps', 'Database', 'Cloud',
   'Scraping', 'Chatbot', 'CRM', 'Paiement',
 ];
@@ -34,6 +35,7 @@ export default function EditSkillPage() {
   const router = useRouter();
   const params = useParams();
   const skillId = params.id as string;
+  const t = useTranslations('EditSkillPage');
 
   const [loading, setLoading] = useState(false);
   const [loadingSkill, setLoadingSkill] = useState(true);
@@ -73,7 +75,7 @@ export default function EditSkillPage() {
         .single();
 
       if (error || !skill) {
-        setError('Skill non trouvé ou vous n\'en êtes pas le créateur');
+        setError(t('skillNotFound'));
         setLoadingSkill(false);
         return;
       }
@@ -93,7 +95,7 @@ export default function EditSkillPage() {
     };
 
     loadSkill();
-  }, [skillId, router]);
+  }, [skillId, router, t]);
 
   const toggleTag = (tag: string) => {
     setFormData(prev => {
@@ -121,7 +123,7 @@ export default function EditSkillPage() {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
 
       if (authError || !user) {
-        throw new Error('Vous devez être connecté');
+        throw new Error(t('mustBeConnected'));
       }
 
       let fileUrl: string | undefined;
@@ -130,20 +132,20 @@ export default function EditSkillPage() {
       // Upload new file if provided
       if (file) {
         if (file.size > 50 * 1024 * 1024) {
-          throw new Error('Le fichier ne doit pas dépasser 50 MB');
+          throw new Error(t('fileTooLarge'));
         }
         if (!file.name.endsWith('.zip')) {
-          throw new Error('Le fichier doit être au format ZIP');
+          throw new Error(t('fileFormatZip'));
         }
 
-        setUploadStep('Upload du nouveau fichier...');
+        setUploadStep(t('uploadNewFile'));
         const fileName = `${user.id}/${skillId}-v${nextMajorVersion()}-${Date.now()}.zip`;
         const { error: uploadError } = await supabase.storage
           .from('skills')
           .upload(fileName, file, { cacheControl: '3600', upsert: false });
 
         if (uploadError) {
-          throw new Error(`Upload échoué : ${uploadError.message}`);
+          throw new Error(`Upload failed: ${uploadError.message}`);
         }
 
         const { data: { publicUrl } } = supabase.storage
@@ -155,7 +157,7 @@ export default function EditSkillPage() {
       }
 
       // Call PATCH API
-      setUploadStep('Soumission de la nouvelle version...');
+      setUploadStep(t('submittingVersion'));
       const response = await fetch(`/api/skills/${skillId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -175,7 +177,7 @@ export default function EditSkillPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Erreur lors de la mise à jour');
+        throw new Error(result.error || t('genericError'));
       }
 
       setSuccess(true);
@@ -183,7 +185,7 @@ export default function EditSkillPage() {
         router.push('/dashboard');
       }, 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      setError(err instanceof Error ? err.message : t('genericError'));
     } finally {
       setLoading(false);
       setUploadStep(null);
@@ -198,16 +200,18 @@ export default function EditSkillPage() {
     );
   }
 
+  const nextVersion = nextMajorVersion();
+
   if (success) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <div className="text-center">
           <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
-          <h2 className="mt-4 text-2xl font-bold text-gray-900">Version {nextMajorVersion()} soumise !</h2>
+          <h2 className="mt-4 text-2xl font-bold text-gray-900">{t('successTitle', { version: nextVersion })}</h2>
           <p className="mt-2 text-gray-600">
-            Votre skill est en attente de validation. Vous serez notifié une fois approuvé.
+            {t('successDescription')}
           </p>
-          <p className="mt-4 text-sm text-gray-400">Redirection...</p>
+          <p className="mt-4 text-sm text-gray-400">{t('redirecting')}</p>
         </div>
       </div>
     );
@@ -221,16 +225,20 @@ export default function EditSkillPage() {
           className="mb-6 inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
         >
           <ArrowLeft className="h-4 w-4" />
-          Retour au dashboard
+          {t('backToDashboard')}
         </Link>
 
         <div className="rounded-xl border bg-white p-8 shadow-sm">
-          <h1 className="text-2xl font-bold text-gray-900">Modifier : {skillTitle}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t('editTitle', { title: skillTitle })}</h1>
           <p className="mt-2 text-gray-600">
-            Version actuelle : <strong>v{currentVersion}</strong> → Nouvelle version : <strong>v{nextMajorVersion()}</strong>
+            {t.rich('currentVersion', {
+              strong: (chunks) => <strong>{chunks}</strong>,
+              current: currentVersion,
+              next: nextVersion,
+            })}
           </p>
           <p className="mt-1 text-sm text-amber-600">
-            La nouvelle version passera par la phase de validation avant publication.
+            {t('validationNote')}
           </p>
 
           {error && (
@@ -244,7 +252,7 @@ export default function EditSkillPage() {
             {/* Title (read-only) */}
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Nom du skill
+                {t('skillName')}
               </label>
               <input
                 type="text"
@@ -252,13 +260,13 @@ export default function EditSkillPage() {
                 value={skillTitle}
                 className="mt-1 block w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-gray-500"
               />
-              <p className="mt-1 text-xs text-gray-400">Le nom ne peut pas être modifié</p>
+              <p className="mt-1 text-xs text-gray-400">{t('nameReadonly')}</p>
             </div>
 
             {/* Category */}
             <div>
               <label htmlFor="category" className="block text-sm font-medium text-gray-700">
-                Catégorie *
+                {t('category')}
               </label>
               <select
                 id="category"
@@ -278,7 +286,7 @@ export default function EditSkillPage() {
             {/* Short description */}
             <div>
               <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                Description courte * <span className="text-gray-400">({formData.description.length}/200)</span>
+                {t('shortDescription')} <span className="text-gray-400">{t('shortDescriptionCount', { count: formData.description.length })}</span>
               </label>
               <textarea
                 id="description"
@@ -294,7 +302,7 @@ export default function EditSkillPage() {
             {/* Long description */}
             <div>
               <label htmlFor="descriptionLong" className="block text-sm font-medium text-gray-700">
-                Description détaillée <span className="text-gray-400">(Markdown supporté)</span>
+                {t('longDescription')} <span className="text-gray-400">({t('markdownSupported')})</span>
               </label>
               <textarea
                 id="descriptionLong"
@@ -308,7 +316,7 @@ export default function EditSkillPage() {
             {/* Price */}
             <div>
               <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-                Prix *
+                {t('price')}
               </label>
               <select
                 id="price"
@@ -317,8 +325,8 @@ export default function EditSkillPage() {
                 onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) })}
                 className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                {PRICE_OPTIONS.map(({ value, label }) => (
-                  <option key={value} value={value}>{label}</option>
+                {PRICE_OPTIONS.map(({ value, label, labelKey }) => (
+                  <option key={value} value={value}>{labelKey ? t(labelKey) : label}</option>
                 ))}
               </select>
             </div>
@@ -326,7 +334,7 @@ export default function EditSkillPage() {
             {/* Tags */}
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Tags <span className="text-gray-400">({formData.tags.length}/{MAX_TAGS} max)</span>
+                {t('tags')} <span className="text-gray-400">{t('tagsCount', { count: formData.tags.length, max: MAX_TAGS })}</span>
               </label>
               <div className="mt-2 flex flex-wrap gap-2">
                 {AVAILABLE_TAGS.map((tag) => {
@@ -357,7 +365,7 @@ export default function EditSkillPage() {
             {/* License */}
             <div>
               <label htmlFor="license" className="block text-sm font-medium text-gray-700">
-                Licence *
+                {t('license')}
               </label>
               <select
                 id="license"
@@ -366,8 +374,8 @@ export default function EditSkillPage() {
                 onChange={(e) => setFormData({ ...formData, license: e.target.value })}
                 className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                {LICENSES.map(({ value, label }) => (
-                  <option key={value} value={value}>{label}</option>
+                {LICENSES.map(({ value, label, labelKey }) => (
+                  <option key={value} value={value}>{labelKey ? t(labelKey) : label}</option>
                 ))}
               </select>
             </div>
@@ -375,7 +383,7 @@ export default function EditSkillPage() {
             {/* Support URL */}
             <div>
               <label htmlFor="supportUrl" className="block text-sm font-medium text-gray-700">
-                URL de support <span className="text-gray-400">(optionnel)</span>
+                {t('supportUrl')} <span className="text-gray-400">({t('supportUrlOptional')})</span>
               </label>
               <input
                 type="url"
@@ -383,14 +391,14 @@ export default function EditSkillPage() {
                 value={formData.supportUrl}
                 onChange={(e) => setFormData({ ...formData, supportUrl: e.target.value })}
                 className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="https://github.com/votre-repo/issues"
+                placeholder="https://github.com/your-repo/issues"
               />
             </div>
 
             {/* File upload (optional for update) */}
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Nouveau fichier ZIP <span className="text-gray-400">(optionnel — garde l&apos;ancien si vide)</span>
+                {t('newFileZip')} <span className="text-gray-400">({t('keepOldIfEmpty')})</span>
               </label>
               <div className="mt-1">
                 <label
@@ -407,9 +415,9 @@ export default function EditSkillPage() {
                     <div className="text-center">
                       <Upload className="mx-auto h-8 w-8 text-gray-400" />
                       <p className="mt-2 text-sm text-gray-600">
-                        <span className="font-medium text-blue-600">Cliquez pour upload</span> un nouveau fichier
+                        <span className="font-medium text-blue-600">{t('clickToUpload')}</span> {t('newFile')}
                       </p>
-                      <p className="text-xs text-gray-500">ZIP uniquement, max 50 MB</p>
+                      <p className="text-xs text-gray-500">{t('zipOnly')}</p>
                     </div>
                   )}
                   <input
@@ -437,7 +445,7 @@ export default function EditSkillPage() {
                 href="/dashboard"
                 className="rounded-lg px-6 py-2 text-gray-600 hover:text-gray-900"
               >
-                Annuler
+                {t('cancel')}
               </Link>
               <button
                 type="submit"
@@ -447,12 +455,12 @@ export default function EditSkillPage() {
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Envoi en cours...
+                    {t('submitting')}
                   </>
                 ) : (
                   <>
                     <Upload className="h-4 w-4" />
-                    Soumettre v{nextMajorVersion()}
+                    {t('submitVersion', { version: nextVersion })}
                   </>
                 )}
               </button>

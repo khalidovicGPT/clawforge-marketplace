@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from '@/i18n/routing';
+import { useTranslations } from 'next-intl';
 import {
   Shield,
   Clock,
@@ -56,6 +57,8 @@ type CertifyAction = 'approve' | 'reject';
 
 export default function ValidationQueuePage() {
   const router = useRouter();
+  const t = useTranslations('AdminValidationQueue');
+  const tc = useTranslations('Common');
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<QueueData>({ silver_queue: [], gold_eligible: [], rejected: [] });
@@ -108,15 +111,16 @@ export default function ValidationQueuePage() {
           setIsAdmin(false);
           return;
         }
-        throw new Error(`Erreur ${res.status}`);
+        throw new Error(`${t('errorPrefix')} ${res.status}`);
       }
       const json = await res.json();
       setData(json);
     } catch (e) {
-      showToast(`Erreur : ${e instanceof Error ? e.message : 'inconnue'}`, 'error');
+      showToast(`${t('errorPrefix')} ${e instanceof Error ? e.message : 'unknown'}`, 'error');
     } finally {
       setLoading(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -138,17 +142,17 @@ export default function ValidationQueuePage() {
 
       const json = await res.json();
       if (!res.ok) {
-        throw new Error(json.error || `Erreur ${res.status}`);
+        throw new Error(json.error || `${t('errorPrefix')} ${res.status}`);
       }
 
-      showToast(json.message || (action === 'approve' ? 'Skill certifie !' : 'Skill rejete.'), 'success');
+      showToast(json.message || (action === 'approve' ? t('skillCertified') : t('skillRejected')), 'success');
       setActionSkillId(null);
       setActionType(null);
       setActionNotes('');
       setActionReason('');
       fetchQueue();
     } catch (e) {
-      showToast(`Erreur : ${e instanceof Error ? e.message : 'inconnue'}`, 'error');
+      showToast(`${t('errorPrefix')} ${e instanceof Error ? e.message : 'unknown'}`, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -164,9 +168,9 @@ export default function ValidationQueuePage() {
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
           <XCircle className="mx-auto h-12 w-12 text-red-400" />
-          <h1 className="mt-4 text-xl font-bold text-red-800">Acces refuse</h1>
+          <h1 className="mt-4 text-xl font-bold text-red-800">{tc('accessDenied')}</h1>
           <p className="mt-2 text-red-600">
-            Cette page est reservee aux administrateurs.
+            {tc('adminOnly')}
           </p>
         </div>
       </div>
@@ -212,10 +216,10 @@ export default function ValidationQueuePage() {
           <div>
             <div className="flex items-center gap-3">
               <Shield className="h-8 w-8 text-blue-600" />
-              <h1 className="text-3xl font-bold text-gray-900">File de Validation</h1>
+              <h1 className="text-3xl font-bold text-gray-900">{t('title')}</h1>
             </div>
             <p className="mt-2 text-gray-600">
-              Pipeline de certification Bronze / Silver / Gold
+              {t('subtitle')}
             </p>
           </div>
 
@@ -225,7 +229,7 @@ export default function ValidationQueuePage() {
             className="flex items-center gap-2 rounded-lg border bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            Rafraichir
+            {t('refresh')}
           </button>
         </div>
 
@@ -242,7 +246,7 @@ export default function ValidationQueuePage() {
                 <Clock className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">En attente Silver</p>
+                <p className="text-sm text-gray-500">{t('pendingSilver')}</p>
                 <p className="text-xl font-bold text-gray-900">{silverCount}</p>
               </div>
             </div>
@@ -259,7 +263,7 @@ export default function ValidationQueuePage() {
                 <Award className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Eligibles Gold</p>
+                <p className="text-sm text-gray-500">{t('eligibleGold')}</p>
                 <p className="text-xl font-bold text-gray-900">{goldCount}</p>
               </div>
             </div>
@@ -276,7 +280,7 @@ export default function ValidationQueuePage() {
                 <XCircle className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Rejetes recemment</p>
+                <p className="text-sm text-gray-500">{t('recentlyRejected')}</p>
                 <p className="text-xl font-bold text-gray-900">{rejectedCount}</p>
               </div>
             </div>
@@ -295,7 +299,7 @@ export default function ValidationQueuePage() {
                 <div className="flex items-center justify-between border-b bg-slate-50 px-6 py-4">
                   <div className="flex items-center gap-2">
                     <span className="text-xl">🥈</span>
-                    <h2 className="text-lg font-bold text-gray-900">En attente de revue Silver</h2>
+                    <h2 className="text-lg font-bold text-gray-900">{t('awaitingSilverReview')}</h2>
                     <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
                       {silverCount}
                     </span>
@@ -312,7 +316,7 @@ export default function ValidationQueuePage() {
                 {silverCount === 0 ? (
                   <div className="p-8 text-center">
                     <CheckCircle className="mx-auto h-10 w-10 text-green-300" />
-                    <p className="mt-3 text-gray-500">Aucun skill en attente de revue Silver</p>
+                    <p className="mt-3 text-gray-500">{t('noSilverPending')}</p>
                   </div>
                 ) : (
                   <div className="divide-y">
@@ -323,7 +327,7 @@ export default function ValidationQueuePage() {
                             <div>
                               <p className="font-semibold text-gray-900">{item.name}</p>
                               <p className="text-sm text-gray-500">
-                                v{item.version} &middot; Soumis le {new Date(item.submitted_at).toLocaleDateString('fr-FR')}
+                                v{item.version} &middot; {t('submittedOn')} {new Date(item.submitted_at).toLocaleDateString(undefined)}
                               </p>
                             </div>
                           </div>
@@ -349,7 +353,7 @@ export default function ValidationQueuePage() {
                               target="_blank"
                               rel="noopener noreferrer"
                               className="rounded-lg border border-gray-300 p-2 text-gray-500 hover:bg-gray-50 hover:text-gray-700"
-                              title="Voir le skill"
+                              title={t('viewSkill')}
                             >
                               <Eye className="h-4 w-4" />
                             </a>
@@ -362,7 +366,7 @@ export default function ValidationQueuePage() {
                               className="flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700"
                             >
                               <ThumbsUp className="h-3.5 w-3.5" />
-                              Approuver
+                              {t('approve')}
                             </button>
                             <button
                               onClick={() => {
@@ -372,7 +376,7 @@ export default function ValidationQueuePage() {
                               className="flex items-center gap-1.5 rounded-lg border border-red-300 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
                             >
                               <ThumbsDown className="h-3.5 w-3.5" />
-                              Rejeter
+                              {t('rejectAction')}
                             </button>
                           </div>
                         </div>
@@ -409,7 +413,7 @@ export default function ValidationQueuePage() {
                 <div className="flex items-center justify-between border-b bg-yellow-50 px-6 py-4">
                   <div className="flex items-center gap-2">
                     <span className="text-xl">🥇</span>
-                    <h2 className="text-lg font-bold text-gray-900">Eligibles Gold</h2>
+                    <h2 className="text-lg font-bold text-gray-900">{t('eligibleGold')}</h2>
                     <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-700">
                       {goldCount}
                     </span>
@@ -419,8 +423,8 @@ export default function ValidationQueuePage() {
                 {goldCount === 0 ? (
                   <div className="p-8 text-center">
                     <Award className="mx-auto h-10 w-10 text-yellow-300" />
-                    <p className="mt-3 text-gray-500">Aucun skill eligible Gold pour le moment</p>
-                    <p className="mt-1 text-xs text-gray-400">Criteres : Silver + 50 ventes + note moyenne &ge; 4.5</p>
+                    <p className="mt-3 text-gray-500">{t('noGoldEligible')}</p>
+                    <p className="mt-1 text-xs text-gray-400">{t('goldCriteria')}</p>
                   </div>
                 ) : (
                   <div className="divide-y">
@@ -429,7 +433,7 @@ export default function ValidationQueuePage() {
                         <div>
                           <p className="font-semibold text-gray-900">{item.name}</p>
                           <p className="text-sm text-gray-500">
-                            {item.sales} ventes &middot; {item.rating.toFixed(1)}/5 ({item.rating_count} avis)
+                            {item.sales} {t('sales')} &middot; {item.rating.toFixed(1)}/5 ({item.rating_count} {t('reviews')})
                           </p>
                         </div>
 
@@ -447,7 +451,7 @@ export default function ValidationQueuePage() {
                             className="flex items-center gap-1.5 rounded-lg bg-yellow-500 px-3 py-2 text-sm font-medium text-white hover:bg-yellow-600"
                           >
                             <Award className="h-3.5 w-3.5" />
-                            Certifier Gold
+                            {t('certifyGold')}
                           </button>
                         </div>
                       </div>
@@ -463,7 +467,7 @@ export default function ValidationQueuePage() {
                 <div className="flex items-center justify-between border-b bg-red-50 px-6 py-4">
                   <div className="flex items-center gap-2">
                     <span className="text-xl">❌</span>
-                    <h2 className="text-lg font-bold text-gray-900">Rejetes recemment</h2>
+                    <h2 className="text-lg font-bold text-gray-900">{t('recentlyRejected')}</h2>
                     <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
                       {rejectedCount}
                     </span>
@@ -473,7 +477,7 @@ export default function ValidationQueuePage() {
                 {rejectedCount === 0 ? (
                   <div className="p-8 text-center">
                     <CheckCircle className="mx-auto h-10 w-10 text-green-300" />
-                    <p className="mt-3 text-gray-500">Aucun skill rejete recemment</p>
+                    <p className="mt-3 text-gray-500">{t('noRecentRejected')}</p>
                   </div>
                 ) : (
                   <div className="divide-y">
@@ -483,12 +487,12 @@ export default function ValidationQueuePage() {
                           <div>
                             <p className="font-semibold text-gray-900">{item.name}</p>
                             <p className="text-sm text-gray-500">
-                              Rejete le {new Date(item.rejected_at).toLocaleDateString('fr-FR')}
+                              {t('rejectedOn')} {new Date(item.rejected_at).toLocaleDateString(undefined)}
                             </p>
                           </div>
                           <div className="flex items-center gap-1 text-sm text-red-600">
                             <AlertTriangle className="h-3.5 w-3.5" />
-                            Rejete
+                            {t('rejected')}
                           </div>
                         </div>
                         <div className="mt-2 flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2">
@@ -518,8 +522,8 @@ export default function ValidationQueuePage() {
                 )}
                 <h2 className="text-lg font-bold text-gray-900">
                   {actionType === 'approve'
-                    ? `Approuver ${actionLevel === 'gold' ? 'Gold' : 'Silver'}`
-                    : 'Rejeter le skill'}
+                    ? (actionLevel === 'gold' ? t('approveGold') : t('approveSilver'))
+                    : t('rejectSkill')}
                 </h2>
               </div>
               <button
@@ -541,18 +545,18 @@ export default function ValidationQueuePage() {
                   <div className="mb-4 flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                     <p className="text-sm text-green-700">
-                      Ce skill sera certifie <strong>{actionLevel === 'gold' ? 'Gold 🥇' : 'Silver 🥈'}</strong>
+                      {t('willBeCertified', { level: actionLevel === 'gold' ? 'Gold 🥇' : 'Silver 🥈' })}
                     </p>
                   </div>
                   <label htmlFor="action-notes" className="mb-1 block text-sm font-medium text-gray-700">
-                    Notes (optionnel)
+                    {t('notesOptional')}
                   </label>
                   <textarea
                     id="action-notes"
                     value={actionNotes}
                     onChange={(e) => setActionNotes(e.target.value)}
                     rows={3}
-                    placeholder="Notes internes..."
+                    placeholder={t('notesPlaceholder')}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
@@ -561,18 +565,18 @@ export default function ValidationQueuePage() {
                   <div className="mb-4 flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2">
                     <AlertTriangle className="h-4 w-4 text-red-600" />
                     <p className="text-sm text-red-700">
-                      Le createur sera notifie du rejet avec votre feedback.
+                      {t('creatorNotified')}
                     </p>
                   </div>
                   <label htmlFor="action-reason" className="mb-1 block text-sm font-medium text-gray-700">
-                    Raison du rejet <span className="text-red-500">*</span>
+                    {t('rejectReason')} <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     id="action-reason"
                     value={actionReason}
                     onChange={(e) => setActionReason(e.target.value)}
                     rows={3}
-                    placeholder="Expliquez pourquoi le skill est rejete..."
+                    placeholder={t('rejectReasonPlaceholder')}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
@@ -590,7 +594,7 @@ export default function ValidationQueuePage() {
                 disabled={submitting}
                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
               >
-                Annuler
+                {tc('cancel')}
               </button>
               <button
                 onClick={() => handleCertify(
@@ -608,7 +612,7 @@ export default function ValidationQueuePage() {
                 }`}
               >
                 {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                {actionType === 'approve' ? 'Confirmer la certification' : 'Confirmer le rejet'}
+                {actionType === 'approve' ? t('confirmCertification') : t('confirmRejection')}
               </button>
             </div>
           </div>

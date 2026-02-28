@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from '@/i18n/routing';
 import { CertifyModal } from '@/components/admin/CertifyModal';
@@ -56,22 +57,24 @@ interface SkillWithCreatorAndTest {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; icon: typeof Clock; color: string }> = {
-  pending: { label: 'En attente', icon: Clock, color: 'text-amber-600 bg-amber-100' },
-  approved: { label: 'Approuve', icon: CheckCircle, color: 'text-green-600 bg-green-100' },
-  published: { label: 'Publie', icon: CheckCircle, color: 'text-blue-600 bg-blue-100' },
-  rejected: { label: 'Rejete', icon: XCircle, color: 'text-red-600 bg-red-100' },
-  draft: { label: 'Brouillon', icon: FileText, color: 'text-gray-600 bg-gray-100' },
+  pending: { label: 'statusPending', icon: Clock, color: 'text-amber-600 bg-amber-100' },
+  approved: { label: 'statusApproved', icon: CheckCircle, color: 'text-green-600 bg-green-100' },
+  published: { label: 'statusPublished', icon: CheckCircle, color: 'text-blue-600 bg-blue-100' },
+  rejected: { label: 'statusRejected', icon: XCircle, color: 'text-red-600 bg-red-100' },
+  draft: { label: 'statusDraft', icon: FileText, color: 'text-gray-600 bg-gray-100' },
 };
 
 const VT_CONFIG: Record<string, { label: string; icon: typeof ShieldCheck; color: string }> = {
-  clean: { label: 'Clean', icon: ShieldCheck, color: 'text-green-600' },
-  suspicious: { label: 'Suspect', icon: ShieldAlert, color: 'text-amber-600' },
-  malicious: { label: 'Malveillant', icon: ShieldAlert, color: 'text-red-600' },
-  pending: { label: 'En cours', icon: ShieldQuestion, color: 'text-gray-500' },
+  clean: { label: 'vtClean', icon: ShieldCheck, color: 'text-green-600' },
+  suspicious: { label: 'vtSuspicious', icon: ShieldAlert, color: 'text-amber-600' },
+  malicious: { label: 'vtMalicious', icon: ShieldAlert, color: 'text-red-600' },
+  pending: { label: 'vtPending', icon: ShieldQuestion, color: 'text-gray-500' },
 };
 
 export default function AdminSkillsPage() {
   const router = useRouter();
+  const t = useTranslations('AdminSkills');
+  const tc = useTranslations('Common');
   const [skills, setSkills] = useState<SkillWithCreatorAndTest[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<'pending' | 'all'>('pending');
@@ -118,16 +121,16 @@ export default function AdminSkillsPage() {
           return;
         }
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.details || err.error || `Erreur ${res.status}`);
+        throw new Error(err.details || err.error || `${t('errorPrefix')} ${res.status}`);
       }
       const data = await res.json();
       setSkills(data.skills || []);
     } catch (e) {
-      showToast(`Erreur : ${e instanceof Error ? e.message : 'inconnue'}`, 'error');
+      showToast(`${t('errorPrefix')} ${e instanceof Error ? e.message : t('unknown')}`, 'error');
     } finally {
       setLoading(false);
     }
-  }, [statusFilter]);
+  }, [statusFilter, t]);
 
   useEffect(() => {
     if (isAdmin) fetchSkills();
@@ -145,12 +148,12 @@ export default function AdminSkillsPage() {
     if (!res.ok) {
       const msg = data.details
         ? `${data.error} : ${data.details}`
-        : data.error || 'Erreur lors de la certification';
+        : data.error || t('certError');
       showToast(msg, 'error');
       throw new Error(msg);
     }
 
-    showToast(data.message || 'Skill certifie !', 'success');
+    showToast(data.message || t('certSuccess'), 'success');
     fetchSkills();
   };
 
@@ -160,9 +163,9 @@ export default function AdminSkillsPage() {
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
           <XCircle className="mx-auto h-12 w-12 text-red-400" />
-          <h1 className="mt-4 text-xl font-bold text-red-800">Acces refuse</h1>
+          <h1 className="mt-4 text-xl font-bold text-red-800">{tc('accessDenied')}</h1>
           <p className="mt-2 text-red-600">
-            Cette page est reservee aux administrateurs.
+            {tc('adminOnly')}
           </p>
         </div>
       </div>
@@ -206,10 +209,10 @@ export default function AdminSkillsPage() {
           <div>
             <div className="flex items-center gap-3">
               <Shield className="h-8 w-8 text-blue-600" />
-              <h1 className="text-3xl font-bold text-gray-900">Certification des Skills</h1>
+              <h1 className="text-3xl font-bold text-gray-900">{t('title')}</h1>
             </div>
             <p className="mt-2 text-gray-600">
-              Gerez la certification et la qualite des skills soumis
+              {t('subtitle')}
             </p>
           </div>
 
@@ -225,7 +228,7 @@ export default function AdminSkillsPage() {
                 }`}
               >
                 <Filter className="h-3.5 w-3.5" />
-                En attente
+                {t('filterPending')}
                 {pendingCount > 0 && statusFilter === 'all' && (
                   <span className="rounded-full bg-amber-500 px-1.5 py-0.5 text-xs text-white">
                     {pendingCount}
@@ -240,7 +243,7 @@ export default function AdminSkillsPage() {
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
-                Tous
+                {t('filterAll')}
               </button>
             </div>
 
@@ -249,7 +252,7 @@ export default function AdminSkillsPage() {
               onClick={fetchSkills}
               disabled={loading}
               className="rounded-lg border bg-white p-2 text-gray-500 hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50"
-              title="Rafraichir"
+              title={t('refresh')}
             >
               <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
             </button>
@@ -269,7 +272,7 @@ export default function AdminSkillsPage() {
                     <Icon className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">{config.label}</p>
+                    <p className="text-sm text-gray-500">{t(config.label)}</p>
                     <p className="text-xl font-bold text-gray-900">{count}</p>
                   </div>
                 </div>
@@ -287,12 +290,12 @@ export default function AdminSkillsPage() {
           <div className="rounded-xl border bg-white p-12 text-center">
             <CheckCircle className="mx-auto h-12 w-12 text-green-300" />
             <h3 className="mt-4 text-lg font-medium text-gray-900">
-              {statusFilter === 'pending' ? 'Aucun skill en attente' : 'Aucun skill'}
+              {statusFilter === 'pending' ? t('noSkillPending') : t('noSkill')}
             </h3>
             <p className="mt-2 text-gray-500">
               {statusFilter === 'pending'
-                ? 'Tous les skills ont ete traites !'
-                : 'Aucun skill ne correspond au filtre.'}
+                ? t('allProcessed')
+                : t('noMatchFilter')}
             </p>
           </div>
         ) : (
@@ -300,25 +303,25 @@ export default function AdminSkillsPage() {
             {/* Table Header */}
             <div className="hidden border-b bg-gray-50 px-6 py-3 md:grid md:grid-cols-12 md:gap-4">
               <div className="col-span-4 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Skill
+                {t('colSkill')}
               </div>
               <div className="col-span-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Createur
+                {t('colCreator')}
               </div>
               <div className="col-span-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Prix
+                {t('colPrice')}
               </div>
               <div className="col-span-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Securite
+                {t('colSecurity')}
               </div>
               <div className="col-span-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Statut
+                {t('colStatus')}
               </div>
               <div className="col-span-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Date
+                {t('colDate')}
               </div>
               <div className="col-span-2 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Actions
+                {t('colActions')}
               </div>
             </div>
 
@@ -353,7 +356,7 @@ export default function AdminSkillsPage() {
                         </p>
                         {skill.status === 'rejected' && (
                           <p className="mt-1 text-xs text-red-600" title={skill.rejection_reason || undefined}>
-                            Motif : {skill.rejection_reason || 'Non specifie'}
+                            {t('reason')} {skill.rejection_reason || t('notSpecified')}
                           </p>
                         )}
                       </div>
@@ -362,7 +365,7 @@ export default function AdminSkillsPage() {
                     {/* Creator */}
                     <div className="col-span-2 min-w-0">
                       <p className="truncate text-sm font-medium text-gray-900">
-                        {skill.creator?.name || 'Inconnu'}
+                        {skill.creator?.name || t('unknown')}
                       </p>
                       <p className="truncate text-xs text-gray-500">
                         {skill.creator?.email || ''}
@@ -373,7 +376,7 @@ export default function AdminSkillsPage() {
                     <div className="col-span-1">
                       <span className={`text-sm font-semibold ${skill.price === 0 || !skill.price ? 'text-green-600' : 'text-gray-900'}`}>
                         {!skill.price || skill.price === 0
-                          ? 'Gratuit'
+                          ? tc('free')
                           : `${(skill.price / 100).toFixed(0)}€`}
                       </span>
                     </div>
@@ -383,7 +386,7 @@ export default function AdminSkillsPage() {
                       {vtConf ? (
                         <div className={`flex items-center gap-1 ${vtConf.color}`}>
                           <VtIcon className="h-4 w-4" />
-                          <span className="text-xs font-medium">{vtConf.label}</span>
+                          <span className="text-xs font-medium">{t(vtConf.label)}</span>
                         </div>
                       ) : (
                         <span className="text-xs text-gray-400">N/A</span>
@@ -394,14 +397,14 @@ export default function AdminSkillsPage() {
                     <div className="col-span-1">
                       <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${statusConf.color}`}>
                         <StatusIcon className="h-3 w-3" />
-                        {statusConf.label}
+                        {t(statusConf.label)}
                       </span>
                     </div>
 
                     {/* Date */}
                     <div className="col-span-1">
                       <p className="text-xs text-gray-500">
-                        {new Date(skill.submitted_at || skill.created_at).toLocaleDateString('fr-FR')}
+                        {new Date(skill.submitted_at || skill.created_at).toLocaleDateString(undefined)}
                       </p>
                     </div>
 
@@ -413,7 +416,7 @@ export default function AdminSkillsPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="rounded-lg border border-gray-300 p-2 text-gray-500 hover:bg-gray-50 hover:text-gray-700"
-                          title="Telecharger le ZIP"
+                          title={t('downloadZip')}
                         >
                           <Download className="h-4 w-4" />
                         </a>
@@ -424,7 +427,7 @@ export default function AdminSkillsPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="rounded-lg border border-gray-300 p-2 text-gray-500 hover:bg-gray-50 hover:text-gray-700"
-                          title="Voir la page"
+                          title={t('viewPage')}
                         >
                           <ExternalLink className="h-4 w-4" />
                         </a>
@@ -433,7 +436,7 @@ export default function AdminSkillsPage() {
                         onClick={() => setCertifySkill(skill)}
                         className="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800"
                       >
-                        Certifier
+                        {t('certify')}
                       </button>
                     </div>
                   </div>
