@@ -1,6 +1,7 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
+import { useSearchParams } from 'next/navigation';
 import { Search } from 'lucide-react';
 import { SKILL_CATEGORIES, CERTIFICATION_BADGES } from '@/types/database';
 import { useState, useCallback } from 'react';

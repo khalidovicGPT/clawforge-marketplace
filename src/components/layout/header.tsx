@@ -1,9 +1,9 @@
 'use client';
 
-import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { Menu, X, Search, User, LogOut, BookOpen, Shield } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
+import { Link } from '@/i18n/routing';
 import { createClient } from '@/lib/supabase/client';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { LanguageSwitcher } from '@/components/layout/language-switcher';
@@ -54,10 +54,12 @@ export function Header() {
     return () => subscription.unsubscribe();
   }, []);
 
+  const locale = useLocale();
+
   const handleSignOut = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
-    window.location.href = '/';
+    window.location.href = locale === 'fr' ? '/' : `/${locale}/`;
   };
 
   return (

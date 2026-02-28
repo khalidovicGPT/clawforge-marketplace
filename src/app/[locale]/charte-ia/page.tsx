@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { BookOpen, Download, Heart, ExternalLink, Users, Scale, Brain, Shield, MessageSquare, Sparkles, Eye, BookMarked, Handshake, Swords, GraduationCap, Lock } from 'lucide-react';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 

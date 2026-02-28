@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 
 export function BuyButton({ skillId, skillSlug, price, currency, pendingPaymentSetup }: {
   skillId: string;
@@ -11,6 +11,7 @@ export function BuyButton({ skillId, skillSlug, price, currency, pendingPaymentS
   pendingPaymentSetup?: boolean;
 }) {
   const t = useTranslations('BuyButton');
+  const locale = useLocale();
   const [loading, setLoading] = useState(false);
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -31,7 +32,8 @@ export function BuyButton({ skillId, skillSlug, price, currency, pendingPaymentS
         window.location.href = data.url;
         return;
       } else if (data.free) {
-        window.location.href = `/checkout/success?skill_id=${skillId}&free=true`;
+        const prefix = locale === 'fr' ? '' : `/${locale}`;
+        window.location.href = `${prefix}/checkout/success?skill_id=${skillId}&free=true`;
         return;
       } else if (data.error) {
         alert(data.error);

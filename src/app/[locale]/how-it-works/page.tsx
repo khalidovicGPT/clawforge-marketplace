@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { Metadata } from 'next';
 import { Search, CreditCard, Download, Zap, UserPlus, Upload, Shield, Wallet } from 'lucide-react';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
