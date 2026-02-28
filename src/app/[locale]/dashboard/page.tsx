@@ -78,7 +78,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
         )
       `)
       .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+      .order('purchased_at', { ascending: false });
     purchases = purchasesData;
 
     // Get user's existing reviews
@@ -581,7 +581,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
                         <p className="mt-1 text-xs text-gray-400">
                           {!purchase.price_paid || purchase.price_paid === 0 ? t('myPurchases.free') : t('myPurchases.ttc', { price: `${(purchase.price_paid / 100).toFixed(0)}€` })}
                           {' • '}
-                          {t('myPurchases.acquiredOn', { date: new Date(purchase.created_at).toLocaleDateString(locale) })}
+                          {t('myPurchases.acquiredOn', { date: new Date(purchase.purchased_at).toLocaleDateString(locale) })}
                         </p>
                         <div className="mt-2 flex items-center gap-2">
                           <span className="text-xs text-gray-500">{t('myPurchases.yourRating')}</span>
@@ -615,7 +615,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
                       </div>
                       <RefundButton
                         purchaseId={purchase.id}
-                        purchasedAt={purchase.purchased_at || purchase.created_at}
+                        purchasedAt={purchase.purchased_at}
                         pricePaid={purchase.price_paid}
                         paymentStatus={purchase.payment_status}
                         refundStatus={refundStatusMap.get(purchase.id) as 'pending' | 'approved' | 'rejected' | undefined}
