@@ -704,6 +704,35 @@
     "fr": "FR",
     "en": "EN"
   },
+  "CheckoutSuccess": {
+    "verifying": "Vérification de votre achat...",
+    "errorTitle": "Erreur",
+    "backToCatalog": "Retour au catalogue",
+    "titleFree": "Téléchargement prêt !",
+    "titlePaid": "Paiement confirmé !",
+    "subtitleFree": "Votre skill gratuit est prêt à être téléchargé.",
+    "subtitlePaid": "Votre achat a été confirmé. Merci pour votre confiance !",
+    "version": "Version {version}",
+    "download": "Télécharger le skill",
+    "dashboardLink": "Le skill est aussi disponible dans votre <link>dashboard</link>",
+    "freeUpdates": "Mises à jour gratuites à vie",
+    "creatorSupport": "Support créateur inclus",
+    "taxNote": "Le prix payé inclut toutes les taxes applicables (TTC).",
+    "myPurchases": "Mes achats",
+    "myPurchasesDesc": "Retrouvez tous vos skills",
+    "explore": "Explorer",
+    "exploreDesc": "Découvrir d'autres skills",
+    "howToInstall": "Comment installer",
+    "step1": "Téléchargez le fichier ZIP ci-dessus",
+    "step2": "Extrayez le contenu dans le dossier <code>skills/</code> de votre agent OpenClaw",
+    "step3": "Redémarrez votre agent — le skill est automatiquement détecté"
+  },
+  "CheckoutError": {
+    "title": "Erreur lors du paiement",
+    "defaultMessage": "Une erreur inattendue est survenue lors du processus de paiement.",
+    "retry": "Réessayer",
+    "backToCatalog": "Retour au catalogue"
+  },
   "Common": {
     "free": "Gratuit",
     "ttc": "TTC"

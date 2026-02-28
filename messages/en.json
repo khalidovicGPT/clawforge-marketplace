@@ -704,6 +704,35 @@
     "fr": "FR",
     "en": "EN"
   },
+  "CheckoutSuccess": {
+    "verifying": "Verifying your purchase...",
+    "errorTitle": "Error",
+    "backToCatalog": "Back to catalog",
+    "titleFree": "Download ready!",
+    "titlePaid": "Payment confirmed!",
+    "subtitleFree": "Your free skill is ready to download.",
+    "subtitlePaid": "Your purchase has been confirmed. Thank you for your trust!",
+    "version": "Version {version}",
+    "download": "Download skill",
+    "dashboardLink": "The skill is also available in your <link>dashboard</link>",
+    "freeUpdates": "Free lifetime updates",
+    "creatorSupport": "Creator support included",
+    "taxNote": "The price paid includes all applicable taxes.",
+    "myPurchases": "My purchases",
+    "myPurchasesDesc": "Find all your skills",
+    "explore": "Explore",
+    "exploreDesc": "Discover more skills",
+    "howToInstall": "How to install",
+    "step1": "Download the ZIP file above",
+    "step2": "Extract the contents into the <code>skills/</code> folder of your OpenClaw agent",
+    "step3": "Restart your agent — the skill is automatically detected"
+  },
+  "CheckoutError": {
+    "title": "Payment error",
+    "defaultMessage": "An unexpected error occurred during the payment process.",
+    "retry": "Retry",
+    "backToCatalog": "Back to catalog"
+  },
   "Common": {
     "free": "Free",
     "ttc": "Tax incl."
